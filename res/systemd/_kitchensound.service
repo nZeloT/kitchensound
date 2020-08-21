@@ -1,0 +1,11 @@
+[Unit]
+Description=Kitchensound Service
+After=multi-user.target
+
+[Service]
+Type=idle
+WorkingDirectory=/home/pi/kitchensound/cmake-build-release-remote/
+ExecStart=sudo ./kitchensound
+
+[Install]
+WantedBy=multi-user.target
