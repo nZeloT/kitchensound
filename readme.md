@@ -14,7 +14,6 @@
 1. Rendering
    - marquee texts which are to wide -- adjust browsing stations
    - load radio station images
-   - display amp cooldown
 2. Bluetooth
    - BT anzeige Name als Property Alias im Devie Interface lesen und reporten statt device ID
    - BT Connect + Disconnect sounds ersetzen; werden automatisch vom Setupskript installiert
@@ -31,16 +30,14 @@
    - Dimm
    - Bluelight Filter during night hours
 
-# Setup Schritte
-- Verwende: Raspberry Pi OS Lite
-- SSH Aktivieren durch platzieren einer leeren ssh Datei in /boot
-- in /boot/config.txt dtoverlays für rotary enc und gpio-keys hinzufügen https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README
-- in /boot/config.txt spi=on
-- in /boot eine wpa_supplicant.conf mit den wesentlichen Informationen platzieren für ein Headless setup https://www.raspberrypi.org/documentation/configuration/wireless/headless.md
-- fbcp-ili9341 compilen mit Rest = 24, Data=24, Backlight = 23; dazu in der config backlight control auskommentieren um es zu aktivieren und statistics = 0;
-- in /etc/rc.local ein call auf fbcp-ili9341 machen
-- libconfig, libmpdclient, SDL, SDL_ttf, SDL_image, sdbus-c++ manuell compilen
-- libcurl-dev, mpd, wiringpi installieren
+# Setup Steps
+- Use: Raspberry Pi OS Lite
+- Activate SSH by placing a empty ssh file in /boot before the first launch
+- in /boot/config.txt add dtoverlays for the rotary encoder und gpio-keys https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README
+- in /boot/config.txt set spi=on
+- in /boot add a wpa_supplicant.conf file with the basic Wifi configuration for a Headless setup https://www.raspberrypi.org/documentation/configuration/wireless/headless.md
+- compile libconfig, libmpdclient, SDL, SDL_ttf, SDL_image, sdbus-c++ in the given versions
+- install libcurl-dev, mpd, wiringpi
 
 ## Systemd Configuration
 - to setup systemd autolaunch service
@@ -99,7 +96,7 @@ audio_output {
 ## Bluetooth - Audio + Metadata Works
 - BT Audio Setup Skript: https://github.com/nicokaiser/rpi-audio-receiver/blob/master/install-bluetooth.sh
 - https://github.com/Arkq/bluez-alsa
-- bluealsa-aplay.service ändern, so dass bluealsa-aplay  mit option ``-d volumedev`` aufgerufen wird
+- adjust ``bluealsa-aplay.service`` such that ``bluealsa-aplay``  is called with ``-d volumedev``
 - Sounds:
   - BT On: https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-41945/zapsplat_multimedia_alert_musical_warm_arp_006_46195.mp3?_=1
   - BT Off: https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-41945/zapsplat_multimedia_alert_prompt_feedback_tone_simple_sine_chime_2_tone_007_45759.mp3?_=1
