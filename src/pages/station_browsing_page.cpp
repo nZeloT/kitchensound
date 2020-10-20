@@ -37,16 +37,9 @@ void StationBrowsingPage::render(Renderer &renderer) {
         _state->trigger_transition(_page, STREAM_PLAYING);
     }
 
-    spdlog::info("StationBrowsingPage: render 0");
-
     this->render_time(renderer);
     //each page contains up to four stations
     //render each of the stations in a loop and then place the page indicator below
-
-    spdlog::error("StationBrowsingPage: render 1; offset: {1}; limit: {2};",
-                 _model.offset, _model.limit);
-    SDL_Delay(64);
-    spdlog::error("StationBrowsingPage: render 1.5 size: {1}", _model.stations.size());
 
     for (int i = _model.offset; i < _model.offset + _model.limit && i < _model.stations.size(); i++) {
         auto station = _model.stations[i];
@@ -72,8 +65,6 @@ void StationBrowsingPage::render(Renderer &renderer) {
         renderer.render_text_small(offsetX, offsetY+35, station.name);
     }
 
-    spdlog::info("StationBrowsingPage: render 2");
-
     // render the page indicators
     auto has_paging = false;
     if (_model.offset > 0) {
@@ -97,5 +88,4 @@ void StationBrowsingPage::render(Renderer &renderer) {
         renderer.render_text_small(160, 225, std::to_string(page_num));
     }
 
-    spdlog::info("StationBrowsingPage: end rendering");
 }
