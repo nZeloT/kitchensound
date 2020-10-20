@@ -14,7 +14,7 @@ mpd_connection *connect_to_mpd() {
 
 bool check_for_error(mpd_connection *connection) {
     if (mpd_connection_get_error(connection) != MPD_ERROR_SUCCESS) {
-        spdlog::error("mpd_connection_get_error(): {1}", mpd_connection_get_error_message(connection));
+        spdlog::error("mpd_connection_get_error(): {0}", mpd_connection_get_error_message(connection));
         return true;
     }
     return false;
@@ -54,7 +54,7 @@ static int poll_metadata(void *ptr) {
             }
 
             auto song_title = read_tag(song, MPD_TAG_TITLE);
-            spdlog::info("New Title: {1}", song_title);
+            spdlog::info("New Title: {0}", song_title);
             ctrl_ptr->_update_handler(song_title);
 
             mpd_song_free(song);

@@ -18,7 +18,7 @@ void StationBrowsingPage::activate_timeout()  {
 void StationBrowsingPage::handle_enter_key() {
     _state->trigger_transition(_page, STREAM_PLAYING);
     _model.confirmed_selection = _model.selected;
-    spdlog::info("StationBrowsingPage: Stream {1} selected; transitioning", _model.confirmed_selection);
+    spdlog::info("StationBrowsingPage: Stream {0} selected; transitioning", _model.confirmed_selection);
 }
 
 void StationBrowsingPage::handle_wheel_input(int delta) {

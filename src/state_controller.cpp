@@ -25,7 +25,7 @@ void StateController::trigger_transition(PAGES origin, PAGES destination) {
     _transition_origin = origin;
     _transition_destination = destination;
     _transitions = ENTER_LOADING;
-    spdlog::info("StateController: Triggered Transition from {1} to {2}", origin, destination);
+    spdlog::info("StateController: Triggered Transition from {0} to {1}", origin, destination);
 
 }
 

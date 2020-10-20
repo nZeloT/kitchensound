@@ -75,7 +75,7 @@ private:
     void on_properties_changed(const std::string &interfaceName,
                                const std::map<std::string, sdbus::Variant> &changedProperties,
                                const std::vector<std::string> &invalidatedProperties) {
-        spdlog::info("DBusBTDeviceMonitor::on_properties_changed(): {1}", interfaceName);
+        spdlog::info("DBusBTDeviceMonitor::on_properties_changed(): {0}", interfaceName);
         if (interfaceName == DEVICE_INTERFACE) {
             check_connected_property(changedProperties);
         } else if (interfaceName == MEDIAPLAYER_INTF) {
@@ -87,7 +87,7 @@ private:
         auto val = props.find("Connected");
         if (val != props.end()) {
             _connected = val->second.get<bool>();
-            spdlog::info("DBusBTDeviceMonitor::check_connected_property(): New Device status: {1}; {2}", _deviceId,
+            spdlog::info("DBusBTDeviceMonitor::check_connected_property(): New Device status: {0}; {1}", _deviceId,
                          _connected);
             _deviceConnectedHandler(_deviceId, _connected);
         }
@@ -97,7 +97,7 @@ private:
         auto val = props.find("Player");
         if (val != props.end()) {
             _playerPath = val->second.get<sdbus::ObjectPath>();
-            spdlog::info("DBusBTDeviceMonitor::check_media_player_property(): Player Property changed: {1}; {2}",
+            spdlog::info("DBusBTDeviceMonitor::check_media_player_property(): Player Property changed: {0}; {1}",
                          _deviceId, _playerPath);
             _devicePlayerChanged(_deviceId, _playerPath);
         }
@@ -154,14 +154,14 @@ private:
         int pos;
         if ((pos = objectPath.find("/dev_")) != std::string::npos) {
             //is it a known device?
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): {1}", objectPath);
+            spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): {0}", objectPath);
             int len = objectPath.find_first_of("/", pos + 1);
             if (len != std::string::npos) {
                 len -= pos;
                 --len;
             }
             auto deviceId = objectPath.substr(pos + 1, len);
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): Found device Id: {1}", deviceId);
+            spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): Found device Id: {0}", deviceId);
 
             //is the device id already known?
             auto known = std::find(begin(_known), end(_known), deviceId);
@@ -183,13 +183,13 @@ private:
             }
 
             auto deviceId = objectPath.substr(devPos + 1, len);
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): Found device Id: {1}", deviceId);
+            spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): Found device Id: {0}", deviceId);
 
             auto known = std::find(begin(_known), end(_known), deviceId);
             if (known == std::end(_known))
                 return; //removing unknown device ...
 
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): removing device {1}", deviceId);
+            spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): removing device {0}", deviceId);
             _known.erase(known);
         }
     }
@@ -215,9 +215,9 @@ public:
 
             //potentially has Title, Artist, Album
             build_metadata_string(metadata);
-            spdlog::info("DBusBTMediaPlayerMonitor::C-Tor(): {1}", _metadata);
+            spdlog::info("DBusBTMediaPlayerMonitor::C-Tor(): {0}", _metadata);
         } catch (sdbus::Error &error) {
-            spdlog::error("DBusBTMediaPlayerMonitor::C-Tor(): {1}", error.getMessage());
+            spdlog::error("DBusBTMediaPlayerMonitor::C-Tor(): {0}", error.getMessage());
         }
 
         if (_enabled)
@@ -235,7 +235,7 @@ public:
     }
 
     void set_enabled(bool enabled) {
-        spdlog::info("DBusBTMediaPlayerMonitor::set_enabled(): {1} : {2}", _player, enabled);
+        spdlog::info("DBusBTMediaPlayerMonitor::set_enabled(): {0} : {1}", _player, enabled);
         _enabled = enabled;
     }
 
@@ -244,7 +244,7 @@ private:
     static constexpr char MEDIAPLAYER_INTF[] = "org.bluez.MediaPlayer1";
 
     void on_properties_changed(std::string const &intf, std::map<std::string, sdbus::Variant> const &props) {
-        spdlog::info("DBusBTMediaPlayerMonitor::on_properties_changed(): {1}", intf);
+        spdlog::info("DBusBTMediaPlayerMonitor::on_properties_changed(): {0}", intf);
         if (intf == MEDIAPLAYER_INTF) {
             //try to find the track property
             auto it = std::find_if(begin(props), end(props), [this](const auto &p) {
@@ -289,7 +289,7 @@ private:
         }
 
         _metadata = s.str();
-        spdlog::info("DBusBTMediaPlayerMonitor::build_metadata_string(): {1}", _metadata);
+        spdlog::info("DBusBTMediaPlayerMonitor::build_metadata_string(): {0}", _metadata);
     }
 
     bool _enabled;

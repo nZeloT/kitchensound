@@ -17,7 +17,7 @@
 
 
 void shutdownHandler(int sigint) {
-    spdlog::info("Received Software Signal: {1}", std::to_string(sigint));
+    spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
     running = false;
 }
 

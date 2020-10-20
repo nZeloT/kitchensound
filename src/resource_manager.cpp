@@ -18,7 +18,7 @@ static int cached_loader(void* dataptr) {
 
             auto resource_pair = res_mgr->_cached.find(next);
             if(resource_pair == std::end(res_mgr->_cached)) {
-                spdlog::warn("Couldn't find a cached resource for entry: '{1}'", next);
+                spdlog::warn("Couldn't find a cached resource for entry: '{0}'", next);
                 continue;
             }
             auto resource = resource_pair->second;
@@ -85,7 +85,7 @@ void ResourceManager::unload_all() {
 void* ResourceManager::load_image_raw(const std::string &path) {
     auto image = IMG_Load(path.c_str());
     if(image == nullptr)
-        spdlog::warn("IMG_Load(): {1}", SDL_GetError());
+        spdlog::warn("IMG_Load(): {0}", SDL_GetError());
     return reinterpret_cast<void*>(image);
 }
 
@@ -95,7 +95,7 @@ void* ResourceManager::load_font_raw(const std::string &path, int size) {
 
     auto font = TTF_OpenFont(path.c_str(), size);
     if (font == nullptr) {
-        spdlog::warn("TTF_OpenFont(): {1}", SDL_GetError());
+        spdlog::warn("TTF_OpenFont(): {0}", SDL_GetError());
     }else {
         TTF_SetFontKerning(font, SDL_ENABLE);
     }
