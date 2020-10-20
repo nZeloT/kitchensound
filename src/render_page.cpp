@@ -59,6 +59,7 @@ void VolumePage::enter_page(PAGES origin) {
 void LoadingPage::render(Renderer &renderer) {
     this->render_time(renderer);
     renderer.render_text_large(160, 120, _model.msg);
+    spdlog::info("LoadingPage: rendered");
 }
 
 void InactivePage::enter_page(PAGES origin) {

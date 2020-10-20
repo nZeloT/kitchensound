@@ -12,11 +12,12 @@ public:
         VolumePage(STREAM_PLAYING, ctrl, vol),
         _res{res}, _model{},
         _text_meta{std::make_unique<RenderText>()},
-        _text_status{std::make_unique<RenderText>()},
-        _mpd{[&](auto new_meta) {
-            set_meta_text(new_meta);
-        }}
-        {};
+        _text_status{std::make_unique<RenderText>()}
+        {
+            MPDController::init([&](auto new_meta) {
+                set_meta_text(new_meta);
+            });
+        };
 
     void enter_page(PAGES origin) override;
     void leave_page(PAGES destination) override;
@@ -33,10 +34,11 @@ private:
         }
     }
 
+    void reset_model();
+
     StationPlayingPageModel _model;
 
     ResourceManager& _res;
-    MPDController _mpd;
 
     std::unique_ptr<RenderText> _text_status;
     std::unique_ptr<RenderText> _text_meta;

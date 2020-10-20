@@ -5,7 +5,7 @@
 StateController::StateController(Configuration &conf, ResourceManager& res, Renderer& renderer)
     : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE}, _renderer{renderer},
       _inactive{this}, _loading{this}, _volume{},
-      _stream_browsing{this, res, conf.get_radio_stations()},
+      _stream_browsing{this, res, std::move(conf.get_radio_stations())},
       _stream_playing{this, res, _volume},
       _bt_playing{this, res, _volume},
       _active_page{&_inactive}, _previous_page{nullptr}, _next_page{nullptr}
@@ -25,7 +25,8 @@ void StateController::trigger_transition(PAGES origin, PAGES destination) {
     _transition_origin = origin;
     _transition_destination = destination;
     _transitions = ENTER_LOADING;
-    spdlog::info("StateController: Triggered Transition");
+    spdlog::info("StateController: Triggered Transition from {1} to {2}", origin, destination);
+
 }
 
 void StateController::update_and_render(bool time) {

@@ -44,8 +44,8 @@ void StationPlayingPage::set_station_playing(RadioStationStream &stream) {
         _model.station.name = std::string{stream.name};
         _model.station.url = std::string{stream.url};
         _model.station.image_url = std::string{stream.image_url};
-        _mpd.stop_playback();
-        _mpd.playback_stream(_model.station.url);
+        MPDController::get().stop_playback();
+        MPDController::get().playback_stream(_model.station.url);
     }
 }
 
@@ -53,17 +53,23 @@ void StationPlayingPage::enter_page(PAGES origin)  {
     BasePage::update_time();
     VolumePage::enter_page(origin);
     if(origin != STREAM_BROWSING) {
-        _model.meta_changed = false;
-        _model.meta_text = "META TEXT";
-        _model.station_changed = false;
-        _model.station.name = "RADIO STATION";
-        _model.station.url = "STREAM";
-        _model.station.image_url = "IMAGE";
+        reset_model();
     }
 }
 
 void StationPlayingPage::leave_page(PAGES destination) {
-    if(destination != STREAM_BROWSING)
-        _mpd.stop_playback();
+    if(destination != STREAM_BROWSING) {
+        MPDController::get().stop_playback();
+        reset_model();
+    }
+}
+
+void StationPlayingPage::reset_model() {
+    _model.meta_changed = false;
+    _model.meta_text = "META TEXT";
+    _model.station_changed = false;
+    _model.station.name = "RADIO STATION";
+    _model.station.url = "STREAM";
+    _model.station.image_url = "IMAGE";
 }
 

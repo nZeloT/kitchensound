@@ -134,6 +134,7 @@ void * ResourceManager::get_cached(const std::string &identifier) {
     if(loaded == nullptr) {
         //not found means it isn't even scheduled for loading
         try_load_cached(identifier);
+        return nullptr;
     }
 
     return loaded->data;
