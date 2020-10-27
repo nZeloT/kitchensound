@@ -1,6 +1,8 @@
 #include "kitchensound/resource_manager.h"
 
+#include <memory>
 #include <string>
+#include <ctime>
 
 #include <spdlog/spdlog.h>
 
@@ -8,48 +10,20 @@
 #include <SDL_ttf.h>
 #include <SDL_image.h>
 
-static bool cached_loader_enabled = true;
-static int cached_loader(void* dataptr) {
-    auto res_mgr = reinterpret_cast<ResourceManager*>(dataptr);
+#include "kitchensound/cache_manager.h"
 
-    while(cached_loader_enabled) {
-        if(!res_mgr->_to_load.empty()) {
-            auto next = res_mgr->_to_load.front();
-
-            auto resource_pair = res_mgr->_cached.find(next);
-            if(resource_pair == std::end(res_mgr->_cached)) {
-                spdlog::warn("Couldn't find a cached resource for entry: '{0}'", next);
-                continue;
-            }
-            auto resource = resource_pair->second;
-
-            if(resource.state == ResourceManager::SHEDULED) {
-                void* data = nullptr;
-                if(resource.type == ResourceManager::IMAGE)
-                    data = ResourceManager::load_image_raw(next);
-                else
-                    spdlog::warn("Tried to dynamically load a font; This is not supported!");
-
-                if(data == nullptr) {
-                    res_mgr->_cached.erase(resource_pair);
-                }else {
-                    //place the newly loaded image into the dynamic cache
-                    resource_pair->second.state = ResourceManager::LOADED;
-                    resource_pair->second.data  = data;
-                }
-            }
-
-            res_mgr->_to_load.pop();
-        }
-        SDL_Delay(512);
-    }
-
-    return 0;
+ResourceManager::ResourceManager()
+ : _cache() {
+    load_all_static();
 }
 
-ResourceManager::Resource const* ResourceManager::get(std::map<std::string, Resource> const& m, const std::string &s) {
+ResourceManager::~ResourceManager()  {
+    unload_all();
+}
+
+ResourceManager::Resource const *ResourceManager::get(std::map<std::string, Resource> const &m, const std::string &s) {
     auto r = m.find(s);
-    if(r == std::end(m))
+    if (r == std::end(m))
         return nullptr;
 
     return &(r->second);
@@ -67,13 +41,13 @@ void ResourceManager::load_all_static() {
 }
 
 void ResourceManager::unload_all() {
-    auto unload = [](std::map<std::string, Resource>& m){
-        for(auto& e : m) {
-            auto& res = e.second;
-            if(res.type == FONT)
+    auto unload = [](std::map<std::string, Resource> &m) {
+        for (auto &e : m) {
+            auto &res = e.second;
+            if (res.type == FONT)
                 SDL_free(res.data);
             else
-                SDL_FreeSurface(reinterpret_cast<SDL_Surface*>(res.data));
+                SDL_FreeSurface(reinterpret_cast<SDL_Surface *>(res.data));
         }
         m.clear();
     };
@@ -82,25 +56,25 @@ void ResourceManager::unload_all() {
     unload(_cached);
 }
 
-void* ResourceManager::load_image_raw(const std::string &path) {
+void *ResourceManager::load_image_raw(const std::string &path) {
     auto image = IMG_Load(path.c_str());
-    if(image == nullptr)
+    if (image == nullptr)
         spdlog::warn("IMG_Load(): {0}", SDL_GetError());
-    return reinterpret_cast<void*>(image);
+    return reinterpret_cast<void *>(image);
 }
 
-void* ResourceManager::load_font_raw(const std::string &path, int size) {
-    if(size <= 0)
+void *ResourceManager::load_font_raw(const std::string &path, int size) {
+    if (size <= 0)
         throw std::runtime_error("Requested Font size smaller or equal to 0!");
 
     auto font = TTF_OpenFont(path.c_str(), size);
     if (font == nullptr) {
         spdlog::warn("TTF_OpenFont(): {0}", SDL_GetError());
-    }else {
+    } else {
         TTF_SetFontKerning(font, SDL_ENABLE);
     }
 
-    return reinterpret_cast<void*>(font);
+    return reinterpret_cast<void *>(font);
 }
 
 void ResourceManager::load_image(const std::string &identifier, const std::string &path, bool is_static) {
@@ -110,10 +84,12 @@ void ResourceManager::load_image(const std::string &identifier, const std::strin
         throw std::runtime_error("Error loading radio image!");
     }
 
-    if(is_static)
-        _static.emplace(std::string{identifier}, Resource{IMAGE, LOADED, reinterpret_cast<void*>(image)});
+    if (is_static)
+        _static.emplace(std::string{identifier},
+                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image)});
     else
-        _cached.emplace(std::string{identifier}, Resource{IMAGE, LOADED, reinterpret_cast<void*>(image)});
+        _cached.emplace(std::string{identifier},
+                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image)});
 }
 
 void ResourceManager::load_font(const std::string &identifier, const std::string &path, int size, bool is_static) {
@@ -123,26 +99,68 @@ void ResourceManager::load_font(const std::string &identifier, const std::string
         throw std::runtime_error("Error loading font");
     }
 
-    if(is_static)
-        _static.emplace(std::string{identifier}, Resource{FONT, LOADED, reinterpret_cast<void*>(font)});
+    if (is_static)
+        _static.emplace(std::string{identifier},
+                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font)});
     else
-        _cached.emplace(std::string{identifier}, Resource{FONT, LOADED, reinterpret_cast<void*>(font)});
+        _cached.emplace(std::string{identifier},
+                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font)});
 }
 
-void * ResourceManager::get_cached(const std::string &identifier) {
-    auto loaded = get(_cached, identifier);
-    if(loaded == nullptr) {
-        //not found means it isn't even scheduled for loading
-        try_load_cached(identifier);
+void *ResourceManager::get_cached(const std::string &identifier) {
+    auto _id = std::string{identifier};
+    if(_id.empty())
         return nullptr;
+
+    auto loaded = get(_cached, _id);
+    if (loaded == nullptr) {
+        //not found means it isn't even scheduled for loading
+        try_load_cached(_id);
+        return nullptr;
+    }
+
+    if(loaded->state == FAILED && std::time(nullptr) - loaded->last_state_upd > 80000) {
+        //retry fetching the resource
+        retry_load_cached(_id);
     }
 
     return loaded->data;
 }
 
 void ResourceManager::try_load_cached(const std::string &identifier) {
-    _cached.emplace(std::string{identifier}, Resource{ .type = IMAGE, .state = SHEDULED, .data = nullptr });
-    _to_load.push(std::string{identifier});
-    // TODO: also somehow make sure that the memory doesn't fill its only 512 mb
-    //       therefore use an access counter + last access time to identify resources which can safely be unloaded
+    if(!_cache)
+        _cache = std::make_unique<CacheManager>(*this);
+    spdlog::info("ResourceManager::try_load_cached(): Try loading `{}`", identifier);
+    _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr});
+    _cache->schedule_for_fetch(std::string{identifier});
+}
+
+void ResourceManager::retry_load_cached(const std::string &identifier) {
+    auto r = _cached.find(identifier);
+    if (r == std::end(_cached))
+        return;
+    auto id = std::string{identifier};
+    spdlog::info("ResourceManager::retry_load_cached(): retry loading `{}`", id);
+    r->second.state = SHEDULED;
+    r->second.last_state_upd = std::time(nullptr);
+    _cache->schedule_for_fetch(id);
+}
+
+void ResourceManager::cache_load_failed(const std::string &identifier) {
+    auto r = _cached.find(identifier);
+    if (r == std::end(_cached))
+        return;
+
+    r->second.state = FAILED;
+    r->second.last_state_upd = std::time(nullptr);
+}
+
+void ResourceManager::cache_load_success(const std::string &identifier, void *data) {
+    auto r = _cached.find(identifier);
+    if (r == std::end(_cached))
+        return;
+
+    r->second.state = LOADED;
+    r->second.last_state_upd = std::time(nullptr);
+    r->second.data = data;
 }

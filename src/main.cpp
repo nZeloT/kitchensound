@@ -1,5 +1,6 @@
 #include <string>
 #include <csignal>
+#include <filesystem>
 
 #include <SDL.h>
 #include <spdlog/spdlog.h>
@@ -12,7 +13,6 @@
 #include "kitchensound/renderer.h"
 #include "kitchensound/input.h"
 #include "kitchensound/config.h"
-#include "kitchensound/mpd_controller.h"
 #include "kitchensound/state_controller.h"
 
 
@@ -25,6 +25,10 @@ int main(int argc, char **argv) {
 
     //0. set the shutdown handler for SIGINT
     signal(SIGINT, ::shutdownHandler);
+
+    //create a log and a cache directory
+    std::filesystem::create_directory("logs");
+    std::filesystem::create_directory("cache");
 
     //0.1 create the logger
     auto logger = spdlog::daily_logger_st("kitchenlog", "logs/log.txt", 2, 30);

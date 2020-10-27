@@ -31,8 +31,8 @@ std::vector<RadioStationStream> Configuration::get_radio_stations() {
         RadioStationStream stream{};
         stream.name = (const char*)s.lookup("name");
         stream.url  = (const char*)s.lookup("url");
-        if(streams.exists("image_url"))
-            stream.image_url = (const char*)s.lookup("image");
+        if(s.exists("image_url"))
+            stream.image_url = (const char*)s.lookup("image_url");
         entries.push_back(std::move(stream));
     }
 

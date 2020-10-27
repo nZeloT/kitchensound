@@ -6,7 +6,7 @@
 - libmpdclient
 - sdbus-c++
 - asound
-- curlcpp
+- curlpp
 - spdlog
 - wiringPi
 

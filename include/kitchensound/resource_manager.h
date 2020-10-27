@@ -2,23 +2,20 @@
 #define KITCHENSOUND_RESOURCE_MANAGER_H
 
 #include <string>
+#include <memory>
 #include <map>
 #include <queue>
 
-static int cached_loader(void* dataptr);
+class CacheManager;
 class ResourceManager {
 public:
-    ResourceManager() {
-        load_all_static();
-    };
-    ~ResourceManager() {
-        unload_all();
-    }
+    ResourceManager();
+    ~ResourceManager();
     void* get_static(std::string const& name) { return get(_static, name)->data; };
     void* get_cached(std::string const& identifier);
 
 private:
-    friend int cached_loader(void* dataptr);
+    friend CacheManager;
 
     enum ResourceType {
         FONT,
@@ -27,12 +24,14 @@ private:
 
     enum ResourceState {
         SHEDULED,
-        LOADED
+        LOADED,
+        FAILED
     };
 
     struct Resource {
         ResourceType type;
         ResourceState state;
+        long last_state_upd;
         void* data;
     };
 
@@ -40,7 +39,12 @@ private:
     void load_all_static();
     void load_image(std::string const& identifier, std::string const& path, bool is_static = true);
     void load_font(std::string const& identifier, std::string const& path, int size, bool is_static = true);
+
     void try_load_cached(std::string const& identifier);
+    void retry_load_cached(std::string const& identifier);
+    void cache_load_failed(std::string const& identifier);
+    void cache_load_success(std::string const& identifier, void* data);
+
     void unload_all();
 
     static void* load_image_raw(std::string const& path);
@@ -48,7 +52,8 @@ private:
 
     std::map<std::string, Resource> _static;
     std::map<std::string, Resource> _cached;
-    std::queue<std::string> _to_load;
+
+    std::unique_ptr<CacheManager> _cache;
 };
 
 #endif //KITCHENSOUND_RESOURCE_MANAGER_H

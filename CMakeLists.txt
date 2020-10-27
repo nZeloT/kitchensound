@@ -22,7 +22,7 @@ add_executable(kitchensound src/main.cpp
                             src/state_controller.cpp
                             src/bt_controller.cpp
                             src/volume.cpp
-                            src/station_image_cache.cpp
+                            src/cache_manager.cpp
                             src/render_text.cpp
                             src/render_page.cpp
                             src/resource_manager.cpp
@@ -33,6 +33,7 @@ add_executable(kitchensound src/main.cpp
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})
 target_include_directories(kitchensound PUBLIC ${ALSA_INCLUDE_DIRS})
+target_link_libraries(kitchensound stdc++fs)
 target_link_libraries(kitchensound ${SDL2_LIBRARIES})
 target_link_libraries(kitchensound SDL2_ttf)
 target_link_libraries(kitchensound SDL2_image)
@@ -41,6 +42,7 @@ target_link_libraries(kitchensound mpdclient)
 target_link_libraries(kitchensound Threads::Threads)
 target_link_libraries(kitchensound SDBusCpp::sdbus-c++)
 target_link_libraries(kitchensound ${ALSA_LIBRARIES})
-target_link_libraries(kitchensound curlcpp)
+target_link_libraries(kitchensound curlpp)
+target_link_libraries(kitchensound curl)
 target_link_libraries(kitchensound spdlog::spdlog)
 target_link_libraries(kitchensound wiringPi)
