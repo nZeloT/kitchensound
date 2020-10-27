@@ -15,7 +15,6 @@
    - marquee texts which are to wide -- adjust browsing stations
    - load radio station images
 2. Bluetooth
-   - BT anzeige Name als Property Alias im Devie Interface lesen und reporten statt device ID
    - BT Connect + Disconnect sounds ersetzen; werden automatisch vom Setupskript installiert
    - Sounds in den res ordner moven
 3. Alsa
@@ -108,6 +107,7 @@ audio_output {
 ## DBus
 - Um per DBus auf die BT Infos zuzugreifen, kann man die Anwendung etweder als root launchen oder dem user "pi" erlauben die DBus destination "org.bluez" zu callen
 - für Option zwei das File ``./res/dbus/_...`` nach ``/usr/share/dbus-1/system.d/`` kopieren
+- dbus debugging with ``busctl``
 
 ## pHAT DAC - Works
 - https://pinout.xyz/pinout/phat_dac# + Ground unten links

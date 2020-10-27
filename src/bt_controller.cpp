@@ -32,17 +32,23 @@ class DBusBTDeviceMonitor {
 public:
     DBusBTDeviceMonitor(sdbus::IConnection &conn, const std::string &deviceId,
                         std::function<void(std::string const &, bool)> deviceConnectedHandler,
+                        std::function<void(std::string const &, std::string const &)> deviceNameHandler,
                         std::function<void(std::string const &, sdbus::ObjectPath const &)> devicePlayerChange) :
             _proxy{std::move(sdbus::createProxy(conn, SERVICE_NAME, "/org/bluez/hci0/" + deviceId))},
             _deviceConnectedHandler(std::move(deviceConnectedHandler)),
+            _deviceNameHandler(std::move(deviceNameHandler)),
             _devicePlayerChanged(std::move(devicePlayerChange)),
             _deviceId(deviceId) {
 
         //0. check current device _state
         auto prop = _proxy->getProperty("Connected").onInterface(DEVICE_INTERFACE);
         _connected = prop.get<bool>();
-        spdlog::info("Initial device state: {0}; {1}", _deviceId, _connected);
+        auto name_prop = _proxy->getProperty("Alias").onInterface(DEVICE_INTERFACE);
+        _name = name_prop.get<std::string>();
+        spdlog::info("Initial device state: {0}; {1}; {2}", _deviceId, _name, _connected);
         _deviceConnectedHandler(_deviceId, _connected);
+        if(!_name.empty())
+            _deviceNameHandler(_deviceId, _name);
 
         try {
             prop = _proxy->getProperty("Player").onInterface(MEDIAPLAYER_INTF);
@@ -78,6 +84,7 @@ private:
         spdlog::info("DBusBTDeviceMonitor::on_properties_changed(): {0}", interfaceName);
         if (interfaceName == DEVICE_INTERFACE) {
             check_connected_property(changedProperties);
+            check_name_property(changedProperties);
         } else if (interfaceName == MEDIAPLAYER_INTF) {
             check_media_player_property(changedProperties);
         }
@@ -93,6 +100,15 @@ private:
         }
     }
 
+    void check_name_property(std::map<std::string, sdbus::Variant> const &props) {
+        auto val = props.find("Alias");
+        if(val != props.end()) {
+            _name = val->second.get<std::string>();
+            spdlog::info("DBusBTDeviceMonitor::check_name_property(): Name Device Name received: {0}", _name);
+            _deviceNameHandler(_deviceId, _name);
+        }
+    }
+
     void check_media_player_property(std::map<std::string, sdbus::Variant> const &props) {
         auto val = props.find("Player");
         if (val != props.end()) {
@@ -104,11 +120,13 @@ private:
     }
 
     bool _connected;
+    std::string _name;
     sdbus::ObjectPath _playerPath;
 
     std::string _deviceId;
     std::unique_ptr<sdbus::IProxy> _proxy;
     std::function<void(std::string const &, bool)> _deviceConnectedHandler;
+    std::function<void(std::string const &, std::string const &)> _deviceNameHandler;
     std::function<void(std::string const &, std::string const &)> _devicePlayerChanged;
 };
 
@@ -336,6 +354,10 @@ private:
                                                                               device_disconnected(deviceId);
                                                                       },
                                                                       [this](std::string const &deviceId,
+                                                                              std::string const &name) {
+                                                                            device_name_changed(deviceId, name);
+                                                                      },
+                                                                      [this](std::string const &deviceId,
                                                                              sdbus::ObjectPath const &playerPath) {
                                                                           player_changed(deviceId, playerPath);
                                                                       }));
@@ -361,7 +383,7 @@ private:
             throw std::runtime_error("Still connected to a device; Can't be connected to more than one devices!");
         _connected = true;
         _connectedDevice = std::string{deviceId};
-        _status = "Connected to " + deviceId;
+        _status = "Connected to " + (_deviceName.empty() ? deviceId : _deviceName);
         _metadata = "";
         _handler(_status, _metadata);
 
@@ -370,6 +392,12 @@ private:
         });
         if (it != std::end(_playerMonitors))
             it->second->set_enabled(true);
+    }
+
+    void device_name_changed(std::string const &deviceId, std::string const &name) {
+        _deviceName = std::string{name};
+        _status     = "Connected to " + _deviceName;
+        _handler(_status, _metadata);
     }
 
     void device_disconnected(std::string const &deviceId) {
@@ -414,6 +442,7 @@ private:
 
     bool _connected;
     std::string _connectedDevice;
+    std::string _deviceName;
     std::string _status;
     std::string _metadata;
 
