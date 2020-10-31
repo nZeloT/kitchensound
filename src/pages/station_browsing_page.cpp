@@ -12,13 +12,13 @@
 void StationBrowsingPage::activate_timeout()  {
     _model.times_out = true;
     _model.remaining_time = BROWSING_TIMEOUT;
-    spdlog::info("StationBrowsingPage: Timeout activated");
+    spdlog::info("StationBrowsingPage::activate_timeout(): active");
 }
 
 void StationBrowsingPage::handle_enter_key() {
     _state->trigger_transition(_page, STREAM_PLAYING);
     _model.confirmed_selection = _model.selected;
-    spdlog::info("StationBrowsingPage: Stream {0} selected; transitioning", _model.confirmed_selection);
+    spdlog::info("StationBrowsingPage::handle_enter_key(): Stream {0} selected; transitioning", _model.confirmed_selection);
 }
 
 void StationBrowsingPage::handle_wheel_input(int delta) {

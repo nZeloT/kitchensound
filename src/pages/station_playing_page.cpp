@@ -14,7 +14,7 @@ void StationPlayingPage::render(Renderer &renderer) {
     //1. render the radio station artwork if present, otherwise the default
     SDL_Rect dstrect{96, 36, 128, 128};
     auto img_ptr = _res.get_cached(_model.station.image_url);
-    if (img_ptr == nullptr)//TODO try and load artwork if not loaded yet
+    if (img_ptr == nullptr)
         img_ptr = _res.get_static(RADIO_IMAGE);
 
     renderer.render_image(reinterpret_cast<SDL_Surface *>(img_ptr), dstrect);

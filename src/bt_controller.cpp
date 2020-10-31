@@ -45,7 +45,7 @@ public:
         _connected = prop.get<bool>();
         auto name_prop = _proxy->getProperty("Alias").onInterface(DEVICE_INTERFACE);
         _name = name_prop.get<std::string>();
-        spdlog::info("Initial device state: {0}; {1}; {2}", _deviceId, _name, _connected);
+        spdlog::info("DBusBTDeviceMonitor::C-Tor(): Initial device state: {0}; {1}; {2}", _deviceId, _name, _connected);
         _deviceConnectedHandler(_deviceId, _connected);
         if(!_name.empty())
             _deviceNameHandler(_deviceId, _name);
@@ -476,7 +476,7 @@ void BTController::activate_bt() {
     if (!res.find("succeeded"))
         throw std::runtime_error("Failed to activate BT!");
     _thread = SDL_CreateThread(::run_dbusbtconnector, "DbusBTController", reinterpret_cast<void *>(_dbus.get()));
-    exec("aplay -Dvolumedev /usr/local/share/sounds/bt-activate.wav");
+    exec("aplay -q -D volumedev /usr/local/share/sounds/bt-activate.wav");
 }
 
 void BTController::deactivate_bt() {
@@ -487,5 +487,5 @@ void BTController::deactivate_bt() {
     auto res = exec("../res/scripts/bt_off.sh");
     if (!res.find("succeeded"))
         throw std::runtime_error("Failed to deactivate BT!");
-    exec("aplay -D volumedev /usr/local/share/sounds/bt-deactivate.wav");
+    exec("aplay -q -D volumedev /usr/local/share/sounds/bt-deactivate.wav");
 }

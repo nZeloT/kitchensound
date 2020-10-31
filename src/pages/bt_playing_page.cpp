@@ -39,12 +39,12 @@ void BluetoothPlayingPage::enter_page(PAGES origin)  {
     _model.status_changed = true;
     _model.status = "Not Connected";
     _btc.activate_bt();
-    spdlog::info("BTPlayingPage: Entered.");
+    spdlog::info("BluetoothPlayingPage::enter_page(): Entered.");
 }
 
 void BluetoothPlayingPage::leave_page(PAGES destination) {
     _btc.deactivate_bt();
-    spdlog::info("BTPlayingPage: Left.");
+    spdlog::info("BluetoothPlayingPage::leave_page(): Left.");
 }
 
 void BluetoothPlayingPage::set_meta(const std::string &new_meta) {

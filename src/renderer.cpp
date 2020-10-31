@@ -16,10 +16,10 @@
 Renderer::Renderer()
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        spdlog::error("SDL_Init(): {0}", SDL_GetError());
+        spdlog::error("Renderer::C-Tor(): SDL_Init(): {0}", SDL_GetError());
         throw std::runtime_error("Error initializing SDL!");
     }
-    spdlog::info("SDL_VIDEODRIVER selected : {0}", SDL_GetCurrentVideoDriver());
+    spdlog::info("Renderer::C-Tor(): SDL_VIDEODRIVER selected : {0}", SDL_GetCurrentVideoDriver());
 
     window = SDL_CreateWindow
             (
@@ -29,24 +29,24 @@ Renderer::Renderer()
                     SDL_WINDOW_FULLSCREEN
             );
     if (nullptr == window) {
-        spdlog::error("SDL_CreateWindow(): {0}", SDL_GetError());
+        spdlog::error("Renderer::C-Tor(): SDL_CreateWindow(): {0}", SDL_GetError());
         throw std::runtime_error("Error creating SDL Window");
     }
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (nullptr == renderer) {
-        spdlog::error("SDL_CreateRenderer(): {0}", SDL_GetError());
+        spdlog::error("Renderer::C-Tor(): SDL_CreateRenderer(): {0}", SDL_GetError());
         throw std::runtime_error("Error creating SDL renderer");
     }
     SDL_RendererInfo info;
     SDL_GetRendererInfo(renderer, &info);
-    spdlog::info("SDL_RENDER_DRIVER selected : {0}", info.name);
+    spdlog::info("Renderer::C-Tor(): SDL_RENDER_DRIVER selected : {0}", info.name);
 
     SDL_ShowCursor(SDL_DISABLE);
 
     init_sdl_ttf();
     init_sdl_image();
-    spdlog::info("Renderer: Initialization finished!");
+    spdlog::info("Renderer::C-Tor(): Initialization finished!");
 }
 
 Renderer::~Renderer() {
@@ -62,12 +62,12 @@ Renderer::~Renderer() {
 
 void Renderer::init_sdl_ttf() {
     if (TTF_Init() < 0) {
-        spdlog::error("TTF_init(): {0}", TTF_GetError());
+        spdlog::error("Renderer::init_sdl_ttf(): {0}", TTF_GetError());
         throw std::runtime_error("Error loading SDL ttf");
     }
     SDL_version version{};
     SDL_TTF_VERSION(&version);
-    spdlog::info("Using SDL_TTF_Version: {0}.{1}.{2}",
+    spdlog::info("Renderer::init_sdl_ttf(): Using SDL_TTF_Version: {0}.{1}.{2}",
                  std::to_string(version.major),
                  std::to_string(version.minor),
                  std::to_string(version.patch));
@@ -76,12 +76,12 @@ void Renderer::init_sdl_ttf() {
 void Renderer::init_sdl_image() {
     int initflags = IMG_INIT_PNG | IMG_INIT_JPG;
     if ((IMG_Init(initflags) & initflags) != initflags) {
-        spdlog::error("IMG_Init(): {0}", IMG_GetError());
+        spdlog::error("Renderer::init_sdl_image(): IMG_Init(): {0}", IMG_GetError());
         throw std::runtime_error("Error loading SDL img");
     }
     SDL_version version{};
     SDL_IMAGE_VERSION(&version);
-    spdlog::info("Using SDL_IMG_Version: {0}.{1}.{2}",
+    spdlog::info("Renderer::init_sdl_image(): Using SDL_IMG_Version: {0}.{1}.{2}",
                  std::to_string(version.major),
                  std::to_string(version.minor),
                  std::to_string(version.patch));
@@ -170,7 +170,7 @@ void Renderer::load_resources(ResourceManager& res) {
     font_small = reinterpret_cast<TTF_Font*>(res.get_static("SMALL"));
     font_large = reinterpret_cast<TTF_Font*>(res.get_static("LARGE"));
     font_hughe = reinterpret_cast<TTF_Font*>(res.get_static("HUGHE"));
-    spdlog::info("Renderer: Loaded font resources.");
+    spdlog::info("Renderer::load_resources(): Loaded font resources.");
 }
 
 void Renderer::start_pass() {

@@ -53,26 +53,25 @@ void VolumePage::render_volume(Renderer &renderer) {
 void VolumePage::enter_page(PAGES origin) {
     //_volume.update_from_system();
     //_vol_model.new_value = _volume.get_volume();
-    spdlog::info("Volume: Entered VolumePage.");
+    spdlog::info("VolumePage::enter_page(): Entered.");
 }
 
 void LoadingPage::render(Renderer &renderer) {
     this->render_time(renderer);
     renderer.render_text_large(160, 120, _model.msg);
-    spdlog::info("LoadingPage: rendered");
 }
 
 void InactivePage::enter_page(PAGES origin) {
     _model.remaining_amp_cooldown_time = COOLDOWN_TIMEOUT;
     //turn off amp
     digitalWrite(4, 1);
-    spdlog::info("InactivePage: Entered InactivePage.");
+    spdlog::info("InactivePage::enter_page(): Entered.");
 }
 
 void InactivePage::leave_page(PAGES destination) {
     //turn amp on
     digitalWrite(4, 0);
-    spdlog::info("InactivePage: Left InactivePage");
+    spdlog::info("InactivePage::leave_page(): Left");
 }
 
 void InactivePage::handle_power_key() {

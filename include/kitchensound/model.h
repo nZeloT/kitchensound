@@ -4,11 +4,6 @@
 #include <string>
 #include <vector>
 
-enum NETWORK_STATE {
-    WIFI,
-    BLUETOOTH
-};
-
 enum PAGES {
     INACTIVE,
     LOADING,

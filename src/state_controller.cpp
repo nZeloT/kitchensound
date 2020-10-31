@@ -25,22 +25,24 @@ void StateController::trigger_transition(PAGES origin, PAGES destination) {
     _transition_origin = origin;
     _transition_destination = destination;
     _transitions = ENTER_LOADING;
-    spdlog::info("StateController: Triggered Transition from {0} to {1}", origin, destination);
+    spdlog::info("StateController::trigger_transition(): Triggered Transition from {0} to {1}", origin, destination);
 
 }
 
-void StateController::update_and_render(bool time) {
+void StateController::update(bool time) {
     if (time)
         update_time();
-
-    _active_page->render(_renderer);
 
     if(_transitions != NONE)
         process_transition();
 }
 
+void StateController::render() {
+    _active_page->render(_renderer);
+}
+
 void StateController::process_transition() {
-    spdlog::info("StateController: process transition");
+    spdlog::info("StateController::process_transition(): switching state");
     switch (_transitions) {
         case LEAVING_LOADING:
             _active_page->leave_page(_transition_destination);
@@ -49,7 +51,7 @@ void StateController::process_transition() {
             _previous_page = nullptr;
             _transition_origin = _transition_destination = INACTIVE;
             _transitions = NONE;
-            spdlog::info("StateController: transition processed LEAVING_LOADING");
+            spdlog::info("StateController::process_transition(): processed LEAVING_LOADING");
             break;
 
         case ENTERING:
@@ -60,13 +62,13 @@ void StateController::process_transition() {
                 _stream_playing.set_station_playing(stream);
             }
             _transitions = LEAVING_LOADING;
-            spdlog::info("StateController: transition processed ENTERING");
+            spdlog::info("StateController::process_transition(): processed ENTERING");
             break;
 
         case LEAVING:
             _previous_page->leave_page(_transition_destination);
             _transitions = ENTERING;
-            spdlog::info("StateController: transition processed LEAVING");
+            spdlog::info("StateController::process_transition(): processed LEAVING");
             break;
 
         case ENTER_LOADING:
@@ -74,7 +76,7 @@ void StateController::process_transition() {
             _active_page   = &_loading;
             _active_page->enter_page(_transition_origin);
             _transitions = LEAVING;
-            spdlog::info("StateController: transition processed ENTER_LOADING");
+            spdlog::info("StateController::process_transition(): processed ENTER_LOADING");
             break;
 
         case NONE: break;

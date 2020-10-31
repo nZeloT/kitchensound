@@ -83,8 +83,10 @@ int main(int argc, char **argv) {
             time_update_counter = 0;
         }
 
+        state_ctrl.update(time_update_counter == 250);
+
         renderer.start_pass();
-        state_ctrl.update_and_render(time_update_counter == 250);
+        state_ctrl.render();
         renderer.complete_pass();
 
         //check if a new input is there to be read

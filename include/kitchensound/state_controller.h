@@ -19,7 +19,9 @@ public:
 
     ~StateController();
 
-    void update_and_render(bool time);
+    void update(bool time);
+
+    void render();
 
     void trigger_transition(PAGES origin, PAGES destination);
 
