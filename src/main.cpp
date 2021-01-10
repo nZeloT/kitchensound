@@ -15,6 +15,8 @@
 #include "kitchensound/config.h"
 #include "kitchensound/state_controller.h"
 
+#define DISPLAY_LED_PIN 13
+
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -31,14 +33,16 @@ int main(int argc, char **argv) {
     std::filesystem::create_directory("cache");
 
     //0.1 create the logger
-    auto logger = spdlog::daily_logger_st("kitchenlog", "logs/log.txt", 2, 30);
-    spdlog::set_default_logger(logger);
-    spdlog::flush_on(spdlog::level::info);
+    //auto logger = spdlog::daily_logger_st("kitchenlog", "logs/log.txt", 2, 30);
+    //spdlog::set_default_logger(logger);
+    //spdlog::flush_on(spdlog::level::err);
 
     //0.2 init wiringPi
     wiringPiSetupGpio();
     pinMode(4, OUTPUT);
+    pinMode(DISPLAY_LED_PIN, OUTPUT);
     digitalWrite(4, 1);
+    digitalWrite(DISPLAY_LED_PIN, 1);
 
     //1. read the configuration file
     Configuration conf{"../config.conf"};
@@ -76,18 +80,33 @@ int main(int argc, char **argv) {
         }
     }};
 
+    bool display_on = true;
     int time_update_counter = 0;
+    int time_cntr_reset = 250;
     while (running) {
         //update time regularly
-        if(time_update_counter > 250){ //every 5 seconds on avg with 20 ms render delay
+        if(time_update_counter > time_cntr_reset){ //every 5 seconds on avg with 20 ms render delay
             time_update_counter = 0;
         }
 
-        state_ctrl.update(time_update_counter == 250);
+        state_ctrl.update(time_update_counter == time_cntr_reset);
 
-        renderer.start_pass();
-        state_ctrl.render();
-        renderer.complete_pass();
+        if(!state_ctrl.is_standby_active()) {
+            if(!display_on) {
+                digitalWrite(DISPLAY_LED_PIN, 0);
+                display_on = true;
+                time_cntr_reset = 250;
+            }
+            renderer.start_pass();
+            state_ctrl.render();
+            renderer.complete_pass();
+        }else{
+            if(display_on){
+                digitalWrite(DISPLAY_LED_PIN, 1);
+                display_on = false;
+                time_cntr_reset = 30;
+            }
+        }
 
         //check if a new input is there to be read
         wheelAxis.check_and_handle();
@@ -95,7 +114,7 @@ int main(int argc, char **argv) {
         networkKey.check_and_handle();
         powerKey.check_and_handle();
 
-        SDL_Delay(20);
+        SDL_Delay(state_ctrl.is_standby_active() ? 500 : 20);
         ++time_update_counter;
     }
 

@@ -18,12 +18,21 @@ public:
         LED_KEY
     };
 
+    struct DisplayStandby {
+        bool enabled;
+        long start_hour;
+        long start_minute;
+        long end_hour;
+        long end_minute;
+    };
+
     explicit Configuration(const std::string& file);
     ~Configuration();
 
     std::string get_input_device(INPUT_SOURCES source);
     std::vector<RadioStationStream> get_radio_stations();
     long get_volume();
+    DisplayStandby get_display_standby();
 
 private:
     libconfig::Config conf;

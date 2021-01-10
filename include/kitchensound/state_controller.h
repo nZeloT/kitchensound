@@ -6,7 +6,7 @@
 
 #include "kitchensound/model.h"
 #include "kitchensound/config.h"
-
+#include "kitchensound/standby.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/render_page.h"
 #include "kitchensound/pages/bt_playing_page.h"
@@ -32,6 +32,8 @@ public:
     void react_confirm();
 
     void react_power_change();
+
+    bool is_standby_active();
 
 private:
     void update_time();
@@ -63,6 +65,7 @@ private:
     BluetoothPlayingPage _bt_playing;
 
     Volume _volume;
+    StandBy _standby;
 };
 
 #endif //KITCHENSOUND_STATE_CONTROLLER_H

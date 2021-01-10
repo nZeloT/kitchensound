@@ -18,6 +18,7 @@ add_executable(kitchensound src/main.cpp
                             src/renderer.cpp
                             src/input.cpp
                             src/config.cpp
+                            src/standby.cpp
                             src/mpd_controller.cpp
                             src/state_controller.cpp
                             src/bt_controller.cpp

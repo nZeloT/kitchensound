@@ -11,23 +11,23 @@
 - wiringPi
 
 # TODO
-1. Rendering
-   - marquee texts which are to wide -- adjust browsing stations
-   - load radio station images
-2. Bluetooth
-   - BT Connect + Disconnect sounds ersetzen; werden automatisch vom Setupskript installiert
-   - Sounds in den res ordner moven
-3. Alsa
-   - Equalizer einbauen
+1. Bluetooth
+   - replace BT connect and disconnect sounds
+   - move BT connect and disconnect sounds to the res folder
+2. Alsa
+   - Add equalizer to alsa configuration
    - http://www.gerrelt.nl/RaspberryPi/wordpress/equalizer/
    - https://www.hifiberry.com/docs/software/guide-adding-equalization-using-alsaeq/
-4. Resilience
-   - WiFi auto reconnect
-   - Manual shutdown
-   - Error message display
-5. Display
-   - Dimm
-   - Bluelight Filter during night hours
+3. Resilience
+   - add WiFi auto reconnect
+   - add option for manual shutdown
+   - add option to display Error messages
+4. Display
+   - implement Bluelight Filter during night hours
+5. Other
+   - measures to speedup boot and reduce power consumption: https://github.com/megatron-uk/sdlRFController
+   - make the sd card readonly; only useful with buildroot: https://learn.adafruit.com/read-only-raspberry-pi/
+   - maybe use buildroot to setup a minimal image https://buildroot.org/
 
 # Setup Steps
 - Use: Raspberry Pi OS Lite
@@ -35,18 +35,19 @@
 - in /boot/config.txt add dtoverlays for the rotary encoder und gpio-keys https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README
 - in /boot/config.txt set spi=on
 - in /boot add a wpa_supplicant.conf file with the basic Wifi configuration for a Headless setup https://www.raspberrypi.org/documentation/configuration/wireless/headless.md
-- compile libconfig, libmpdclient, SDL, SDL_ttf, SDL_image, sdbus-c++ in the given versions
-- install libcurl-dev, mpd, wiringpi
+- install and compile given dependencies
+- enable passwordless auto login
+
 
 ## Systemd Configuration
-- to setup systemd autolaunch service
+- to setup systemd autolaunch on boot and auto restart service
 - ```sudo cp ./res/systemd/_kitchensound.servcie /lib/systemd/system/kitchensound.service```
 - ```sudo chmod 644 /lib/systemd/system/kitchensound.service```
 - ```sudo systemctl daemon-reload```
 - ```sudo systemctl enable kitchensound.service```
 - reboot
 
-## Alsa Konfiguration
+## Alsa Configuration
 https://alsa.opensrc.org/Softvol
 ````
 pcm.!default {
@@ -63,7 +64,7 @@ pcm.volumedev {
 }
 ````
 
-## MPD Konfiguration
+## MPD Configuration
 https://www.musicpd.org/doc/html/user.html#configuring-audio-outputs
 https://www.musicpd.org/doc/html/plugins.html#output-plugins
 ```
@@ -124,28 +125,12 @@ audio_output {
 - Analog zum Rot Enc. kann man die als nonblocking readonly devices öffnen das value Attribute der input_event struct wird dabei 0 = Release, 1 = press, 2 = autorepeat
 
 ## Display - Works
-- Displaytreiber manuelles dtoverlay + fbcp: https://github.com/notro/fbtft/wiki/FBTFT-RPI-overlays
+- display driver and manual overlay + fbcp: https://github.com/notro/fbtft/wiki/FBTFT-RPI-overlays
 - https://github.com/tasanakorn/rpi-fbcp
 - https://github.com/philenotfound/rpi_elecfreaks_22_tft_dt_overlay
 - Rendering mit SDL https://stackoverflow.com/questions/57672568/sdl2-on-raspberry-pi-without-x
-- Mehrere Versuche Backlight dimmbar zu machen mit PWM1 sind gescheitert; Bester versuch war mig pigpio; Gab aber ordentlich tearing und Farbverschiebungen; geht vermutlich erst wenn fbtft im Kernel das kann oder so
+- using pwm to dimm the display leads to display and audio distortions
 
 ## Internet Radio
 - Stations Index API: https://de1.api.radio-browser.info/
-- Wiedergabe durch MPD mit pipe in snapcast
-- Weitere Meta Daten können durch https://www.discogs.com/developers geladen werden; u.a. auch Cover Bilder
-
-## DLNA/UPnP
-- Renderer: https://github.com/hzeller/gmrender-resurrect
-- Audio kann man direkt in snapcast pipen 
-- evtl. ist auch ein Controller notwendig um die entsprechenden Metadaten anzuzeigen -> https://github.com/hzeller/upnp-display als beispiel
-
-## Spotify
-- Librespot: https://github.com/librespot-org/librespot
-- Kann man direkt headless starten und in Snapcast pipen
-
-## Other
-- https://github.com/Spotifyd/spotifyd
-- https://learn.adafruit.com/read-only-raspberry-pi/
-- Energiespar und boot beschleunigung: https://github.com/megatron-uk/sdlRFController
-- https://buildroot.org/
+- fetch additional metadata for songs https://www.discogs.com/developers

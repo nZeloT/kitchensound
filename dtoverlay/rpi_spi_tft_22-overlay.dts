@@ -29,8 +29,8 @@
 		target = <&gpio>;
 		__overlay__ {
 			rpi_display_pins: rpi_display_pins {
-				brcm,pins = <13 24 25>;
-				brcm,function = <1 1 1>; /* out out out */
+				brcm,pins = <24 25>;
+				brcm,function = <1 1>; /* out out out */
 			};
 		};
 	};
@@ -55,7 +55,6 @@
 				buswidth = <8>;
 				reset-gpios = <&gpio 24 0>;
 				dc-gpios = <&gpio 25 0>;
-				led-gpios = <&gpio 13 1>;
 				debug = <0>;
 			};
 		};
