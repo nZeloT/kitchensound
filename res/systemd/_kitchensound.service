@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
-WorkingDirectory=/home/pi/kitchensound/cmake-build-release-remote/
+WorkingDirectory=/home/pi/kitchensound/cmake-build-release-kitchensound/
 ExecStart=sudo ./kitchensound
 
 Restart=always

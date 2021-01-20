@@ -4,7 +4,6 @@
 
 #include <SDL.h>
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/daily_file_sink.h>
 #include <wiringPi.h>
 
 #include "kitchensound/running.h"
@@ -17,6 +16,7 @@
 
 #define DISPLAY_LED_PIN 13
 
+#define VERSION "Version 0.3.1"
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -25,17 +25,15 @@ void shutdownHandler(int sigint) {
 
 int main(int argc, char **argv) {
 
-    //0. set the shutdown handler for SIGINT
+    //0. set the shutdown handler for SIGINT and SIGTERM
     signal(SIGINT, ::shutdownHandler);
+    signal(SIGTERM, ::shutdownHandler);
 
     //create a log and a cache directory
-    std::filesystem::create_directory("logs");
     std::filesystem::create_directory("cache");
 
-    //0.1 create the logger
-    //auto logger = spdlog::daily_logger_st("kitchenlog", "logs/log.txt", 2, 30);
-    //spdlog::set_default_logger(logger);
-    //spdlog::flush_on(spdlog::level::err);
+    //0.1 log the version number
+    spdlog::info(VERSION);
 
     //0.2 init wiringPi
     wiringPiSetupGpio();
@@ -93,7 +91,8 @@ int main(int argc, char **argv) {
 
         if(!state_ctrl.is_standby_active()) {
             if(!display_on) {
-                digitalWrite(DISPLAY_LED_PIN, 0);
+                digitalWrite(DISPLAY_LED_PIN, 1);
+                spdlog::info("main(): Tunring Display ON");
                 display_on = true;
                 time_cntr_reset = 250;
             }
@@ -102,7 +101,8 @@ int main(int argc, char **argv) {
             renderer.complete_pass();
         }else{
             if(display_on){
-                digitalWrite(DISPLAY_LED_PIN, 1);
+                digitalWrite(DISPLAY_LED_PIN, 0);
+                spdlog::info("main(): Turning Display OFF");
                 display_on = false;
                 time_cntr_reset = 30;
             }
