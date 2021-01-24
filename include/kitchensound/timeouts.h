@@ -1,8 +1,9 @@
 #ifndef KITCHENSOUND_TIMEOUTS_H
 #define KITCHENSOUND_TIMEOUTS_H
 
-#define BROWSING_TIMEOUT 100
-#define COOLDOWN_TIMEOUT 6000
-#define   VOLUME_TIMEOUT  50
+#define BROWSING_TIMEOUT     100 // iterations
+#define AMPLIFIER_TIMEOUT    150 // seconds
+#define VOLUME_TIMEOUT        50 // iterations
+#define STANDBY_TIMEOUT        3 // iterations
 
 #endif //KITCHENSOUND_TIMEOUTS_H

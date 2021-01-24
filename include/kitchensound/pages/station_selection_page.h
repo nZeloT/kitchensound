@@ -1,19 +1,14 @@
-#ifndef KITCHENSOUND_STATION_BROWSING_PAGE_H
-#define KITCHENSOUND_STATION_BROWSING_PAGE_H
+#ifndef KITCHENSOUND_STATION_SELECTION_PAGE_H
+#define KITCHENSOUND_STATION_SELECTION_PAGE_H
 
 #include <utility>
 
-#include "kitchensound/render_page.h"
-#include "kitchensound/resource_manager.h"
+#include "kitchensound/pages/selection_page.h"
 #include "kitchensound/mpd_controller.h"
 
-class StationBrowsingPage : public BasePage {
+class StationSelectionPage : public SelectionPage<RadioStationStream> {
 public:
-    StationBrowsingPage(StateController* ctrl, ResourceManager& res, std::vector<RadioStationStream> streams) : BasePage(STREAM_BROWSING, ctrl),
-        _res{res}, _model{} {
-        _model.stations = std::move(streams);
-        _model.limit    = _model.stations.size();
-    };
+    StationSelectionPage(StateController* ctrl, ResourceManager& res, std::vector<RadioStationStream> streams);
 
     void enter_page(PAGES origin) override {
         this->update_time();
@@ -35,14 +30,12 @@ public:
     void handle_enter_key() override;
     void render(Renderer &renderer) override;
 
-    RadioStationStream get_selected_stream() { return _model.stations[_model.confirmed_selection]; };
+    RadioStationStream get_selected_stream() { return _sp_model.data[_model.confirmed_selection]; };
 
 private:
     void activate_timeout();
 
-    ResourceManager& _res;
-
     StationBrowsingPageModel _model;
 };
 
-#endif //KITCHENSOUND_STATION_BROWSING_PAGE_H
+#endif //KITCHENSOUND_STATION_SELECTION_PAGE_H

@@ -6,12 +6,14 @@
 
 #include "kitchensound/model.h"
 #include "kitchensound/config.h"
-#include "kitchensound/standby.h"
+#include "kitchensound/time_based_standby.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/render_page.h"
 #include "kitchensound/pages/bt_playing_page.h"
-#include "kitchensound/pages/station_browsing_page.h"
+#include "kitchensound/pages/station_selection_page.h"
 #include "kitchensound/pages/station_playing_page.h"
+#include "kitchensound/pages/menu_selection_page.h"
+#include "kitchensound/pages/options_page.h"
 
 class StateController {
 public:
@@ -27,7 +29,7 @@ public:
 
     void react_wheel_input(int delta);
 
-    void react_network_change();
+    void react_menu_change();
 
     void react_confirm();
 
@@ -60,12 +62,14 @@ private:
 
     LoadingPage _loading;
     InactivePage _inactive;
-    StationBrowsingPage _stream_browsing;
+    MenuSelectionPage _mode_selection;
+    StationSelectionPage _stream_selection;
     StationPlayingPage _stream_playing;
     BluetoothPlayingPage _bt_playing;
+    OptionsPage _options_page;
 
     Volume _volume;
-    StandBy _standby;
+    TimeBasedStandby _standby;
 };
 
 #endif //KITCHENSOUND_STATE_CONTROLLER_H

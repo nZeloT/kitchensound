@@ -5,7 +5,7 @@
 #define RADIO_IMAGE "img/radio.png"
 
 void StationPlayingPage::handle_enter_key() {
-    _state->trigger_transition(_page, STREAM_BROWSING);
+    _state->trigger_transition(_page, STREAM_SELECTION);
 }
 
 void StationPlayingPage::render(Renderer &renderer) {
@@ -52,13 +52,13 @@ void StationPlayingPage::set_station_playing(RadioStationStream &stream) {
 void StationPlayingPage::enter_page(PAGES origin)  {
     BasePage::update_time();
     VolumePage::enter_page(origin);
-    if(origin != STREAM_BROWSING) {
+    if(origin != STREAM_SELECTION) {
         reset_model();
     }
 }
 
 void StationPlayingPage::leave_page(PAGES destination) {
-    if(destination != STREAM_BROWSING) {
+    if(destination != STREAM_SELECTION) {
         MPDController::get().stop_playback();
         reset_model();
     }

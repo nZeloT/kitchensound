@@ -34,6 +34,7 @@ void ResourceManager::load_all_static() {
     load_image("img/arrow_left.png", "../res/img/arrow_left.png");
     load_image("img/arrow_right.png", "../res/img/arrow_right.png");
     load_image("img/bluetooth.png", "../res/img/bluetooth.png");
+    load_image("img/gears.png", "../res/img/gears.png");
 
     load_font("SMALL", "../res/font/DroidSans.ttf", 18);
     load_font("LARGE", "../res/font/DroidSans.ttf", 24);

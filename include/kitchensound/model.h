@@ -3,13 +3,16 @@
 
 #include <string>
 #include <vector>
+#include <ctime>
 
 enum PAGES {
     INACTIVE,
     LOADING,
-    STREAM_BROWSING,
+    STREAM_SELECTION,
     STREAM_PLAYING,
-    BT_PLAYING
+    BT_PLAYING,
+    OPTIONS,
+    MENU_SELECTION
 };
 
 struct RadioStationStream {
@@ -19,8 +22,9 @@ struct RadioStationStream {
 };
 
 struct BasePageModel {
-    int hour;
-    int minutes;
+    std::time_t current_time = 0;
+    int hour = 0;
+    int minute = 0;
 };
 
 struct VolumeModel {
@@ -28,23 +32,34 @@ struct VolumeModel {
 };
 
 struct InactivePageModel {
-    int remaining_amp_cooldown_time;
+    std::time_t amp_cooldown_start;
+    PAGES last_seen;
 };
 
 struct LoadingPageModel {
     std::string msg;
 };
 
-struct StationBrowsingPageModel {
+template<class T>
+struct SelectionPageModel {
     int offset;
     int selected;
-    int confirmed_selection;
     int limit;
+
+    std::vector<T> data;
+};
+
+struct ModeModel {
+    std::string name;
+    PAGES ref_page;
+    std::string static_image;
+};
+
+struct StationBrowsingPageModel {
+    int confirmed_selection;
 
     bool times_out;
     int remaining_time;
-
-    std::vector<RadioStationStream> stations;
 };
 
 struct StationPlayingPageModel {
@@ -68,6 +83,12 @@ struct BluetoothPlayingPageModel {
 
     bool meta_changed;
     std::string meta;
+};
+
+const std::vector<ModeModel> MENUS = {
+        {"Radio", STREAM_PLAYING, "img/radio.png"},
+        {"Bluetooth", BT_PLAYING, "img/bluetooth.png"},
+        {"Optionen", OPTIONS, "img/gears.png"}
 };
 
 #endif //KITCHENSOUND_MODEL_H

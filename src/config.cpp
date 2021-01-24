@@ -12,8 +12,8 @@ std::string Configuration::get_input_device(INPUT_SOURCES source) {
             return (const char *) conf.lookup("input.wheel_axis");
         case ENTER_KEY:
             return (const char *) conf.lookup("input.enter_key");
-        case NETWORK_KEY:
-            return (const char *) conf.lookup("input.network_key");
+        case MENU_KEY:
+            return (const char *) conf.lookup("input.menu_key");
         case LED_KEY:
             return (const char *) conf.lookup("input.led_key");
         default:

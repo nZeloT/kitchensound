@@ -5,7 +5,8 @@
 StateController::StateController(Configuration &conf, ResourceManager& res, Renderer& renderer)
     : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE}, _renderer{renderer},
       _inactive{this}, _loading{this}, _volume{},
-      _stream_browsing{this, res, std::move(conf.get_radio_stations())},
+      _mode_selection{this, res}, _options_page{this},
+      _stream_selection{this, res, std::move(conf.get_radio_stations())},
       _stream_playing{this, res, _volume},
       _bt_playing{this, res, _volume},
       _active_page{&_inactive}, _previous_page{nullptr}, _next_page{nullptr},
@@ -60,7 +61,7 @@ void StateController::process_transition() {
             transition_select_next_page();
             _next_page->enter_page(_transition_origin);
             if(_transition_destination == STREAM_PLAYING) { //TODO maybe improve?
-                auto stream = _stream_browsing.get_selected_stream();
+                auto stream = _stream_selection.get_selected_stream();
                 _stream_playing.set_station_playing(stream);
             }else if(_transition_destination == INACTIVE)
                 _standby.arm();
@@ -91,9 +92,11 @@ void StateController::process_transition() {
 void StateController::transition_select_next_page() {
     switch (_transition_destination) {
         case INACTIVE: _next_page = &_inactive; break;
-        case STREAM_BROWSING: _next_page = &_stream_browsing; break;
+        case STREAM_SELECTION: _next_page = &_stream_selection; break;
         case STREAM_PLAYING: _next_page = &_stream_playing; break;
         case BT_PLAYING: _next_page = &_bt_playing; break;
+        case MENU_SELECTION: _next_page = &_mode_selection; break;
+        case OPTIONS: _next_page = &_options_page; break;
         default:
             throw std::runtime_error{"Tried to transition to Loading or unknown!"};
     }
@@ -119,8 +122,8 @@ void StateController::react_power_change() {
     _standby.reset_standby_cooldown();
 }
 
-void StateController::react_network_change() {
-    _active_page->handle_network_key();
+void StateController::react_menu_change() {
+    _active_page->handle_mode_key();
     _standby.reset_standby_cooldown();
 }
 

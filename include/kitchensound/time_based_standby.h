@@ -1,13 +1,13 @@
-#ifndef KITCHENSOUND_STANDBY_H
-#define KITCHENSOUND_STANDBY_H
+#ifndef KITCHENSOUND_TIME_BASED_STANDBY_H
+#define KITCHENSOUND_TIME_BASED_STANDBY_H
 
 #include <ctime>
 
 class Configuration;
 
-class StandBy {
+class TimeBasedStandby {
 public:
-    explicit StandBy(Configuration &conf);
+    explicit TimeBasedStandby(Configuration &conf);
 
     void arm() { _armed = true; };
 
@@ -46,4 +46,4 @@ private:
     int _cooldown_timer;
 };
 
-#endif //KITCHENSOUND_STANDBY_H
+#endif //KITCHENSOUND_TIME_BASED_STANDBY_H

@@ -1,11 +1,10 @@
-#include "kitchensound/standby.h"
+#include "kitchensound/time_based_standby.h"
 
+#include "kitchensound/timeouts.h"
 #include "kitchensound/config.h"
 
-#define COOLDOWN_ITERATIONS 3
 
-
-StandBy::StandBy(Configuration &conf)
+TimeBasedStandby::TimeBasedStandby(Configuration &conf)
         : _interval_a{}, _interval_b{}, _armed{}, _current_time{nullptr} {
     update_time();
 
@@ -36,10 +35,10 @@ StandBy::StandBy(Configuration &conf)
         _interval_a.end_min = c.end_minute;
     }
 
-    _cooldown_timer = COOLDOWN_ITERATIONS;
+    _cooldown_timer = STANDBY_TIMEOUT;
 }
 
-void StandBy::update_time() {
+void TimeBasedStandby::update_time() {
     auto now = std::time(nullptr);
     _current_time = std::localtime(&now);
     if (_armed && _cooldown_timer > 0)
@@ -47,11 +46,11 @@ void StandBy::update_time() {
 
 }
 
-void StandBy::reset_standby_cooldown() {
-    _cooldown_timer = COOLDOWN_ITERATIONS;
+void TimeBasedStandby::reset_standby_cooldown() {
+    _cooldown_timer = STANDBY_TIMEOUT;
 }
 
-bool StandBy::is_standby_active() {
+bool TimeBasedStandby::is_standby_active() {
     return _enabled
            && _armed
            && _current_time != nullptr

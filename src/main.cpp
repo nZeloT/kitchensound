@@ -16,7 +16,7 @@
 
 #define DISPLAY_LED_PIN 13
 
-#define VERSION "Version 0.3.1"
+#define VERSION "Version 0.4"
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -67,9 +67,9 @@ int main(int argc, char **argv) {
             state_ctrl.react_confirm();
         }
     }};
-    InputSource networkKey{conf.get_input_device(Configuration::NETWORK_KEY), [&state_ctrl](auto& ev) {
+    InputSource menuKey{conf.get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto& ev) {
         if(ev.value == 1) { //key down
-            state_ctrl.react_network_change();
+            state_ctrl.react_menu_change();
         }
     }};
     InputSource powerKey  {conf.get_input_device(Configuration::LED_KEY), [&state_ctrl](auto& ev) {
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
         //check if a new input is there to be read
         wheelAxis.check_and_handle();
         enterKey.check_and_handle();
-        networkKey.check_and_handle();
+        menuKey.check_and_handle();
         powerKey.check_and_handle();
 
         SDL_Delay(state_ctrl.is_standby_active() ? 500 : 20);

@@ -18,7 +18,7 @@ add_executable(kitchensound src/main.cpp
                             src/renderer.cpp
                             src/input.cpp
                             src/config.cpp
-                            src/standby.cpp
+                            src/time_based_standby.cpp
                             src/mpd_controller.cpp
                             src/state_controller.cpp
                             src/bt_controller.cpp
@@ -29,7 +29,9 @@ add_executable(kitchensound src/main.cpp
                             src/resource_manager.cpp
                             src/pages/bt_playing_page.cpp
                             src/pages/station_playing_page.cpp
-                            src/pages/station_browsing_page.cpp)
+                            src/pages/station_selection_page.cpp
+                            src/pages/selection_page.cpp
+        src/pages/menu_selection_page.cpp src/pages/options_page.cpp)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})

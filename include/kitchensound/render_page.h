@@ -15,7 +15,7 @@ class BasePage {
 public:
     virtual void enter_page(PAGES origin) { this->update_time(); };
     virtual void handle_power_key();
-    virtual void handle_network_key();
+    virtual void handle_mode_key();
 
     virtual void leave_page(PAGES destination) = 0;
     virtual void handle_wheel_input(int delta) = 0;
@@ -23,10 +23,10 @@ public:
     virtual void render(Renderer& renderer) = 0;
 
     void update_time() {
-        auto now = std::time(nullptr);
-        auto local_time = std::localtime(&now);
-        _bp_model.hour = local_time->tm_hour;
-        _bp_model.minutes = local_time->tm_min;
+        _bp_model.current_time = std::time(nullptr);
+        auto tmp = std::localtime(&_bp_model.current_time);
+        _bp_model.hour = tmp->tm_hour;
+        _bp_model.minute = tmp->tm_min;
     }
 
 protected:
@@ -34,8 +34,8 @@ protected:
 
     void render_time(Renderer &renderer) const {
         std::ostringstream time;
-        time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minutes < 10 ? "0" : "")
-             << std::to_string(_bp_model.minutes);
+        time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
+             << std::to_string(_bp_model.minute);
         renderer.render_text_small(160, 15, time.str());
     }
 
@@ -62,16 +62,17 @@ private:
 
 class InactivePage : public BasePage {
 public:
-    explicit InactivePage(StateController* ctrl) : BasePage(INACTIVE, ctrl), _model{} {};
+    explicit InactivePage(StateController* ctrl) : BasePage(INACTIVE, ctrl), _model{} {
+        _model.last_seen = MENU_SELECTION;
+    };
 
     void enter_page(PAGES origin) override;
     void leave_page(PAGES destination) override;
     void handle_wheel_input(int delta) override {};
     void handle_enter_key() override {};
-    void handle_network_key() override {};
+    void handle_mode_key() override {};
     void handle_power_key() override;
     void render(Renderer &renderer) override;
-
 private:
     InactivePageModel _model;
 };

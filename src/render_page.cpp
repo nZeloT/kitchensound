@@ -10,11 +10,8 @@ void BasePage::handle_power_key() {
     _state->trigger_transition(_page, INACTIVE);
 }
 
-void BasePage::handle_network_key() {
-    if (_page == BT_PLAYING)
-        _state->trigger_transition(_page, STREAM_BROWSING);
-    else
-        _state->trigger_transition(_page, BT_PLAYING);
+void BasePage::handle_mode_key() {
+    _state->trigger_transition(_page, MENU_SELECTION);
 }
 
 void VolumePage::handle_wheel_input(int delta) {
@@ -62,7 +59,8 @@ void LoadingPage::render(Renderer &renderer) {
 }
 
 void InactivePage::enter_page(PAGES origin) {
-    _model.remaining_amp_cooldown_time = COOLDOWN_TIMEOUT;
+    _model.amp_cooldown_start = _bp_model.current_time;
+    _model.last_seen = origin;
     //turn off amp
     digitalWrite(4, 1);
     spdlog::info("InactivePage::enter_page(): Entered.");
@@ -75,23 +73,23 @@ void InactivePage::leave_page(PAGES destination) {
 }
 
 void InactivePage::handle_power_key() {
-    if (_model.remaining_amp_cooldown_time < 0)
-        _state->trigger_transition(_page, STREAM_BROWSING);
+    if (_bp_model.current_time - _model.amp_cooldown_start >= AMPLIFIER_TIMEOUT)
+        _state->trigger_transition(_page, _model.last_seen);
 }
 
 void InactivePage::render(Renderer &renderer) {
-    if (_model.remaining_amp_cooldown_time >= 0) {
-        --_model.remaining_amp_cooldown_time;
+    auto remaining = _bp_model.current_time - _model.amp_cooldown_start;
+    if (remaining < AMPLIFIER_TIMEOUT) {
 
         //display cooldown
-        int width = std::ceil(320 * (_model.remaining_amp_cooldown_time + 0.0) / (COOLDOWN_TIMEOUT + 0.0));
+        int width = std::ceil(320 * (AMPLIFIER_TIMEOUT - remaining + 0.0) / (AMPLIFIER_TIMEOUT + 0.0));
         renderer.render_foreground(0, 230, width, 10);
     }
 
     //just display a large digital clock
     std::ostringstream time;
-    time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minutes < 10 ? "0" : "")
-         << std::to_string(_bp_model.minutes);
+    time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
+         << std::to_string(_bp_model.minute);
 
     renderer.render_text_hughe(160, 120, time.str());
 }

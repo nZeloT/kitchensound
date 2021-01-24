@@ -14,7 +14,7 @@ public:
     enum INPUT_SOURCES {
         WHEEL_AXIS,
         ENTER_KEY,
-        NETWORK_KEY,
+        MENU_KEY,
         LED_KEY
     };
 
