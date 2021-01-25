@@ -8,8 +8,9 @@ constexpr char CARD_NAME[] = "default";
 constexpr char ELEM_NAME[] = "Master";
 
 
-Volume::Volume() : _currentVol{0} {
+Volume::Volume(int start_vol) : _currentVol{0} {
     update_from_system();
+    set_volume(start_vol);
 }
 
 void Volume::apply_delta(long delta) {

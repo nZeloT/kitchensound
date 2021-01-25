@@ -7,16 +7,17 @@
 #include <wiringPi.h>
 
 #include "kitchensound/running.h"
-#include "kitchensound/model.h"
-#include "kitchensound/resource_manager.h"
-#include "kitchensound/renderer.h"
-#include "kitchensound/input.h"
 #include "kitchensound/config.h"
+#include "kitchensound/renderer.h"
+#include "kitchensound/resource_manager.h"
+#include "kitchensound/volume.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/input.h"
+#include "kitchensound/pages/page_loader.h"
 
 #define DISPLAY_LED_PIN 13
 
-#define VERSION "Version 0.4"
+#define VERSION "Version 0.5"
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -43,38 +44,45 @@ int main(int argc, char **argv) {
     digitalWrite(DISPLAY_LED_PIN, 1);
 
     //1. read the configuration file
-    Configuration conf{"../config.conf"};
+    auto conf = std::make_unique<Configuration>("../config.conf");
 
     //2. create Renderer (RAII)
-    Renderer renderer{};
+    auto renderer = std::make_unique<Renderer>();
 
     //2.1 create the resource manager (RAII)
-    ResourceManager resource{};
+    auto resource_mgr = std::make_shared<ResourceManager>();
 
     //2.2 initialize the font resources in the renderer
-    renderer.load_resources(resource);
+    renderer->load_resources(resource_mgr);
 
-    //3. initialize _state controller
-    StateController state_ctrl{conf, resource, renderer};
+    //2.3 initialize the volume handler
+    auto volume = std::make_shared<Volume>(conf->get_volume());
+
+    //3. initialize state controller
+    auto state_ctrl = std::make_shared<StateController>(conf);
+
+    //3.1 initialize the render pages
+    state_ctrl->register_pages(load_pages(conf, state_ctrl, resource_mgr, volume));
+    state_ctrl->set_active_page(INACTIVE);
 
     //4. initialize the input devices (RAII)
-    InputSource wheelAxis {conf.get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto& ev) {
-        state_ctrl.react_wheel_input(ev.value);
+    InputSource wheelAxis {conf->get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto& ev) {
+        state_ctrl->react_wheel_input(ev.value);
     }};
-    InputSource enterKey  {conf.get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto& ev) {
+    InputSource enterKey  {conf->get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto& ev) {
         if(ev.value == 1) { //key down
             //handling button ENTER input
-            state_ctrl.react_confirm();
+            state_ctrl->react_confirm();
         }
     }};
-    InputSource menuKey{conf.get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto& ev) {
+    InputSource menuKey{conf->get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto& ev) {
         if(ev.value == 1) { //key down
-            state_ctrl.react_menu_change();
+            state_ctrl->react_menu_change();
         }
     }};
-    InputSource powerKey  {conf.get_input_device(Configuration::LED_KEY), [&state_ctrl](auto& ev) {
+    InputSource powerKey  {conf->get_input_device(Configuration::LED_KEY), [&state_ctrl](auto& ev) {
         if(ev.value == 1) { //key down
-            state_ctrl.react_power_change();
+            state_ctrl->react_power_change();
         }
     }};
 
@@ -87,18 +95,18 @@ int main(int argc, char **argv) {
             time_update_counter = 0;
         }
 
-        state_ctrl.update(time_update_counter == time_cntr_reset);
+        state_ctrl->update(time_update_counter == time_cntr_reset);
 
-        if(!state_ctrl.is_standby_active()) {
+        if(!state_ctrl->is_standby_active()) {
             if(!display_on) {
                 digitalWrite(DISPLAY_LED_PIN, 1);
                 spdlog::info("main(): Tunring Display ON");
                 display_on = true;
                 time_cntr_reset = 250;
             }
-            renderer.start_pass();
-            state_ctrl.render();
-            renderer.complete_pass();
+            renderer->start_pass();
+            state_ctrl->render(renderer);
+            renderer->complete_pass();
         }else{
             if(display_on){
                 digitalWrite(DISPLAY_LED_PIN, 0);
@@ -114,7 +122,7 @@ int main(int argc, char **argv) {
         menuKey.check_and_handle();
         powerKey.check_and_handle();
 
-        SDL_Delay(state_ctrl.is_standby_active() ? 500 : 20);
+        SDL_Delay(state_ctrl->is_standby_active() ? 500 : 20);
         ++time_update_counter;
     }
 

@@ -3,7 +3,7 @@
 
 class Volume {
 public:
-    Volume();
+    explicit Volume(int start_vol);
     ~Volume() = default;
 
     void update_from_system();

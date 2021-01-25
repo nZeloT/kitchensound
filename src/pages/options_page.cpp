@@ -9,7 +9,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "kitchensound/model.h"
+#include "kitchensound/renderer.h"
 
 //code to determine local IP addr is taken from StackOverflow https://stackoverflow.com/a/59025254
 std::string OptionsPage::get_ip_addr() {
@@ -47,17 +47,21 @@ std::string OptionsPage::get_ip_addr() {
     }
 }
 
-OptionsPage::OptionsPage(StateController *ctrl)
+OptionsPage::OptionsPage(std::shared_ptr<StateController>& ctrl)
     : BasePage(OPTIONS, ctrl){
-    _local_ip = std::move(get_ip_addr());
+    _model.local_ip = std::move(get_ip_addr());
+    _model.startup_time = std::time(nullptr);
 }
 
-void OptionsPage::enter_page(PAGES origin) {
+OptionsPage::~OptionsPage() = default;
+
+void OptionsPage::enter_page(PAGES origin, void* payload) {
     spdlog::info("OptionsPage::enter_page(): from origin {0}", origin);
 }
 
-void OptionsPage::leave_page(PAGES destination) {
+void* OptionsPage::leave_page(PAGES destination) {
     spdlog::info("OptionsPage::leave_page(): to destination {0}", destination);
+    return nullptr;
 }
 
 void OptionsPage::handle_enter_key() {
@@ -68,7 +72,7 @@ void OptionsPage::handle_wheel_input(int delta) {
     //NOP
 }
 
-void OptionsPage::render(Renderer &renderer) {
+void OptionsPage::render(std::unique_ptr<Renderer>& renderer) {
     this->render_time(renderer);
-    renderer.render_text_small(160, 35, _local_ip);
+    renderer->render_text_small(160, 35, _model.local_ip);
 }

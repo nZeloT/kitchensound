@@ -2,28 +2,31 @@
 #define KITCHENSOUND_STATE_CONTROLLER_H
 
 #include <memory>
-#include <queue>
+#include <unordered_map>
 
-#include "kitchensound/model.h"
-#include "kitchensound/config.h"
-#include "kitchensound/time_based_standby.h"
-#include "kitchensound/renderer.h"
-#include "kitchensound/render_page.h"
-#include "kitchensound/pages/bt_playing_page.h"
-#include "kitchensound/pages/station_selection_page.h"
-#include "kitchensound/pages/station_playing_page.h"
-#include "kitchensound/pages/menu_selection_page.h"
-#include "kitchensound/pages/options_page.h"
+#include "kitchensound/pages/pages.h"
+#include "kitchensound/pages/base_page.h"
+
+class Configuration;
+class Volume;
+class ResourceManager;
+class Renderer;
+class Volume;
+class TimeBasedStandby;
 
 class StateController {
 public:
-    StateController(Configuration &conf, ResourceManager &res, Renderer &renderer);
+    explicit StateController(std::unique_ptr<Configuration>& conf);
 
     ~StateController();
 
+    void register_pages(std::unordered_map<PAGES, std::unique_ptr<BasePage>> pages);
+
+    void set_active_page(PAGES page);
+
     void update(bool time);
 
-    void render();
+    void render(std::unique_ptr<Renderer>& renderer);
 
     void trigger_transition(PAGES origin, PAGES destination);
 
@@ -52,24 +55,16 @@ private:
         ENTER_LOADING
     };
 
-    Renderer &_renderer;
-    BasePage *_active_page;
-    BasePage *_previous_page;
-    BasePage *_next_page;
+    BasePage* _active_page;
+    BasePage* _previous_page;
+    BasePage* _next_page;
     TRANSITION_STATE _transitions;
     PAGES _transition_origin;
+    void* _transition_payload;
     PAGES _transition_destination;
+    std::unordered_map<PAGES, std::unique_ptr<BasePage>> _pages;
 
-    LoadingPage _loading;
-    InactivePage _inactive;
-    MenuSelectionPage _mode_selection;
-    StationSelectionPage _stream_selection;
-    StationPlayingPage _stream_playing;
-    BluetoothPlayingPage _bt_playing;
-    OptionsPage _options_page;
-
-    Volume _volume;
-    TimeBasedStandby _standby;
+    std::unique_ptr<TimeBasedStandby> _standby;
 };
 
 #endif //KITCHENSOUND_STATE_CONTROLLER_H

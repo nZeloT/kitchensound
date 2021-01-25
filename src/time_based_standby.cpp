@@ -1,14 +1,11 @@
 #include "kitchensound/time_based_standby.h"
 
 #include "kitchensound/timeouts.h"
-#include "kitchensound/config.h"
 
-
-TimeBasedStandby::TimeBasedStandby(Configuration &conf)
+TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandby c)
         : _interval_a{}, _interval_b{}, _armed{}, _current_time{nullptr} {
     update_time();
 
-    auto c = conf.get_display_standby();
     _enabled = c.enabled;
 
     //does the given interval go over midnight?

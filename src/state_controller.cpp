@@ -2,21 +2,27 @@
 
 #include <spdlog/spdlog.h>
 
-StateController::StateController(Configuration &conf, ResourceManager& res, Renderer& renderer)
-    : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE}, _renderer{renderer},
-      _inactive{this}, _loading{this}, _volume{},
-      _mode_selection{this, res}, _options_page{this},
-      _stream_selection{this, res, std::move(conf.get_radio_stations())},
-      _stream_playing{this, res, _volume},
-      _bt_playing{this, res, _volume},
-      _active_page{&_inactive}, _previous_page{nullptr}, _next_page{nullptr},
-      _standby{conf}
+#include "kitchensound/config.h"
+#include "kitchensound/time_based_standby.h"
+
+StateController::StateController(std::unique_ptr<Configuration>& conf)
+    : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE},
+      _active_page{nullptr}, _previous_page{nullptr}, _next_page{nullptr}, _transition_payload{nullptr},
+      _standby{std::make_unique<TimeBasedStandby>(conf->get_display_standby())},
+      _pages{}
 {
-    _volume.set_volume(conf.get_volume());
-    _standby.arm();
+    _standby->arm();
 }
 
 StateController::~StateController() = default;
+
+void StateController::register_pages(std::unordered_map<PAGES, std::unique_ptr<BasePage>> pages) {
+    _pages = std::move(pages);
+}
+
+void StateController::set_active_page(PAGES page) {
+    _active_page = _pages[page].get();
+}
 
 void StateController::trigger_transition(PAGES origin, PAGES destination) {
     if(origin == destination)
@@ -40,47 +46,45 @@ void StateController::update(bool time) {
         process_transition();
 }
 
-void StateController::render() {
-    _active_page->render(_renderer);
+void StateController::render(std::unique_ptr<Renderer>& renderer) {
+    _active_page->render(renderer);
 }
 
 void StateController::process_transition() {
     spdlog::info("StateController::process_transition(): switching state");
     switch (_transitions) {
         case LEAVING_LOADING:
-            _active_page->leave_page(_transition_destination);
+            _active_page->leave_page(_transition_destination); // leave loading and ignore the payload
             _active_page = _next_page;
             _next_page = nullptr;
             _previous_page = nullptr;
             _transition_origin = _transition_destination = INACTIVE;
             _transitions = NONE;
+            _transition_payload = nullptr;
             spdlog::info("StateController::process_transition(): processed LEAVING_LOADING");
             break;
 
         case ENTERING:
             transition_select_next_page();
-            _next_page->enter_page(_transition_origin);
-            if(_transition_destination == STREAM_PLAYING) { //TODO maybe improve?
-                auto stream = _stream_selection.get_selected_stream();
-                _stream_playing.set_station_playing(stream);
-            }else if(_transition_destination == INACTIVE)
-                _standby.arm();
+            _next_page->enter_page(_transition_origin, _transition_payload);
+            if(_transition_destination == INACTIVE)
+                _standby->arm();
             _transitions = LEAVING_LOADING;
             spdlog::info("StateController::process_transition(): processed ENTERING");
             break;
 
         case LEAVING:
-            _previous_page->leave_page(_transition_destination);
-            if(_previous_page == &_inactive)
-                _standby.disarm();
+            _transition_payload = _previous_page->leave_page(_transition_destination);
+            if(_transition_origin == INACTIVE)
+                _standby->disarm();
             _transitions = ENTERING;
             spdlog::info("StateController::process_transition(): processed LEAVING");
             break;
 
         case ENTER_LOADING:
             _previous_page = _active_page;
-            _active_page   = &_loading;
-            _active_page->enter_page(_transition_origin);
+            _active_page   = _pages[LOADING].get();
+            _active_page->enter_page(_transition_origin, nullptr); // no payload for loading page
             _transitions = LEAVING;
             spdlog::info("StateController::process_transition(): processed ENTER_LOADING");
             break;
@@ -90,43 +94,36 @@ void StateController::process_transition() {
 }
 
 void StateController::transition_select_next_page() {
-    switch (_transition_destination) {
-        case INACTIVE: _next_page = &_inactive; break;
-        case STREAM_SELECTION: _next_page = &_stream_selection; break;
-        case STREAM_PLAYING: _next_page = &_stream_playing; break;
-        case BT_PLAYING: _next_page = &_bt_playing; break;
-        case MENU_SELECTION: _next_page = &_mode_selection; break;
-        case OPTIONS: _next_page = &_options_page; break;
-        default:
-            throw std::runtime_error{"Tried to transition to Loading or unknown!"};
-    }
+    _next_page = _pages[_transition_destination].get();
+    if(_next_page == nullptr)
+        throw std::runtime_error{"Tried to transition to Loading or unknown!"};
 }
 
 void StateController::update_time() {
     _active_page->update_time();
-    _standby.update_time();
+    _standby->update_time();
 }
 
 void StateController::react_wheel_input(int delta) {
     _active_page->handle_wheel_input(delta);
-    _standby.reset_standby_cooldown();
+    _standby->reset_standby_cooldown();
 }
 
 void StateController::react_confirm() {
     _active_page->handle_enter_key();
-    _standby.reset_standby_cooldown();
+    _standby->reset_standby_cooldown();
 }
 
 void StateController::react_power_change() {
     _active_page->handle_power_key();
-    _standby.reset_standby_cooldown();
+    _standby->reset_standby_cooldown();
 }
 
 void StateController::react_menu_change() {
     _active_page->handle_mode_key();
-    _standby.reset_standby_cooldown();
+    _standby->reset_standby_cooldown();
 }
 
 bool StateController::is_standby_active() {
-    return _standby.is_standby_active();
+    return _standby->is_standby_active();
 }

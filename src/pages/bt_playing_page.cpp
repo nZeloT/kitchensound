@@ -2,18 +2,35 @@
 
 #include <spdlog/spdlog.h>
 
+#include "kitchensound/renderer.h"
+#include "kitchensound/render_text.h"
+#include "kitchensound/resource_manager.h"
+#include "kitchensound/bt_controller.h"
+
 #define BLUETOOTH_IMAGE "img/bluetooth.png"
 
-void BluetoothPlayingPage::render(Renderer &renderer) {
+
+BluetoothPlayingPage::BluetoothPlayingPage(std::shared_ptr<StateController> &ctrl, std::shared_ptr<Volume> vol,
+                                           std::shared_ptr<ResourceManager> &res)
+        : VolumePage(BT_PLAYING, ctrl, vol), _res{res}, _model{},
+          _text_status{std::make_unique<RenderText>()}, _text_meta{std::make_unique<RenderText>()},
+          _btc{std::make_unique<BTController>([&](auto status, auto meta) {
+              set_status(status);
+              set_meta(meta);
+          })} {};
+
+BluetoothPlayingPage::~BluetoothPlayingPage() = default;
+
+void BluetoothPlayingPage::render(std::unique_ptr<Renderer> &renderer) {
     this->render_time(renderer);
 
     //1. render the artwork
     SDL_Rect dstrect{96, 36, 128, 128};
-    auto image = reinterpret_cast<SDL_Surface*>(_res.get_static(BLUETOOTH_IMAGE));
-    renderer.render_image(image, dstrect);
+    auto image = reinterpret_cast<SDL_Surface *>(_res->get_static(BLUETOOTH_IMAGE));
+    renderer->render_image(image, dstrect);
 
     //2. render the status message
-    if(_model.status_changed){
+    if (_model.status_changed) {
         _model.status_changed = false;
         _text_status->change_text(renderer, _model.status, 160, 180);
     }
@@ -21,7 +38,7 @@ void BluetoothPlayingPage::render(Renderer &renderer) {
     _text_status->update_and_render(renderer);
 
     //3. render the metadata
-    if(_model.meta_changed){
+    if (_model.meta_changed) {
         _model.meta_changed = false;
         _text_meta->change_text(renderer, _model.meta, 160, 210);
     }
@@ -31,20 +48,21 @@ void BluetoothPlayingPage::render(Renderer &renderer) {
     this->render_volume(renderer);
 }
 
-void BluetoothPlayingPage::enter_page(PAGES origin)  {
+void BluetoothPlayingPage::enter_page(PAGES origin, void* payload) {
     BasePage::update_time();
-    VolumePage::enter_page(origin);
+    VolumePage::enter_page(origin, payload);
     _model.meta_changed = true;
     _model.meta = "";
     _model.status_changed = true;
     _model.status = "Not Connected";
-    _btc.activate_bt();
+    _btc->activate_bt();
     spdlog::info("BluetoothPlayingPage::enter_page(): Entered.");
 }
 
-void BluetoothPlayingPage::leave_page(PAGES destination) {
-    _btc.deactivate_bt();
+void* BluetoothPlayingPage::leave_page(PAGES destination) {
+    _btc->deactivate_bt();
     spdlog::info("BluetoothPlayingPage::leave_page(): Left.");
+    return nullptr;
 }
 
 void BluetoothPlayingPage::set_meta(const std::string &new_meta) {

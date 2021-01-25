@@ -7,7 +7,7 @@
 #include <queue>
 
 class CacheManager;
-class ResourceManager {
+class ResourceManager : std::enable_shared_from_this<ResourceManager> {
 public:
     ResourceManager();
     ~ResourceManager();

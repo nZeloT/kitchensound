@@ -7,7 +7,7 @@
 
 #include <libconfig.h++>
 
-#include "kitchensound/model.h"
+#include "kitchensound/radio_station_stream.h"
 
 class Configuration {
 public:

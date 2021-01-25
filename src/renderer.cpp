@@ -5,9 +5,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include <SDL.h>
-#include <SDL_ttf.h>
-#include <SDL_image.h>
+#include "kitchensound/resource_manager.h"
 
 #define COLOR_BACKGROUND  61, 137,  49
 #define COLOR_HIGHLIGHT  104, 211,  82
@@ -166,10 +164,10 @@ void Renderer::render_rectangle(int x, int y, int w, int h) const {
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void Renderer::load_resources(ResourceManager& res) {
-    font_small = reinterpret_cast<TTF_Font*>(res.get_static("SMALL"));
-    font_large = reinterpret_cast<TTF_Font*>(res.get_static("LARGE"));
-    font_hughe = reinterpret_cast<TTF_Font*>(res.get_static("HUGHE"));
+void Renderer::load_resources(std::shared_ptr<ResourceManager>& res) {
+    font_small = reinterpret_cast<TTF_Font*>(res->get_static("SMALL"));
+    font_large = reinterpret_cast<TTF_Font*>(res->get_static("LARGE"));
+    font_hughe = reinterpret_cast<TTF_Font*>(res->get_static("HUGHE"));
     spdlog::info("Renderer::load_resources(): Loaded font resources.");
 }
 

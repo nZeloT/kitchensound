@@ -3,11 +3,11 @@
 
 #include <ctime>
 
-class Configuration;
+#include "kitchensound/config.h"
 
 class TimeBasedStandby {
 public:
-    explicit TimeBasedStandby(Configuration &conf);
+    explicit TimeBasedStandby(Configuration::DisplayStandby standby);
 
     void arm() { _armed = true; };
 

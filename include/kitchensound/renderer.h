@@ -6,15 +6,14 @@
 #include <SDL_image.h>
 #include <memory>
 
-#include "kitchensound/model.h"
-#include "kitchensound/resource_manager.h"
+class ResourceManager;
 
 class Renderer {
 public:
     Renderer();
     ~Renderer();
 
-    void load_resources(ResourceManager& res);
+    void load_resources(std::shared_ptr<ResourceManager>& res);
 
     void start_pass();
     void complete_pass();

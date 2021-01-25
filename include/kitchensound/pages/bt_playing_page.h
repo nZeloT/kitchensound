@@ -3,34 +3,49 @@
 
 #include <memory>
 
-#include "kitchensound/bt_controller.h"
-#include "kitchensound/resource_manager.h"
-#include "kitchensound/render_text.h"
-#include "kitchensound/render_page.h"
+#include "kitchensound/pages/pages.h"
+#include "kitchensound/pages/volume_page.h"
+
+class BTController;
+
+class RenderText;
+
+class ResourceManager;
 
 class BluetoothPlayingPage : public VolumePage {
 public:
-    BluetoothPlayingPage(StateController* ctrl, ResourceManager& res, Volume& vol)
-        : VolumePage(BT_PLAYING, ctrl, vol), _res{res}, _model{},
-        _text_status{std::make_unique<RenderText>()}, _text_meta{std::make_unique<RenderText>()},
-        _btc{[&](auto status, auto meta) {
-            set_status(status);
-            set_meta(meta);
-        }} {};
+    BluetoothPlayingPage(std::shared_ptr<StateController> &ctrl, std::shared_ptr<Volume> vol,
+                         std::shared_ptr<ResourceManager> &res);
 
-    void enter_page(PAGES origin) override;
-    void leave_page(PAGES destination) override;
+    ~BluetoothPlayingPage() override;
+
+    void enter_page(PAGES origin, void* payload) override;
+
+    void* leave_page(PAGES destination) override;
+
     void handle_enter_key() override {};
-    void render(Renderer &renderer) override;
+
+    void render(std::unique_ptr<Renderer> &renderer) override;
 
 private:
-    void set_status(std::string const& new_status);
-    void set_meta(std::string const& new_meta);
+    void set_status(std::string const &new_status);
 
-    BluetoothPlayingPageModel _model;
+    void set_meta(std::string const &new_meta);
 
-    ResourceManager& _res;
-    BTController _btc;
+    struct BluetoothPlayingPageModel {
+        BluetoothPlayingPageModel() : status_changed{true},
+                                      status{}, meta_changed{true}, meta{} {};
+
+        bool status_changed;
+        std::string status;
+
+        bool meta_changed;
+        std::string meta;
+    } _model;
+
+    std::shared_ptr<ResourceManager> _res;
+
+    std::unique_ptr<BTController> _btc;
 
     std::unique_ptr<RenderText> _text_status;
     std::unique_ptr<RenderText> _text_meta;

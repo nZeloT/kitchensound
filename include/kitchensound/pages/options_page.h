@@ -1,23 +1,28 @@
 #ifndef KITCHENSOUND_OPTIONS_PAGE_H
 #define KITCHENSOUND_OPTIONS_PAGE_H
 
-#include "kitchensound/render_page.h"
+#include <ctime>
+
+#include "kitchensound/pages/base_page.h"
 
 class OptionsPage : public BasePage {
 public:
-    explicit OptionsPage(StateController* ctrl);
-
-    void enter_page(PAGES origin) override;
-    void leave_page(PAGES destination) override;
+    explicit OptionsPage(std::shared_ptr<StateController>& ctrl);
+    ~OptionsPage() override;
+    void enter_page(PAGES origin, void* payload) override;
+    void* leave_page(PAGES destination) override;
     void handle_enter_key() override;
     void handle_wheel_input(int delta) override;
 
-    void render(Renderer& renderer) override;
+    void render(std::unique_ptr<Renderer>& renderer) override;
 
 private:
-    static std::string get_ip_addr() ;
+    static std::string get_ip_addr();
 
-    std::string _local_ip;
+    struct OptionsPageModel {
+        std::string local_ip;
+        std::time_t startup_time;
+    } _model;
 };
 
 #endif //KITCHENSOUND_OPTIONS_PAGE_H
