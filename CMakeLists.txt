@@ -30,7 +30,7 @@ add_executable(kitchensound src/main.cpp
                             src/pages/station_playing_page.cpp
                             src/pages/station_selection_page.cpp
                             src/pages/selection_page.cpp
-        src/pages/menu_selection_page.cpp src/pages/options_page.cpp src/pages/base_page.cpp src/pages/volume_page.cpp src/pages/loading_page.cpp src/pages/inactive_page.cpp src/pages/page_loader.cpp)
+        src/pages/menu_selection_page.cpp src/pages/options_page.cpp src/pages/base_page.cpp src/pages/volume_page.cpp src/pages/loading_page.cpp src/pages/inactive_page.cpp src/pages/page_loader.cpp src/version.cpp)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})

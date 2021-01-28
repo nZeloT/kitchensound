@@ -3,9 +3,10 @@ Description=Kitchensound Service
 After=multi-user.target
 
 [Service]
+User=pi
 Type=idle
 WorkingDirectory=/home/pi/kitchensound/cmake-build-release-kitchensound/
-ExecStart=sudo ./kitchensound
+ExecStart=/home/pi/kitchensound/cmake-build-release-kitchensound/kitchensound
 
 Restart=always
 RestartSec=10

@@ -85,16 +85,16 @@ void Renderer::init_sdl_image() {
                  std::to_string(version.patch));
 }
 
-void Renderer::render_text_small(int x, int y, const std::string &text) {
-    render_text_centered(text,font_small, {x, y}, get_color(FOREGROUND));
+void Renderer::render_text_small(int x, int y, const std::string &text, TEXT_ALIGN alignment) {
+    render_text(text, font_small, {x, y}, get_color(FOREGROUND), alignment);
 }
 
-void Renderer::render_text_large(int x, int y, const std::string &text) {
-    render_text_centered(text,font_large, {x, y}, get_color(FOREGROUND));
+void Renderer::render_text_large(int x, int y, const std::string &text, TEXT_ALIGN alignment) {
+    render_text(text, font_large, {x, y}, get_color(FOREGROUND), alignment);
 }
 
-void Renderer::render_text_hughe(int x, int y, const std::string &text) {
-    render_text_centered(text,font_hughe, {x, y}, get_color(FOREGROUND));
+void Renderer::render_text_hughe(int x, int y, const std::string &text, TEXT_ALIGN alignment) {
+    render_text(text, font_hughe, {x, y}, get_color(FOREGROUND), alignment);
 }
 
 void Renderer::render_foreground(int x, int y, int w, int h) {
@@ -142,12 +142,14 @@ SDL_Color Renderer::get_color(COLOR_PALETTE color) {
     }
 }
 
-void Renderer::render_text_centered(const std::string &text, TTF_Font *font, SDL_Point point, SDL_Color fg) const {
+void Renderer::render_text(const std::string &text, TTF_Font *font, SDL_Point point, SDL_Color fg, TEXT_ALIGN alignment) const {
     SDL_Surface *surface = TTF_RenderUTF8_Solid(font, text.c_str(), fg);
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     int texW = 0, texH = 0;
     SDL_QueryTexture(texture, nullptr, nullptr, &texW, &texH);
     SDL_Rect dstrect{point.x - texW / 2, point.y - texH / 2, texW, texH};
+    if(alignment == LEFT)
+        dstrect.x = point.x;
     SDL_RenderCopy(renderer, texture, nullptr, &dstrect);
     SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);

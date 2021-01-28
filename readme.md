@@ -110,6 +110,20 @@ audio_output {
 - für Option zwei das File ``./res/dbus/_...`` nach ``/usr/share/dbus-1/system.d/`` kopieren
 - dbus debugging with ``busctl``
 
+## PolKit
+- to enable system reboot and shutdown without manual ssh login and running the software as root (using sudo) a local exception to the policy kit is needed
+- therefore use the following excerpt:
+```
+[Allow the user Pi to shutdown]
+Identity=unix-user:pi
+Action=org.freedesktop.login1.reboot;org.freedesktop.login1.reboot-multiple-sessions;org.freedesktop.login1.power-off;org.freedesktop.login1.power-off-multiple-sessions;
+ResultAny=yes
+```
+- the excerpt is a combination of [StackOverflow Solutions](https://askubuntu.com/questions/493627/power-button-shutdown-permission-override) and official documentation [Doc](https://www.freedesktop.org/software/polkit/docs/0.105/pklocalauthority.8.html)
+
+## GPIO
+- to enable gpio access to the software without launching it as root add the user to the ``gpio`` group by calling ``sudo usermod -a -G gpio <myuser>``
+
 ## pHAT DAC - Works
 - https://pinout.xyz/pinout/phat_dac# + Ground unten links
 - https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/

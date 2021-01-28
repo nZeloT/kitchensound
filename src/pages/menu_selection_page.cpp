@@ -35,6 +35,7 @@ void MenuSelectionPage::handle_enter_key() {
 }
 
 void MenuSelectionPage::enter_page(PAGES orig, void* payload) {
+    BasePage::enter_page(orig, payload);
     spdlog::info("MenuSelectionPage::enter_page(): from origin {0}", orig);
 }
 

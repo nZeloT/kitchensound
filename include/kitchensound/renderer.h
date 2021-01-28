@@ -18,9 +18,14 @@ public:
     void start_pass();
     void complete_pass();
 
-    void render_text_small(int x, int y, const std::string& text);
-    void render_text_large(int x, int y, const std::string& text);
-    void render_text_hughe(int x, int y, const std::string& text);
+    enum TEXT_ALIGN {
+        LEFT,
+        CENTER
+    };
+
+    void render_text_small(int x, int y, const std::string& text, TEXT_ALIGN alignment = CENTER);
+    void render_text_large(int x, int y, const std::string& text, TEXT_ALIGN alignment = CENTER);
+    void render_text_hughe(int x, int y, const std::string& text, TEXT_ALIGN alignment = CENTER);
     void render_foreground(int x, int y, int w, int h);
     void render_highlight(int x, int y, int w, int h);
     void render_background(int x, int y, int w, int h);
@@ -37,7 +42,7 @@ private:
 
     void set_color(COLOR_PALETTE color) const;
     static SDL_Color get_color(COLOR_PALETTE color);
-    void render_text_centered(const std::string &text, TTF_Font *font, SDL_Point point, SDL_Color fg) const;
+    void render_text(const std::string &text, TTF_Font *font, SDL_Point point, SDL_Color fg, TEXT_ALIGN alignment) const;
     void render_rectangle(int x, int y, int w, int h) const;
 
     void init_sdl_image();

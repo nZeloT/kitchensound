@@ -13,15 +13,24 @@ public:
     void* leave_page(PAGES destination) override;
     void handle_enter_key() override;
     void handle_wheel_input(int delta) override;
+    void update_time() override;
 
     void render(std::unique_ptr<Renderer>& renderer) override;
 
 private:
     static std::string get_ip_addr();
+    static std::string get_system_uptime();
+    [[nodiscard]] std::string get_program_uptime() const;
+    static void trigger_shutdown();
+    static void trigger_reboot();
+
+    static std::string to_time_string(int seconds);
 
     struct OptionsPageModel {
         std::string local_ip;
-        std::time_t startup_time;
+        std::string system_uptime;
+        std::string program_uptime;
+        std::time_t program_start_time;
     } _model;
 };
 

@@ -7,6 +7,7 @@
 #include <wiringPi.h>
 
 #include "kitchensound/running.h"
+#include "kitchensound/version.h"
 #include "kitchensound/config.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/resource_manager.h"
@@ -16,8 +17,6 @@
 #include "kitchensound/pages/page_loader.h"
 
 #define DISPLAY_LED_PIN 13
-
-#define VERSION "Version 0.5"
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -34,7 +33,7 @@ int main(int argc, char **argv) {
     std::filesystem::create_directory("cache");
 
     //0.1 log the version number
-    spdlog::info(VERSION);
+    spdlog::info(get_version_string());
 
     //0.2 init wiringPi
     wiringPiSetupGpio();
