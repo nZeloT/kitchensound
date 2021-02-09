@@ -45,9 +45,6 @@ private:
     void render_text(const std::string &text, TTF_Font *font, SDL_Point point, SDL_Color fg, TEXT_ALIGN alignment) const;
     void render_rectangle(int x, int y, int w, int h) const;
 
-    void init_sdl_image();
-    void init_sdl_ttf();
-
     TTF_Font *font_small = nullptr;
     TTF_Font *font_large = nullptr;
     TTF_Font *font_hughe = nullptr;

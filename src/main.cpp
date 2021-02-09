@@ -15,6 +15,8 @@
 #include "kitchensound/state_controller.h"
 #include "kitchensound/input.h"
 #include "kitchensound/pages/page_loader.h"
+#include "kitchensound/sdl_util.h"
+#include "kitchensound/sound_file_playback.h"
 
 #define DISPLAY_LED_PIN 13
 
@@ -41,6 +43,12 @@ int main(int argc, char **argv) {
     pinMode(DISPLAY_LED_PIN, OUTPUT);
     digitalWrite(4, 1);
     digitalWrite(DISPLAY_LED_PIN, 1);
+
+    //0.3 init sdl
+    init_sdl();
+
+    //0.4 init playback mechanics
+    init_playback();
 
     //1. read the configuration file
     auto conf = std::make_unique<Configuration>("../config.conf");
@@ -124,6 +132,9 @@ int main(int argc, char **argv) {
         SDL_Delay(state_ctrl->is_standby_active() ? 500 : 20);
         ++time_update_counter;
     }
+
+    exit_playback();
+    exit_sdl();
 
     return 0;
 }

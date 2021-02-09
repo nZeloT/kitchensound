@@ -13,12 +13,6 @@
 
 Renderer::Renderer()
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        spdlog::error("Renderer::C-Tor(): SDL_Init(): {0}", SDL_GetError());
-        throw std::runtime_error("Error initializing SDL!");
-    }
-    spdlog::info("Renderer::C-Tor(): SDL_VIDEODRIVER selected : {0}", SDL_GetCurrentVideoDriver());
-
     window = SDL_CreateWindow
             (
                     "Kitchensound",
@@ -42,48 +36,16 @@ Renderer::Renderer()
 
     SDL_ShowCursor(SDL_DISABLE);
 
-    init_sdl_ttf();
-    init_sdl_image();
     spdlog::info("Renderer::C-Tor(): Initialization finished!");
 }
 
 Renderer::~Renderer() {
-    IMG_Quit();
     TTF_CloseFont(font_small);
     TTF_CloseFont(font_large);
     TTF_CloseFont(font_hughe);
-    TTF_Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    SDL_Quit();
-}
-
-void Renderer::init_sdl_ttf() {
-    if (TTF_Init() < 0) {
-        spdlog::error("Renderer::init_sdl_ttf(): {0}", TTF_GetError());
-        throw std::runtime_error("Error loading SDL ttf");
-    }
-    SDL_version version{};
-    SDL_TTF_VERSION(&version);
-    spdlog::info("Renderer::init_sdl_ttf(): Using SDL_TTF_Version: {0}.{1}.{2}",
-                 std::to_string(version.major),
-                 std::to_string(version.minor),
-                 std::to_string(version.patch));
-}
-
-void Renderer::init_sdl_image() {
-    int initflags = IMG_INIT_PNG | IMG_INIT_JPG;
-    if ((IMG_Init(initflags) & initflags) != initflags) {
-        spdlog::error("Renderer::init_sdl_image(): IMG_Init(): {0}", IMG_GetError());
-        throw std::runtime_error("Error loading SDL img");
-    }
-    SDL_version version{};
-    SDL_IMAGE_VERSION(&version);
-    spdlog::info("Renderer::init_sdl_image(): Using SDL_IMG_Version: {0}.{1}.{2}",
-                 std::to_string(version.major),
-                 std::to_string(version.minor),
-                 std::to_string(version.patch));
-}
+};
 
 void Renderer::render_text_small(int x, int y, const std::string &text, TEXT_ALIGN alignment) {
     render_text(text, font_small, {x, y}, get_color(FOREGROUND), alignment);

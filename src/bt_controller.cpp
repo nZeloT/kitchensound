@@ -12,19 +12,20 @@
 #include <spdlog/spdlog.h>
 #include <sdbus-c++/sdbus-c++.h>
 
+#include "kitchensound/sound_file_playback.h"
+
 constexpr char SERVICE_NAME[] = "org.bluez";
 
-//taken from SO: https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po/479103#479103
-// credit to @waqas + @gregpaton
-static std::string exec(const std::string &cmd) {
-    std::array<char, 128> buffer{};
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe)
-        throw std::runtime_error("Failed to execute command!");
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
-        result += buffer.data();
-    return result;
+void activate_discoverable() {
+    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
+    proxy->setProperty("Discoverable").onInterface("org.bluez.Adapter1").toValue(true);
+    spdlog::info("BTController::activate_discoverable(): BT adapter made discoverable");
+}
+
+void deactivate_discoverable() {
+    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
+    proxy->setProperty("Discoverable").onInterface("org.bluez.Adapter1").toValue(false);
+    spdlog::info("BTController::deactivate_discoverable(): BT adapter made undiscoverable");
 }
 
 class DBusBTDeviceMonitor {
@@ -265,7 +266,7 @@ private:
         spdlog::info("DBusBTMediaPlayerMonitor::on_properties_changed(): {0}", intf);
         if (intf == MEDIAPLAYER_INTF) {
             //try to find the track property
-            auto it = std::find_if(begin(props), end(props), [this](const auto &p) {
+            auto it = std::find_if(begin(props), end(props), [](const auto &p) {
                 return p.first == "Track";
             });
             if (it != end(props))
@@ -380,11 +381,15 @@ private:
 
     void device_connected(std::string const &deviceId) {
         if (_connected)
-            throw std::runtime_error("Still connected to a device; Can't be connected to more than one devices!");
+            throw std::runtime_error("Still connected to a device; Can't be connected to more than one device!");
         _connected = true;
         _connectedDevice = std::string{deviceId};
         _status = "Connected to " + (_deviceName.empty() ? deviceId : _deviceName);
         _metadata = "";
+
+        deactivate_discoverable();
+        playback_file("bt-connect.mp3");
+
         _handler(_status, _metadata);
 
         auto it = std::find_if(begin(_playerMonitors), end(_playerMonitors), [&deviceId](const auto &it) {
@@ -417,6 +422,10 @@ private:
         _connectedDevice = "";
         _status = "Not Connected.";
         _metadata = "";
+
+        activate_discoverable();
+        playback_file("bt-disconnect.mp3");
+
         _handler(_status, _metadata);
     }
 
@@ -472,11 +481,14 @@ void BTController::handle_update(const std::string &status, const std::string &m
 }
 
 void BTController::activate_bt() {
-    auto res = exec("../res/scripts/bt_on.sh");
-    if (!res.find("succeeded"))
-        throw std::runtime_error("Failed to activate BT!");
+    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
+    proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(true);
+    spdlog::info("BTController::activate_bt(): Bluetooth adapter powered on");
+
+    activate_discoverable();
+
     _thread = SDL_CreateThread(::run_dbusbtconnector, "DbusBTController", reinterpret_cast<void *>(_dbus.get()));
-    exec("aplay -q -D volumedev /usr/local/share/sounds/bt-activate.wav");
+    playback_file("bt-activate.mp3");
 }
 
 void BTController::deactivate_bt() {
@@ -484,8 +496,10 @@ void BTController::deactivate_bt() {
     int status;
     SDL_WaitThread(_thread, &status);
     _thread = nullptr;
-    auto res = exec("../res/scripts/bt_off.sh");
-    if (!res.find("succeeded"))
-        throw std::runtime_error("Failed to deactivate BT!");
-    exec("aplay -q -D volumedev /usr/local/share/sounds/bt-deactivate.wav");
+
+    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
+    proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(false);
+    spdlog::info("BTController::deactivate_bt(): Bluetooth adapter powered off");
+
+    playback_file("bt-deactivate.mp3");
 }
