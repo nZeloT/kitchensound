@@ -2,7 +2,7 @@
 
 #include "kitchensound/timeouts.h"
 
-TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandby c)
+TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c)
         : _interval_a{}, _interval_b{}, _armed{}, _current_time{nullptr} {
     update_time();
 

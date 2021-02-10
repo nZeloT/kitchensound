@@ -5,11 +5,12 @@
 #include <memory>
 #include <map>
 #include <queue>
+#include <filesystem>
 
 class CacheManager;
 class ResourceManager : std::enable_shared_from_this<ResourceManager> {
 public:
-    ResourceManager();
+    ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root);
     ~ResourceManager();
     void* get_static(std::string const& name) { return get(_static, name)->data; };
     void* get_cached(std::string const& identifier);
@@ -52,6 +53,9 @@ private:
 
     std::map<std::string, Resource> _static;
     std::map<std::string, Resource> _cached;
+
+    std::filesystem::path _res_root;
+    std::filesystem::path _cache_root;
 
     std::unique_ptr<CacheManager> _cache;
 };

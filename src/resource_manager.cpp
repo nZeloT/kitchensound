@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <ctime>
+#include <utility>
 
 #include <spdlog/spdlog.h>
 
@@ -12,8 +13,8 @@
 
 #include "kitchensound/cache_manager.h"
 
-ResourceManager::ResourceManager()
- : _cache() {
+ResourceManager::ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root)
+ : _cache(), _res_root{std::move(res_root)}, _cache_root{std::move(cache_root)} {
     load_all_static();
 }
 
@@ -30,15 +31,15 @@ ResourceManager::Resource const *ResourceManager::get(std::map<std::string, Reso
 }
 
 void ResourceManager::load_all_static() {
-    load_image("img/radio.png", "../res/img/radio.png");
-    load_image("img/arrow_left.png", "../res/img/arrow_left.png");
-    load_image("img/arrow_right.png", "../res/img/arrow_right.png");
-    load_image("img/bluetooth.png", "../res/img/bluetooth.png");
-    load_image("img/gears.png", "../res/img/gears.png");
+    load_image("img/radio.png", _res_root.string() + "img/radio.png");
+    load_image("img/arrow_left.png", _res_root.string() +"img/arrow_left.png");
+    load_image("img/arrow_right.png", _res_root.string() + "img/arrow_right.png");
+    load_image("img/bluetooth.png",  _res_root.string() +"img/bluetooth.png");
+    load_image("img/gears.png", _res_root.string() + "img/gears.png");
 
-    load_font("SMALL", "../res/font/DroidSans.ttf", 18);
-    load_font("LARGE", "../res/font/DroidSans.ttf", 24);
-    load_font("HUGHE", "../res/font/DroidSans.ttf", 90);
+    load_font("SMALL", _res_root.string() + "font/DroidSans.ttf", 18);
+    load_font("LARGE", _res_root.string() + "font/DroidSans.ttf", 24);
+    load_font("HUGHE", _res_root.string() + "font/DroidSans.ttf", 90);
 }
 
 void ResourceManager::unload_all() {
@@ -130,7 +131,7 @@ void *ResourceManager::get_cached(const std::string &identifier) {
 
 void ResourceManager::try_load_cached(const std::string &identifier) {
     if(!_cache)
-        _cache = std::make_unique<CacheManager>(*this);
+        _cache = std::make_unique<CacheManager>(*this, _cache_root);
     spdlog::info("ResourceManager::try_load_cached(): Try loading `{}`", identifier);
     _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr});
     _cache->schedule_for_fetch(std::string{identifier});

@@ -1,0 +1,4 @@
+[Service]
+Type=oneshot
+ExecStartPost=/bin/hciconfig %I piscan
+ExecStartPost=/bin/hciconfig %I sspmode 1

@@ -48,6 +48,6 @@ void VolumePage::render_volume(std::unique_ptr<Renderer>& renderer) {
 
 void VolumePage::enter_page(PAGES origin, void* payload) {
     //_volume.update_from_system();
-    //_vol_model.new_value = _volume.get_volume();
+    //_vol_model.new_value = _volume.get_default_volume();
     spdlog::info("VolumePage::enter_page(): Entered.");
 }

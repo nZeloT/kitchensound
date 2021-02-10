@@ -11,8 +11,9 @@
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
 
-InactivePage::InactivePage(std::shared_ptr<StateController>& ctrl) : BasePage(INACTIVE, ctrl), _model{} {
+InactivePage::InactivePage(std::shared_ptr<StateController>& ctrl, int amp_power_gpio) : BasePage(INACTIVE, ctrl), _model{} {
     _model.last_seen = MENU_SELECTION;
+    _model.amp_power_gpio = amp_power_gpio;
 }
 
 InactivePage::~InactivePage() = default;
@@ -22,13 +23,13 @@ void InactivePage::enter_page(PAGES origin, void* payload) {
     _model.amp_cooldown_start = _bp_model.current_time;
     _model.last_seen = origin;
     //turn off amp
-    digitalWrite(4, 1);
+    digitalWrite(_model.amp_power_gpio, 1);
     spdlog::info("InactivePage::enter_page(): Entered.");
 }
 
 void* InactivePage::leave_page(PAGES destination) {
     //turn amp on
-    digitalWrite(4, 0);
+    digitalWrite(_model.amp_power_gpio, 0);
     spdlog::info("InactivePage::leave_page(): Left");
     return nullptr;
 }

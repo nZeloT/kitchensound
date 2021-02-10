@@ -9,13 +9,11 @@
 
 #include "kitchensound/resource_manager.h"
 
-#define CACHE_BASE_PATH "./cache/"
-
 static bool fetcher_active = true;
 
-static std::string fetch_file(std::string const &url) {
+static std::string fetch_file(std::string const &url, std::filesystem::path& cache_root) {
     auto url_hash = std::hash<std::string>{}(url);
-    auto cache_id = std::string{CACHE_BASE_PATH + std::to_string(url_hash)};
+    auto cache_id = std::string{cache_root.string() + std::to_string(url_hash)};
 
     spdlog::info("CacheManager::fetch_file(): Try'in to fetch from `{0}` with hash `{1}` into cache id `{2}`",
                  url, url_hash, cache_id);
@@ -55,7 +53,7 @@ static int image_fetcher(void *cache_mgr) {
         }
 
         auto next_url = cache->_to_load.front();
-        auto cache_id = std::move(fetch_file(next_url));
+        auto cache_id = std::move(fetch_file(next_url, cache->_cache_root));
         if (!cache_id.empty())
             cache->load_success(next_url, cache_id); //load the newly available resource through the resource manager
         else
@@ -66,8 +64,9 @@ static int image_fetcher(void *cache_mgr) {
     return 0;
 }
 
-CacheManager::CacheManager(ResourceManager &res)
-        : _res{res} {
+CacheManager::CacheManager(ResourceManager &res, std::filesystem::path& cache_root)
+        : _res{res}, _cache_root{cache_root} {
+    std::filesystem::create_directory(cache_root);
     spdlog::info("CacheManager::C-Tor: launching fetcher thread");
     _fetcher_thread = SDL_CreateThread(image_fetcher, "Image Fetcher", reinterpret_cast<void *>(this));
 }

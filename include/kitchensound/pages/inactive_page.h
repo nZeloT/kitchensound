@@ -8,7 +8,7 @@ class Renderer;
 
 class InactivePage : public BasePage {
 public:
-    explicit InactivePage(std::shared_ptr<StateController>& ctrl);
+    InactivePage(std::shared_ptr<StateController>& ctrl, int amp_power_gpio);
     ~InactivePage() override;
     void enter_page(PAGES origin, void* payload) override;
     void* leave_page(PAGES destination) override;
@@ -21,6 +21,7 @@ private:
     struct InactivePageModel {
         std::time_t amp_cooldown_start;
         PAGES last_seen;
+        int amp_power_gpio;
     } _model;
 };
 

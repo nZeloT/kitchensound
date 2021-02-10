@@ -1,9 +1,11 @@
 #ifndef KITCHENSOUND_VOLUME_CTRL_H
 #define KITCHENSOUND_VOLUME_CTRL_H
 
+#include <string>
+
 class Volume {
 public:
-    explicit Volume(int start_vol);
+    Volume(int start_vol, std::string  mixer_control, std::string  mixer_card);
     ~Volume() = default;
 
     void update_from_system();
@@ -13,6 +15,8 @@ public:
 
 private:
     long _currentVol;
+    std::string _mixer_control;
+    std::string _mixer_card;
 };
 
 #endif //KITCHENSOUND_VOLUME_CTRL_H

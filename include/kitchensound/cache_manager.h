@@ -3,6 +3,7 @@
 
 #include <string>
 #include <queue>
+#include <filesystem>
 
 struct SDL_Thread;
 class ResourceManager;
@@ -14,7 +15,7 @@ static int image_fetcher(void* cache_mgr);
 //      about the newly available resource
 class CacheManager {
 public:
-    explicit CacheManager(ResourceManager &res);
+    CacheManager(ResourceManager &res, std::filesystem::path &cache_root);
     ~CacheManager();
 
     void schedule_for_fetch(std::string const &url);
@@ -28,6 +29,7 @@ private:
     SDL_Thread* _fetcher_thread;
     std::queue<std::string> _to_load;
     ResourceManager &_res;
+    std::filesystem::path _cache_root;
 };
 
 #endif //KITCHENSOUND_CACHE_MANAGER_H

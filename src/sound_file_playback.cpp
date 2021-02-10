@@ -10,15 +10,18 @@
 //adapted from http://hzqtc.github.io/2012/05/play-mp3-with-libmpg123-and-libao.html
 
 struct {
-    mpg123_handle *mpg_handle;
-    unsigned char* buffer;
-    size_t buffer_size;
-    int alsa_driver_id;
-    ao_option  use_volumedev;
+    mpg123_handle *mpg_handle{};
+    unsigned char* buffer{};
+    size_t buffer_size{};
+    int alsa_driver_id{};
+    ao_option  use_volumedev{};
+    std::filesystem::path absolute_res_root{};
 } playback;
 
 void playback_file(std::string const& file_name) {
-    auto path = std::filesystem::path{"/home/pi/kitchensound/res/sound/"}.concat(file_name);
+    spdlog::info("playback_file(): trying to playback `{0}`", file_name);
+
+    auto path = std::filesystem::path{playback.absolute_res_root}.concat("sound/").concat(file_name);
     if(mpg123_open(playback.mpg_handle, path.c_str()) != MPG123_OK){
         spdlog::error("playback_file(): {0}", mpg123_strerror(playback.mpg_handle));
         return;
@@ -49,11 +52,12 @@ void playback_file(std::string const& file_name) {
     ao_close(dev);
 }
 
-void init_playback() {
+void init_playback(const std::string& pcm_device, const std::filesystem::path& res_root) {
+    playback.absolute_res_root = std::filesystem::absolute(res_root);
     ao_initialize();
     playback.alsa_driver_id = ao_driver_id("alsa");
     playback.use_volumedev.key = (char*)"dev";
-    playback.use_volumedev.value = (char*)"volumedev";
+    playback.use_volumedev.value = strdup(pcm_device.c_str());
     mpg123_init();
     int err;
     playback.mpg_handle = mpg123_new(nullptr, &err);

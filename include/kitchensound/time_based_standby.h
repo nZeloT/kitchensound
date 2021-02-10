@@ -7,7 +7,7 @@
 
 class TimeBasedStandby {
 public:
-    explicit TimeBasedStandby(Configuration::DisplayStandby standby);
+    explicit TimeBasedStandby(Configuration::DisplayStandbyConfig standby);
 
     void arm() { _armed = true; };
 
