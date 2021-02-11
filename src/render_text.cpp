@@ -1,7 +1,6 @@
 #include "kitchensound/render_text.h"
 
 #include <SDL.h>
-#include <SDL_ttf.h>
 
 #include "kitchensound/renderer.h"
 
@@ -34,8 +33,7 @@ void RenderText::update_and_render(std::unique_ptr<Renderer>& renderer) {
                 --_leftmost_cnt;
         }
 
-        SDL_Rect dstrect{_center_position.x, _center_position.y, _render_width, _render_height};
-        SDL_RenderCopy(renderer->renderer, _render_texture, nullptr, &dstrect);
+        renderer->render_texture(_render_texture, _center_position.x, _center_position.y, _render_width, _render_height);
     }
 }
 
@@ -47,9 +45,7 @@ void RenderText::change_text(std::unique_ptr<Renderer>& renderer, const std::str
     _leftmost_cnt = -1;
     _current_text = std::string{new_text};
 
-    SDL_Surface *surface = TTF_RenderUTF8_Solid(renderer->font_large, new_text.c_str(), Renderer::get_color(Renderer::FOREGROUND));
-    _render_texture = SDL_CreateTextureFromSurface(renderer->renderer, surface);
-
+    _render_texture = renderer->create_texture_from_text(new_text);
     SDL_QueryTexture(_render_texture, nullptr, nullptr, &_render_width, &_render_height);
 
     if(_render_width < 310)
@@ -59,5 +55,4 @@ void RenderText::change_text(std::unique_ptr<Renderer>& renderer, const std::str
 
     _center_position.y = y - _render_height / 2;
 
-    SDL_FreeSurface(surface);
 }

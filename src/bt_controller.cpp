@@ -8,6 +8,7 @@
 #include <map>
 #include <sstream>
 
+#include <SDL.h>
 
 #include <spdlog/spdlog.h>
 #include <sdbus-c++/sdbus-c++.h>

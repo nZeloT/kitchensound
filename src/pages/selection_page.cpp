@@ -46,41 +46,38 @@ void SelectionPage<T>::render(std::unique_ptr<Renderer>& renderer) {
 
         //1. render a possible selection background
         if (_sp_model.selected == i) {
-            renderer->render_highlight(offsetX-80, offsetY-32, 160, 90);
+            renderer->render_rect(offsetX-80, offsetY-32, 160, 90, Renderer::HIGHLIGHT);
         }
 
         //2. render the artwork
-        SDL_Rect dstrect = {offsetX - 24, offsetY - 24, 48, 48};
         void* image_ptr = _get_img(_res, element);
         auto image = reinterpret_cast<SDL_Surface*>(image_ptr);
-        renderer->render_image(image, dstrect);
+        renderer->render_image(image, offsetX - 24, offsetY - 24, 48, 48);
 
         //3. render the element name
         auto text = _get_text(element);
-        renderer->render_text_small(offsetX, offsetY+35, text);
+        renderer->render_text(offsetX, offsetY+35, text, Renderer::SMALL);
     }
 
     // render the page indicators
     auto has_paging = false;
     if (_sp_model.offset > 0) {
         //render left indicator
-        SDL_Rect dstrect{4, 210, 24, 24};
         auto image = reinterpret_cast<SDL_Surface*>(_res->get_static(ARROW_RIGHT));
-        renderer->render_image(image, dstrect);
+        renderer->render_image(image, 4, 210, 24, 24);
         has_paging = true;
     }
     if (_sp_model.offset + _sp_model.limit < _sp_model.limit) {
         //render right indicator
-        SDL_Rect dstrect{292, 210, 24, 24};
         auto image = reinterpret_cast<SDL_Surface*>(_res->get_static(ARROW_LEFT));
-        renderer->render_image(image, dstrect);
+        renderer->render_image(image, 292, 210, 24, 24);
         has_paging = true;
     }
 
     //render the page number
     if (has_paging) {
         int page_num = _sp_model.offset / _sp_model.limit;
-        renderer->render_text_small(160, 225, std::to_string(page_num));
+        renderer->render_text(160, 225, std::to_string(page_num), Renderer::SMALL);
     }
 }
 

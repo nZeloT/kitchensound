@@ -1,7 +1,5 @@
 #include "kitchensound/pages/station_playing_page.h"
 
-#include <SDL.h>
-
 #include "kitchensound/mpd_controller.h"
 #include "kitchensound/render_text.h"
 #include "kitchensound/resource_manager.h"
@@ -45,12 +43,11 @@ void StationPlayingPage::render(std::unique_ptr<Renderer>& renderer) {
     this->render_time(renderer);
 
     //1. render the radio station artwork if present, otherwise the default
-    SDL_Rect dstrect{96, 36, 128, 128};
     auto img_ptr = _res->get_cached(_model.station.image_url);
     if (img_ptr == nullptr)
         img_ptr = _res->get_static(RADIO_IMAGE);
 
-    renderer->render_image(reinterpret_cast<SDL_Surface *>(img_ptr), dstrect);
+    renderer->render_image(img_ptr, 96, 36, 128, 128);
 
     //2. render the station name
     if (_model.station_changed) {

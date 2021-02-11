@@ -1,20 +1,19 @@
 #include <string>
 #include <csignal>
 
-#include <SDL.h>
 #include <spdlog/spdlog.h>
 #include <wiringPi.h>
 
 #include "kitchensound/running.h"
 #include "kitchensound/version.h"
+#include "kitchensound/sdl_util.h"
 #include "kitchensound/config.h"
+#include "kitchensound/volume.h"
+#include "kitchensound/input.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/resource_manager.h"
-#include "kitchensound/volume.h"
 #include "kitchensound/state_controller.h"
-#include "kitchensound/input.h"
 #include "kitchensound/pages/page_loader.h"
-#include "kitchensound/sdl_util.h"
 #include "kitchensound/sound_file_playback.h"
 
 void shutdownHandler(int sigint) {
@@ -46,7 +45,7 @@ int main(int argc, char **argv) {
     //2.1 create the resource manager (RAII)
     auto resource_mgr = std::make_shared<ResourceManager>(conf->get_res_folder(), conf->get_cache_folder());
 
-    //2.2 initialize the font resources in the renderer
+    //2.2 initialize the font resources in the _renderer
     renderer->load_resources(resource_mgr);
 
     //2.3 initialize the volume handler
@@ -130,7 +129,7 @@ int main(int argc, char **argv) {
         menuKey.check_and_handle();
         powerKey.check_and_handle();
 
-        SDL_Delay(state_ctrl->is_standby_active() ? 500 : 20);
+        delay(state_ctrl->is_standby_active() ? 500 : 20);
         ++time_update_counter;
     }
 

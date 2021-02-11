@@ -10,7 +10,7 @@ LoadingPage::~LoadingPage() = default;
 
 void LoadingPage::render(std::unique_ptr<Renderer> &renderer) {
     this->render_time(renderer);
-    renderer->render_text_large(160, 120, _model.msg);
+    renderer->render_text(160, 120, _model.msg, Renderer::LARGE);
 }
 
 void LoadingPage::enter_page(PAGES origin, void* payload) {

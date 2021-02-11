@@ -34,16 +34,16 @@ void VolumePage::render_volume(std::unique_ptr<Renderer>& renderer) {
     volume << std::to_string(vol);
 
     //render background
-    renderer->render_highlight(290, 0, 30, 240);
+    renderer->render_rect(290, 0, 30, 240, Renderer::HIGHLIGHT);
 
     //render volume bar
-    renderer->render_background(300, 10, 12, 200);
+    renderer->render_rect(300, 10, 12, 200, Renderer::BACKGROUND);
 
     //render the actual volume
-    renderer->render_foreground(300, 10 + 200 - 2 * vol, 12, 2 * vol);
+    renderer->render_rect(300, 10 + 200 - 2 * vol, 12, 2 * vol, Renderer::FOREGROUND);
 
     //render the volume value
-    renderer->render_text_small(305, 225, volume.str());
+    renderer->render_text(305, 225, volume.str(), Renderer::SMALL);
 }
 
 void VolumePage::enter_page(PAGES origin, void* payload) {

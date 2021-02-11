@@ -19,7 +19,7 @@ void BasePage::render_time(std::unique_ptr<Renderer>& renderer) const {
     std::ostringstream time;
     time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
          << std::to_string(_bp_model.minute);
-    renderer->render_text_small(160, 15, time.str());
+    renderer->render_text(160, 15, time.str(), Renderer::SMALL);
 }
 
 void BasePage::handle_power_key() {

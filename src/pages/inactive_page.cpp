@@ -45,7 +45,7 @@ void InactivePage::render(std::unique_ptr<Renderer>& renderer) {
 
         //display cooldown
         int width = std::ceil(320 * (AMPLIFIER_TIMEOUT - remaining + 0.0) / (AMPLIFIER_TIMEOUT + 0.0));
-        renderer->render_foreground(0, 230, width, 10);
+        renderer->render_rect(0, 230, width, 10, Renderer::FOREGROUND);
     }
 
     //just display a large digital clock
@@ -53,5 +53,5 @@ void InactivePage::render(std::unique_ptr<Renderer>& renderer) {
     time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
          << std::to_string(_bp_model.minute);
 
-    renderer->render_text_hughe(160, 120, time.str());
+    renderer->render_text(160, 120, time.str(), Renderer::HUGHE);
 }

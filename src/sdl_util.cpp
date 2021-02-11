@@ -22,6 +22,10 @@ void exit_sdl() {
     SDL_Quit();
 }
 
+void delay(int ms) {
+    SDL_Delay(ms);
+}
+
 void init_sdl2() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         spdlog::error("init_sdl2(): SDL_Init(): {0}", SDL_GetError());

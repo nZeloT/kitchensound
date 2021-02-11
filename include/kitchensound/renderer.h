@@ -1,10 +1,15 @@
 #ifndef KITCHENSOUND_RENDERER_H
 #define KITCHENSOUND_RENDERER_H
 
-#include <SDL.h>
-#include <SDL_ttf.h>
-#include <SDL_image.h>
 #include <memory>
+
+struct SDL_Window;
+struct SDL_Renderer;
+struct SDL_Texture;
+struct SDL_Surface;
+struct SDL_Color;
+struct _TTF_Font;
+typedef _TTF_Font TTF_Font;
 
 class ResourceManager;
 
@@ -23,35 +28,37 @@ public:
         CENTER
     };
 
-    void render_text_small(int x, int y, const std::string& text, TEXT_ALIGN alignment = CENTER);
-    void render_text_large(int x, int y, const std::string& text, TEXT_ALIGN alignment = CENTER);
-    void render_text_hughe(int x, int y, const std::string& text, TEXT_ALIGN alignment = CENTER);
-    void render_foreground(int x, int y, int w, int h);
-    void render_highlight(int x, int y, int w, int h);
-    void render_background(int x, int y, int w, int h);
-    void render_image(SDL_Surface* surface, SDL_Rect& destrect) const;
+    enum TEXT_SIZE {
+        SMALL,
+        LARGE,
+        HUGHE
+    };
 
-private:
-    friend class RenderText;
-
-    enum COLOR_PALETTE {
+    enum COLOR {
         BACKGROUND,
         HIGHLIGHT,
         FOREGROUND
     };
 
-    void set_color(COLOR_PALETTE color) const;
-    static SDL_Color get_color(COLOR_PALETTE color);
-    void render_text(const std::string &text, TTF_Font *font, SDL_Point point, SDL_Color fg, TEXT_ALIGN alignment) const;
-    void render_rectangle(int x, int y, int w, int h) const;
+    void render_text(int x, int y, const std::string& text, TEXT_SIZE size = LARGE, TEXT_ALIGN alignment = CENTER);
+    void render_rect(int x, int y, int w, int h, COLOR color = BACKGROUND);
+    void render_image(void* surface, int tlX, int tlY, int w, int h) const;
+    void render_image(SDL_Surface* surface, int tlX, int tlY, int w, int h) const;
+    void render_texture(SDL_Texture* texture, int tlX, int tlY, int w, int h) const;
+private:
+    friend class RenderText;
 
-    TTF_Font *font_small = nullptr;
-    TTF_Font *font_large = nullptr;
-    TTF_Font *font_hughe = nullptr;
+    SDL_Texture* create_texture_from_text(std::string const& text, TEXT_SIZE size = LARGE);
 
-    SDL_Window* window = nullptr;
-    SDL_Renderer *renderer = nullptr;
+    [[nodiscard]] TTF_Font* get_font(TEXT_SIZE size) const;
+    void set_active_color(COLOR col);
 
+    TTF_Font *_font_small = nullptr;
+    TTF_Font *_font_large = nullptr;
+    TTF_Font *_font_hughe = nullptr;
+
+    SDL_Window* _window = nullptr;
+    SDL_Renderer *_renderer = nullptr;
 };
 
 #endif //KITCHENSOUND_RENDERER_H

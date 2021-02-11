@@ -5,9 +5,9 @@
 #include <string>
 #include <memory>
 
-#include <SDL.h>
-
+struct SDL_Thread;
 class DBusBTController;
+
 class BTController {
 public:
     explicit BTController(std::function<void(const std::string&, const std::string&)> handler);
