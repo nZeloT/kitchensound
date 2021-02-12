@@ -2,11 +2,11 @@
 #include <csignal>
 
 #include <spdlog/spdlog.h>
-#include <wiringPi.h>
 
 #include "kitchensound/running.h"
 #include "kitchensound/version.h"
 #include "kitchensound/sdl_util.h"
+#include <kitchensound/gpio_util.h>
 #include "kitchensound/config.h"
 #include "kitchensound/volume.h"
 #include "kitchensound/input.h"
@@ -15,6 +15,7 @@
 #include "kitchensound/state_controller.h"
 #include "kitchensound/pages/page_loader.h"
 #include "kitchensound/sound_file_playback.h"
+#include "kitchensound/time_based_standby.h"
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -22,78 +23,62 @@ void shutdownHandler(int sigint) {
 }
 
 int main(int argc, char **argv) {
+    log_version_text();
 
     //0. set the shutdown handler for SIGINT and SIGTERM
     signal(SIGINT, ::shutdownHandler);
     signal(SIGTERM, ::shutdownHandler);
 
-    //0.1 log the version number
-    spdlog::info(get_version_string());
-
-    //0.2 init wiringPi
-    wiringPiSetupGpio();
-
     //0.3 init sdl
     init_sdl();
 
-    //1. read the configuration file
-    auto conf = std::make_unique<Configuration>("../config.conf");
+    auto conf = Configuration{"../config.conf"};
 
-    //2. create Renderer (RAII)
-    auto renderer = std::make_unique<Renderer>();
+    auto resource_mgr = ResourceManager(conf.get_res_folder(), conf.get_cache_folder());
 
-    //2.1 create the resource manager (RAII)
-    auto resource_mgr = std::make_shared<ResourceManager>(conf->get_res_folder(), conf->get_cache_folder());
+    auto renderer = Renderer{resource_mgr};
 
-    //2.2 initialize the font resources in the _renderer
-    renderer->load_resources(resource_mgr);
+    auto volume = Volume(conf.get_default_volume(),
+                         conf.get_alsa_device_name(Configuration::MIXER_CONTROL),
+                         conf.get_alsa_device_name(Configuration::MIXER_CARD));
 
-    //2.3 initialize the volume handler
-    auto volume = std::make_shared<Volume>(conf->get_default_volume(),
-                                           conf->get_alsa_device_name(Configuration::MIXER_CONTROL),
-                                           conf->get_alsa_device_name(Configuration::MIXER_CARD));
-
-    //2.4 initialize gpio
-    auto amp_power = conf->get_gpio_pin(Configuration::AMPLIFIER_POWER);
-    auto display_back = conf->get_gpio_pin(Configuration::DISPLAY_BACKLIGHT);
-    pinMode(amp_power, OUTPUT);
-    pinMode(display_back, OUTPUT);
-    digitalWrite(amp_power, 1);
-    digitalWrite(display_back, 1);
+    auto gpio = GpioUtil{conf.get_gpio_pin(Configuration::DISPLAY_BACKLIGHT),
+                         conf.get_gpio_pin(Configuration::AMPLIFIER_POWER)};
 
     //2.5 init alsa playback mechanics
-    init_playback(conf->get_alsa_device_name(Configuration::PCM_DEVICE),
-                  conf->get_res_folder());
+    init_playback(conf.get_alsa_device_name(Configuration::PCM_DEVICE),
+                  conf.get_res_folder());
 
-    //3. initialize state controller
-    auto state_ctrl = std::make_shared<StateController>(conf);
+    auto standby = TimeBasedStandby{conf.get_display_standby()};
+
+    auto state_ctrl = StateController{standby};
 
     //3.1 initialize the render pages
-    state_ctrl->register_pages(load_pages(conf, state_ctrl, resource_mgr, volume));
-    state_ctrl->set_active_page(INACTIVE);
+    state_ctrl.register_pages(load_pages(conf, state_ctrl, resource_mgr, volume, gpio));
+    state_ctrl.set_active_page(INACTIVE);
 
     //4. initialize the input devices (RAII)
-    InputSource wheelAxis{conf->get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto &ev) {
-        state_ctrl->react_wheel_input(ev.value);
+    InputSource wheelAxis{conf.get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto &ev) {
+        state_ctrl.react_wheel_input(ev.value);
     }};
-    InputSource enterKey{conf->get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto &ev) {
+    InputSource enterKey{conf.get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto &ev) {
         if (ev.value == 1) { //key down
             //handling button ENTER input
-            state_ctrl->react_confirm();
+            state_ctrl.react_confirm();
         }
     }};
-    InputSource menuKey{conf->get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto &ev) {
+    InputSource menuKey{conf.get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto &ev) {
         if (ev.value == 1) { //key down
-            state_ctrl->react_menu_change();
+            state_ctrl.react_menu_change();
         }
     }};
-    InputSource powerKey{conf->get_input_device(Configuration::POWER_KEY), [&state_ctrl](auto &ev) {
+    InputSource powerKey{conf.get_input_device(Configuration::POWER_KEY), [&state_ctrl](auto &ev) {
         if (ev.value == 1) { //key down
-            state_ctrl->react_power_change();
+            state_ctrl.react_power_change();
         }
     }};
 
-    bool display_on = true;
+    bool display_on = false;
     int time_update_counter = 0;
     int time_cntr_reset = 250;
     while (running) {
@@ -102,21 +87,21 @@ int main(int argc, char **argv) {
             time_update_counter = 0;
         }
 
-        state_ctrl->update(time_update_counter == time_cntr_reset);
+        state_ctrl.update(time_update_counter == time_cntr_reset);
 
-        if (!state_ctrl->is_standby_active()) {
+        if (!standby.is_standby_active()) {
             if (!display_on) {
-                digitalWrite(display_back, 1); //TODO move to state controller
+                gpio.turn_on_display(); //TODO move to inactive page
                 spdlog::info("main(): Turning Display ON");
                 display_on = true;
                 time_cntr_reset = 250;
             }
-            renderer->start_pass();
-            state_ctrl->render(renderer);
-            renderer->complete_pass();
+            renderer.start_pass();
+            state_ctrl.render(renderer);
+            renderer.complete_pass();
         } else {
             if (display_on) {
-                digitalWrite(display_back, 0);
+                gpio.turn_off_display();
                 spdlog::info("main(): Turning Display OFF");
                 display_on = false;
                 time_cntr_reset = 30;
@@ -129,7 +114,7 @@ int main(int argc, char **argv) {
         menuKey.check_and_handle();
         powerKey.check_and_handle();
 
-        delay(state_ctrl->is_standby_active() ? 500 : 20);
+        delay(standby.is_standby_active() ? 500 : 20);
         ++time_update_counter;
     }
 

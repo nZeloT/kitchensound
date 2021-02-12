@@ -14,8 +14,8 @@ public:
     RenderText();
     ~RenderText();
 
-    void update_and_render(std::unique_ptr<Renderer>& renderer);
-    void change_text(std::unique_ptr<Renderer>& renderer, std::string const& new_text, int x, int y);
+    void update_and_render(Renderer& renderer);
+    void change_text(Renderer& renderer, std::string const& new_text, int x, int y);
 
     std::string get_current_text() { return _current_text; };
 

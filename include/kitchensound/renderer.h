@@ -15,14 +15,12 @@ class ResourceManager;
 
 class Renderer {
 public:
-    Renderer();
+    explicit Renderer(ResourceManager& res);
     ~Renderer();
 
-    void load_resources(std::shared_ptr<ResourceManager>& res);
-
     void start_pass();
-    void complete_pass();
 
+    void complete_pass();
     enum TEXT_ALIGN {
         LEFT,
         CENTER
@@ -41,12 +39,15 @@ public:
     };
 
     void render_text(int x, int y, const std::string& text, TEXT_SIZE size = LARGE, TEXT_ALIGN alignment = CENTER);
+
     void render_rect(int x, int y, int w, int h, COLOR color = BACKGROUND);
     void render_image(void* surface, int tlX, int tlY, int w, int h) const;
     void render_image(SDL_Surface* surface, int tlX, int tlY, int w, int h) const;
     void render_texture(SDL_Texture* texture, int tlX, int tlY, int w, int h) const;
 private:
     friend class RenderText;
+
+    void load_resources(ResourceManager& res);
 
     SDL_Texture* create_texture_from_text(std::string const& text, TEXT_SIZE size = LARGE);
 

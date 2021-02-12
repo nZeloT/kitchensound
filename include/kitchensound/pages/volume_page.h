@@ -10,15 +10,15 @@ class Volume;
 
 class VolumePage : public BasePage {
 public:
-    VolumePage(PAGES page, std::shared_ptr<StateController>& ctrl, std::shared_ptr<Volume>& vol);
+    VolumePage(PAGES page, StateController& ctrl, Volume& vol);
     ~VolumePage() override;
     void enter_page(PAGES origin, void* payload) override;
     void handle_wheel_input(int delta) override;
 
 protected:
-    void render_volume(std::unique_ptr<Renderer>& renderer);
+    void render_volume(Renderer& renderer);
 private:
-    std::shared_ptr<Volume> _volume;
+    Volume& _volume;
     struct VolumeModel {
         int active_change_timeout;
     } _vol_model;

@@ -8,7 +8,7 @@
 #include <filesystem>
 
 class CacheManager;
-class ResourceManager : std::enable_shared_from_this<ResourceManager> {
+class ResourceManager {
 public:
     ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root);
     ~ResourceManager();

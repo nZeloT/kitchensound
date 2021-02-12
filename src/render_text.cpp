@@ -16,7 +16,7 @@ RenderText::~RenderText() {
         SDL_DestroyTexture(_render_texture);
 }
 
-void RenderText::update_and_render(std::unique_ptr<Renderer>& renderer) {
+void RenderText::update_and_render(Renderer& renderer) {
     if(_render_texture != nullptr) {
 
         if(_render_width > 310) {
@@ -33,11 +33,11 @@ void RenderText::update_and_render(std::unique_ptr<Renderer>& renderer) {
                 --_leftmost_cnt;
         }
 
-        renderer->render_texture(_render_texture, _center_position.x, _center_position.y, _render_width, _render_height);
+        renderer.render_texture(_render_texture, _center_position.x, _center_position.y, _render_width, _render_height);
     }
 }
 
-void RenderText::change_text(std::unique_ptr<Renderer>& renderer, const std::string &new_text, int x, int y) {
+void RenderText::change_text(Renderer& renderer, const std::string &new_text, int x, int y) {
     if(_render_texture != nullptr)
         SDL_DestroyTexture(_render_texture);
 
@@ -45,7 +45,7 @@ void RenderText::change_text(std::unique_ptr<Renderer>& renderer, const std::str
     _leftmost_cnt = -1;
     _current_text = std::string{new_text};
 
-    _render_texture = renderer->create_texture_from_text(new_text);
+    _render_texture = renderer.create_texture_from_text(new_text);
     SDL_QueryTexture(_render_texture, nullptr, nullptr, &_render_width, &_render_height);
 
     if(_render_width < 310)

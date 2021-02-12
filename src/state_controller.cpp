@@ -5,13 +5,13 @@
 #include "kitchensound/config.h"
 #include "kitchensound/time_based_standby.h"
 
-StateController::StateController(std::unique_ptr<Configuration>& conf)
+StateController::StateController(TimeBasedStandby& standby)
     : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE},
       _active_page{nullptr}, _previous_page{nullptr}, _next_page{nullptr}, _transition_payload{nullptr},
-      _standby{std::make_unique<TimeBasedStandby>(conf->get_display_standby())},
+      _standby{standby},
       _pages{}
 {
-    _standby->arm();
+    _standby.arm();
 }
 
 StateController::~StateController() = default;
@@ -46,7 +46,7 @@ void StateController::update(bool time) {
         process_transition();
 }
 
-void StateController::render(std::unique_ptr<Renderer>& renderer) {
+void StateController::render(Renderer& renderer) {
     _active_page->render(renderer);
 }
 
@@ -68,7 +68,7 @@ void StateController::process_transition() {
             transition_select_next_page();
             _next_page->enter_page(_transition_origin, _transition_payload);
             if(_transition_destination == INACTIVE)
-                _standby->arm();
+                _standby.arm();
             _transitions = LEAVING_LOADING;
             spdlog::info("StateController::process_transition(): processed ENTERING");
             break;
@@ -76,7 +76,7 @@ void StateController::process_transition() {
         case LEAVING:
             _transition_payload = _previous_page->leave_page(_transition_destination);
             if(_transition_origin == INACTIVE)
-                _standby->disarm();
+                _standby.disarm();
             _transitions = ENTERING;
             spdlog::info("StateController::process_transition(): processed LEAVING");
             break;
@@ -101,29 +101,25 @@ void StateController::transition_select_next_page() {
 
 void StateController::update_time() {
     _active_page->update_time();
-    _standby->update_time();
+    _standby.update_time();
 }
 
 void StateController::react_wheel_input(int delta) {
     _active_page->handle_wheel_input(delta);
-    _standby->reset_standby_cooldown();
+    _standby.reset_standby_cooldown();
 }
 
 void StateController::react_confirm() {
     _active_page->handle_enter_key();
-    _standby->reset_standby_cooldown();
+    _standby.reset_standby_cooldown();
 }
 
 void StateController::react_power_change() {
     _active_page->handle_power_key();
-    _standby->reset_standby_cooldown();
+    _standby.reset_standby_cooldown();
 }
 
 void StateController::react_menu_change() {
     _active_page->handle_mode_key();
-    _standby->reset_standby_cooldown();
-}
-
-bool StateController::is_standby_active() {
-    return _standby->is_standby_active();
+    _standby.reset_standby_cooldown();
 }

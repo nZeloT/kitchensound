@@ -12,20 +12,20 @@
 9. update the repositories using ``sudo apt update``
 
 ### 2. Install Dependencies
-- SDL2 >= 2.0.12 (self compiling is recommended, as the debian package als installs the x-server which is unnecessary)
+- SDL2 >= 2.0.12 (self compiling is recommended, as the debian package also installs the x-server which is unnecessary)
 - SDL_ttf >= 2.0.15 (self compiling is needed when self compiling SDL2)
 - SDL_image >= 2.0.5 (self compiling is needed when self compiling SDL2)
-- libconfig (i self compiled 1.7.2 but 1.5 from the repos should do as well)
-- libmpdclient (from repo, currently 2.16)
 - sdbus-c++ >= 0.8.3 (self compile needed; not in the repos)
-- libasound (from repo, currently 1.1.8)
-- libao (from repo, currently 1.2.2)
-- libmpg123 (from repo, currently 1.25)
-- curlpp (from repo, currentl 0.8.1)
-- spdlog (from repo, currently 1.3.1)
-- wiringPi (from repo, currently 2.50)
+- libconfig (i self compiled 1.7.2 but 1.5 from the repos, stable should do as well)
+- libmpdclient (from repo, stable, currently 2.16)
+- libasound (from repo, stable, currently 1.1.8)
+- libao (from repo, stable, currently 1.2.2)
+- libmpg123 (from repo, stable, currently 1.25)
+- libcurlpp (from repo, stable, currentl 0.8.1)
+- libspdlog (from repo, stable, currently 1.3.1)
+- libgpiod (from repo, stable, currently 1.2)
 
-1. to install recomended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev libao-dev libmpg123-dev libcurlpp-dev libspdlog-dev wiringpi``
+1. to install recomended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev libao-dev libmpg123-dev libcurlpp-dev libspdlog-dev libgpiod-dev``
 2. install the development base packages to compile SDL, it's plugins and sdbus-c++
 3. download the appropriate source files, compile and install the libs
 

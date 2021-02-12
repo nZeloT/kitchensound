@@ -15,17 +15,17 @@ void BasePage::update_time() {
     _bp_model.minute = tmp->tm_min;
 }
 
-void BasePage::render_time(std::unique_ptr<Renderer>& renderer) const {
+void BasePage::render_time(Renderer& renderer) const {
     std::ostringstream time;
     time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
          << std::to_string(_bp_model.minute);
-    renderer->render_text(160, 15, time.str(), Renderer::SMALL);
+    renderer.render_text(160, 15, time.str(), Renderer::SMALL);
 }
 
 void BasePage::handle_power_key() {
-    _state->trigger_transition(_page, INACTIVE);
+    _state.trigger_transition(_page, INACTIVE);
 }
 
 void BasePage::handle_mode_key() {
-    _state->trigger_transition(_page, MENU_SELECTION);
+    _state.trigger_transition(_page, MENU_SELECTION);
 }

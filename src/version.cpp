@@ -1,5 +1,7 @@
 #include "kitchensound/version.h"
 
-std::string get_version_string() {
-    return "Version 0.5.4";
+#include <spdlog/spdlog.h>
+
+void log_version_text() {
+    spdlog::info("Kitchensound v0.5.5");
 }

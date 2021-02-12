@@ -6,7 +6,7 @@
 
 class MenuSelectionPage : public SelectionPage<MenuModel> {
 public:
-    MenuSelectionPage(std::shared_ptr<StateController>& ctrl, std::shared_ptr<ResourceManager>& res);
+    MenuSelectionPage(StateController& ctrl, ResourceManager& res);
     ~MenuSelectionPage() override;
     void handle_enter_key() override;
     void enter_page(PAGES orig, void* payload) override;

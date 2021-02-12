@@ -14,7 +14,7 @@
 #define COLOR_HIGHLIGHT  104, 211,  82
 #define COLOR_FOREGROUND 255, 255, 255
 
-Renderer::Renderer()
+Renderer::Renderer(ResourceManager& res)
 {
     _window = SDL_CreateWindow
             (
@@ -39,6 +39,8 @@ Renderer::Renderer()
 
     SDL_ShowCursor(SDL_DISABLE);
 
+    load_resources(res);
+
     spdlog::info("Renderer::C-Tor(): Initialization finished!");
 }
 
@@ -47,10 +49,10 @@ Renderer::~Renderer() {
     SDL_DestroyWindow(_window);
 }
 
-void Renderer::load_resources(std::shared_ptr<ResourceManager>& res) {
-    _font_small = reinterpret_cast<TTF_Font*>(res->get_static("SMALL"));
-    _font_large = reinterpret_cast<TTF_Font*>(res->get_static("LARGE"));
-    _font_hughe = reinterpret_cast<TTF_Font*>(res->get_static("HUGHE"));
+void Renderer::load_resources(ResourceManager& res) {
+    _font_small = reinterpret_cast<TTF_Font*>(res.get_static("SMALL"));
+    _font_large = reinterpret_cast<TTF_Font*>(res.get_static("LARGE"));
+    _font_hughe = reinterpret_cast<TTF_Font*>(res.get_static("HUGHE"));
     spdlog::info("Renderer::load_resources(): Loaded font resources.");
 }
 
@@ -98,10 +100,10 @@ void Renderer::render_texture(SDL_Texture *texture, int tlX, int tlY, int w, int
 }
 
 SDL_Texture* Renderer::create_texture_from_text(const std::string &text, TEXT_SIZE size) {
-    SDL_Color col{FOREGROUND, SDL_ALPHA_OPAQUE};
+    SDL_Color col{COLOR_FOREGROUND, SDL_ALPHA_OPAQUE};
     auto surface = TTF_RenderUTF8_Solid(get_font(size), text.c_str(), col);
     auto texture =  SDL_CreateTextureFromSurface(_renderer, surface);
-    SDL_FreeSurface(surface); //TODO check it's working
+    SDL_FreeSurface(surface);
     return texture;
 }
 

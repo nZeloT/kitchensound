@@ -7,7 +7,7 @@
 
 class OptionsPage : public BasePage {
 public:
-    explicit OptionsPage(std::shared_ptr<StateController>& ctrl);
+    explicit OptionsPage(StateController& ctrl);
     ~OptionsPage() override;
     void enter_page(PAGES origin, void* payload) override;
     void* leave_page(PAGES destination) override;
@@ -15,7 +15,7 @@ public:
     void handle_wheel_input(int delta) override;
     void update_time() override;
 
-    void render(std::unique_ptr<Renderer>& renderer) override;
+    void render(Renderer& renderer) override;
 
 private:
     static std::string get_ip_addr();

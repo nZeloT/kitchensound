@@ -21,16 +21,16 @@ public:
     virtual void handle_wheel_input(int delta) = 0;
     virtual void handle_enter_key() = 0;
 
-    virtual void render(std::unique_ptr<Renderer>& renderer) = 0;
+    virtual void render(Renderer& renderer) = 0;
 
     virtual void update_time();
 
     PAGES get_kind() { return _page; };
 protected:
-    BasePage(PAGES page, std::shared_ptr<StateController>& ctrl) : _bp_model{}, _state{ctrl}, _page{page} {};
-    void render_time(std::unique_ptr<Renderer>& renderer) const;
+    BasePage(PAGES page, StateController& ctrl) : _bp_model{}, _state{ctrl}, _page{page} {};
+    void render_time(Renderer& renderer) const;
 
-    std::shared_ptr<StateController> _state;
+    StateController& _state;
     PAGES _page;
 
 private:

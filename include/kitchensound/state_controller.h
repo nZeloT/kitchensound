@@ -7,7 +7,6 @@
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/pages/base_page.h"
 
-class Configuration;
 class Volume;
 class ResourceManager;
 class Renderer;
@@ -16,7 +15,7 @@ class TimeBasedStandby;
 
 class StateController {
 public:
-    explicit StateController(std::unique_ptr<Configuration>& conf);
+    explicit StateController(TimeBasedStandby& standby);
 
     ~StateController();
 
@@ -26,7 +25,7 @@ public:
 
     void update(bool time);
 
-    void render(std::unique_ptr<Renderer>& renderer);
+    void render(Renderer& renderer);
 
     void trigger_transition(PAGES origin, PAGES destination);
 
@@ -37,8 +36,6 @@ public:
     void react_confirm();
 
     void react_power_change();
-
-    bool is_standby_active();
 
 private:
     void update_time();
@@ -64,7 +61,7 @@ private:
     PAGES _transition_destination;
     std::unordered_map<PAGES, std::unique_ptr<BasePage>> _pages;
 
-    std::unique_ptr<TimeBasedStandby> _standby;
+    TimeBasedStandby& _standby; // TODO make page
 };
 
 #endif //KITCHENSOUND_STATE_CONTROLLER_H

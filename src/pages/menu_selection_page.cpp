@@ -2,8 +2,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <utility>
-
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/state_controller.h"
 
@@ -13,10 +11,10 @@ const std::vector<MenuModel> MENUS = {
         {"Optionen", OPTIONS, "img/gears.png"}
 };
 
-MenuSelectionPage::MenuSelectionPage(std::shared_ptr<StateController>& ctrl, std::shared_ptr<ResourceManager>& res)
+MenuSelectionPage::MenuSelectionPage(StateController& ctrl, ResourceManager& res)
         : SelectionPage<MenuModel>(MENU_SELECTION, ctrl, res, MENUS,
-                                   [](std::shared_ptr<ResourceManager>& r, const MenuModel &m) {
-                                       void *image_ptr = r->get_static(m.static_image);
+                                   [](ResourceManager& r, const MenuModel &m) {
+                                       void *image_ptr = r.get_static(m.static_image);
                                        if (image_ptr == nullptr)
                                            throw std::runtime_error{
                                                    "MenuSelectionPage::C-Tor(): Failed to load static image!"};
@@ -30,7 +28,7 @@ MenuSelectionPage::~MenuSelectionPage() = default;
 
 void MenuSelectionPage::handle_enter_key() {
     auto dest = _sp_model.data[_sp_model.selected].ref_page;
-    _state->trigger_transition(_page, dest);
+    _state.trigger_transition(_page, dest);
     spdlog::info("MenuSelectionPage::handle_enter_key(): transitioning from Mode Selection to {0}", dest);
 }
 

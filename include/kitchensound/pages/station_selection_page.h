@@ -8,7 +8,7 @@
 
 class StationSelectionPage : public SelectionPage<RadioStationStream> {
 public:
-    StationSelectionPage(std::shared_ptr<StateController>& ctrl, std::shared_ptr<ResourceManager>& res, std::vector<RadioStationStream> streams);
+    StationSelectionPage(StateController& ctrl, ResourceManager& res, std::vector<RadioStationStream> streams);
     ~StationSelectionPage() override;
 
     void enter_page(PAGES origin, void* payload) override;
@@ -17,7 +17,7 @@ public:
 
     void handle_wheel_input(int delta) override;
     void handle_enter_key() override;
-    void render(std::unique_ptr<Renderer>& renderer) override;
+    void render(Renderer& renderer) override;
 
     RadioStationStream* get_selected_stream();
 

@@ -9,13 +9,13 @@
 
 #define RADIO_IMAGE "img/radio.png"
 
-StationSelectionPage::StationSelectionPage(std::shared_ptr<StateController>& ctrl, std::shared_ptr<ResourceManager>& res,
+StationSelectionPage::StationSelectionPage(StateController& ctrl, ResourceManager& res,
                                            std::vector<RadioStationStream> streams) :
         SelectionPage<RadioStationStream>(STREAM_SELECTION, ctrl, res, std::move(streams),
-                                          [](std::shared_ptr<ResourceManager> &r, const RadioStationStream& s) {
-                                              void* image_ptr = r->get_cached(s.image_url);
+                                          [](ResourceManager& r, const RadioStationStream& s) {
+                                              void* image_ptr = r.get_cached(s.image_url);
                                               if(image_ptr == nullptr)
-                                                  image_ptr = r->get_static(RADIO_IMAGE);
+                                                  image_ptr = r.get_static(RADIO_IMAGE);
                                               return image_ptr;
                                           },
                                           [](const RadioStationStream& s) {
@@ -55,7 +55,7 @@ void StationSelectionPage::activate_timeout() {
 }
 
 void StationSelectionPage::handle_enter_key() {
-    _state->trigger_transition(_page, STREAM_PLAYING);
+    _state.trigger_transition(_page, STREAM_PLAYING);
     _model.confirmed_selection = _sp_model.selected;
     spdlog::info("StationSelectionPage::handle_enter_key(): Stream {0} selected; transitioning",
                  _model.confirmed_selection);
@@ -67,12 +67,12 @@ void StationSelectionPage::handle_wheel_input(int delta) {
         _model.remaining_time = BROWSING_TIMEOUT;
 }
 
-void StationSelectionPage::render(std::unique_ptr<Renderer>& renderer) {
+void StationSelectionPage::render(Renderer& renderer) {
     if (_model.times_out && _model.remaining_time > 0) {
         --_model.remaining_time;
     }
     if (_model.times_out && _model.remaining_time == 0) {
-        _state->trigger_transition(_page, STREAM_PLAYING);
+        _state.trigger_transition(_page, STREAM_PLAYING);
     }
 
     SelectionPage<RadioStationStream>::render(renderer);

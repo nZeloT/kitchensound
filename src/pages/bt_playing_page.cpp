@@ -9,8 +9,8 @@
 
 #define BLUETOOTH_IMAGE "img/bluetooth.png"
 
-BluetoothPlayingPage::BluetoothPlayingPage(std::shared_ptr<StateController> &ctrl, std::shared_ptr<Volume> vol,
-                                           std::shared_ptr<ResourceManager> &res)
+BluetoothPlayingPage::BluetoothPlayingPage(StateController &ctrl, Volume& vol,
+                                           ResourceManager &res)
         : VolumePage(BT_PLAYING, ctrl, vol), _res{res}, _model{},
           _text_status{std::make_unique<RenderText>()}, _text_meta{std::make_unique<RenderText>()},
           _btc{std::make_unique<BTController>([&](auto status, auto meta) {
@@ -20,12 +20,12 @@ BluetoothPlayingPage::BluetoothPlayingPage(std::shared_ptr<StateController> &ctr
 
 BluetoothPlayingPage::~BluetoothPlayingPage() = default;
 
-void BluetoothPlayingPage::render(std::unique_ptr<Renderer> &renderer) {
+void BluetoothPlayingPage::render(Renderer& renderer) {
     this->render_time(renderer);
 
     //1. render the artwork
-    auto image = reinterpret_cast<SDL_Surface *>(_res->get_static(BLUETOOTH_IMAGE));
-    renderer->render_image(image, 96, 36, 128, 128);
+    auto image = reinterpret_cast<SDL_Surface *>(_res.get_static(BLUETOOTH_IMAGE));
+    renderer.render_image(image, 96, 36, 128, 128);
 
     //2. render the status message
     if (_model.status_changed) {

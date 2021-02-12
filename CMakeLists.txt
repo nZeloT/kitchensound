@@ -39,7 +39,8 @@ add_executable(kitchensound src/main.cpp
         src/pages/page_loader.cpp
         src/version.cpp
         src/sound_file_playback.cpp
-        src/sdl_util.cpp)
+        src/sdl_util.cpp
+        src/gpio_util.cpp)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})
@@ -58,4 +59,4 @@ target_link_libraries(kitchensound ${ALSA_LIBRARIES})
 target_link_libraries(kitchensound curlpp)
 target_link_libraries(kitchensound curl)
 target_link_libraries(kitchensound spdlog::spdlog)
-target_link_libraries(kitchensound wiringPi)
+target_link_libraries(kitchensound gpiod)

@@ -9,8 +9,8 @@ class RenderText;
 
 class StationPlayingPage : public VolumePage {
 public:
-    StationPlayingPage(std::shared_ptr<StateController> &ctrl, std::shared_ptr<ResourceManager> &res,
-                       std::shared_ptr<Volume> &vol, RadioStationStream* initial_station);
+    StationPlayingPage(StateController &ctrl, ResourceManager &res,
+                       Volume &vol, RadioStationStream* initial_station);
     ~StationPlayingPage() override;
 
     void enter_page(PAGES origin, void* payload) override;
@@ -19,7 +19,7 @@ public:
 
     void handle_enter_key() override;
 
-    void render(std::unique_ptr<Renderer> &renderer) override;
+    void render(Renderer &renderer) override;
 
 private:
 
@@ -39,7 +39,7 @@ private:
         std::string meta_text;
     } _model;
 
-    std::shared_ptr<ResourceManager>& _res;
+    ResourceManager& _res;
 
     std::unique_ptr<RenderText> _text_status;
     std::unique_ptr<RenderText> _text_meta;

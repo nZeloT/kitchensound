@@ -114,7 +114,7 @@ void OptionsPage::trigger_shutdown() {
     }
 }
 
-OptionsPage::OptionsPage(std::shared_ptr<StateController> &ctrl)
+OptionsPage::OptionsPage(StateController &ctrl)
         : BasePage(OPTIONS, ctrl) {
     _model.local_ip = get_ip_addr();
     _model.system_uptime = get_system_uptime();
@@ -148,11 +148,11 @@ void OptionsPage::handle_wheel_input(int delta) {
     //NOP
 }
 
-void OptionsPage::render(std::unique_ptr<Renderer> &renderer) {
+void OptionsPage::render(Renderer& renderer) {
     this->render_time(renderer);
-    renderer->render_text(10, 40, "IPv4:\t" + _model.local_ip, Renderer::LARGE, Renderer::LEFT);
-    renderer->render_text(10, 70,  "Sys. Up.: " + _model.system_uptime, Renderer::LARGE, Renderer::LEFT);
-    renderer->render_text(10, 100, "Prg. Up.: " + _model.program_uptime, Renderer::LARGE, Renderer::LEFT);
-    renderer->render_text(10, 130, "Shutdown", Renderer::LARGE, Renderer::LEFT);
-    renderer->render_text(10, 160, "Reboot", Renderer::LARGE, Renderer::LEFT);
+    renderer.render_text(10, 40, "IPv4:\t" + _model.local_ip, Renderer::LARGE, Renderer::LEFT);
+    renderer.render_text(10, 70,  "Sys. Up.: " + _model.system_uptime, Renderer::LARGE, Renderer::LEFT);
+    renderer.render_text(10, 100, "Prg. Up.: " + _model.program_uptime, Renderer::LARGE, Renderer::LEFT);
+    renderer.render_text(10, 130, "Shutdown", Renderer::LARGE, Renderer::LEFT);
+    renderer.render_text(10, 160, "Reboot", Renderer::LARGE, Renderer::LEFT);
 }
