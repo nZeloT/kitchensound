@@ -8,11 +8,20 @@
 
 BasePage::~BasePage() = default;
 
+void BasePage::update() {
+    ++_bp_model.update_time_frame_cnt;
+    if(_bp_model.update_time_frame_cnt > _bp_model.update_time_frame_skip) {
+        update_time();
+        _bp_model.update_time_frame_cnt = 0;
+    }
+}
+
 void BasePage::update_time() {
     _bp_model.current_time = std::time(nullptr);
     auto tmp = std::localtime(&_bp_model.current_time);
     _bp_model.hour = tmp->tm_hour;
     _bp_model.minute = tmp->tm_min;
+    _bp_model.update_time_frame_cnt = 0;
 }
 
 void BasePage::render_time(Renderer& renderer) const {

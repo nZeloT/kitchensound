@@ -8,9 +8,13 @@
 #include "kitchensound/timeouts.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/time_based_standby.h"
+#include "kitchensound/gpio_util.h"
 
-InactivePage::InactivePage(StateController& ctrl, std::function<void(bool)> set_amp_state)
-    : BasePage(INACTIVE, ctrl), _model{-1, MENU_SELECTION, std::move(set_amp_state)} {}
+InactivePage::InactivePage(StateController& ctrl, Configuration::DisplayStandbyConfig standby, int display_gpio, int amplifier_gpio)
+    : BasePage(INACTIVE, ctrl), _model{-1, MENU_SELECTION, false},
+    _standby{std::make_unique<TimeBasedStandby>(standby)}, _gpio{std::make_unique<GpioUtil>(display_gpio, amplifier_gpio)}
+    {}
 
 InactivePage::~InactivePage() = default;
 
@@ -18,24 +22,64 @@ void InactivePage::enter_page(PAGES origin, void* payload) {
     this->update_time();
     _model.amp_cooldown_start = _bp_model.current_time;
     _model.last_seen = origin;
-    //turn off amp
-    _model.set_amplifier_state(false);
+    _gpio->turn_off_amplifier();
+    _standby->arm();
     spdlog::info("InactivePage::enter_page(): Entered.");
 }
 
 void* InactivePage::leave_page(PAGES destination) {
-    //turn amp on
-    _model.set_amplifier_state(true);
+    _standby->disarm();
+    _gpio->turn_on_amplifier();
     spdlog::info("InactivePage::leave_page(): Left");
     return nullptr;
 }
 
+void InactivePage::update() {
+    if(_standby->is_standby_active()){
+        if(_model.display_on){
+            _gpio->turn_off_display();
+            _model.display_on = false;
+            _bp_model.update_time_frame_skip = 30;
+            _bp_model.update_delay_time = 500;
+        }
+    }else{
+        if(!_model.display_on){
+            _gpio->turn_on_display();
+            _model.display_on = true;
+            _bp_model.update_time_frame_skip = 250;
+            _bp_model.update_delay_time = 20;
+        }
+    }
+    BasePage::update();
+}
+
 void InactivePage::handle_power_key() {
+    _standby->reset_standby_cooldown();
     if (_bp_model.current_time - _model.amp_cooldown_start >= AMPLIFIER_TIMEOUT)
         _state.trigger_transition(_page, _model.last_seen);
 }
 
+void InactivePage::handle_wheel_input(int delta) {
+    _standby->reset_standby_cooldown();
+}
+
+void InactivePage::handle_enter_key() {
+    _standby->reset_standby_cooldown();
+}
+
+void InactivePage::handle_mode_key() {
+    _standby->reset_standby_cooldown();
+}
+
+void InactivePage::update_time() {
+    _standby->update_time();
+    BasePage::update_time();
+}
+
 void InactivePage::render(Renderer& renderer) {
+    if(_standby->is_standby_active())
+        return;
+
     auto remaining = _bp_model.current_time - _model.amp_cooldown_start;
     if (remaining < AMPLIFIER_TIMEOUT) {
 

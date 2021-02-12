@@ -16,7 +16,6 @@ class GpioUtil;
 std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(Configuration& conf,
                                                                 StateController& ctrl,
                                                                 ResourceManager& res,
-                                                                Volume& vol,
-                                                                GpioUtil& gpio);
+                                                                Volume& vol);
 
 #endif //KITCHENSOUND_PAGE_LOADER_H

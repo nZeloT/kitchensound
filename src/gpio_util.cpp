@@ -2,6 +2,8 @@
 
 #include <gpiod.h>
 
+#include <spdlog/spdlog.h>
+
 GpioUtil::GpioUtil(int display_backlight_pin, int amplifier_power_pin) {
     _chip = gpiod_chip_open_by_number(0);
     _line_amplifier = gpiod_chip_get_line(_chip, amplifier_power_pin);
@@ -22,16 +24,20 @@ GpioUtil::~GpioUtil() {
 
 void GpioUtil::turn_off_amplifier() {
     gpiod_line_set_value(_line_amplifier, 1);
+    spdlog::info("GpioUtil::turn_off_amplifier(): Turned Amplifier OFF");
 }
 
 void GpioUtil::turn_off_display() {
     gpiod_line_set_value(_line_display, 0);
+    spdlog::info("GpioUtil::turn_off_display(): Turned Display OFF");
 }
 
 void GpioUtil::turn_on_amplifier() {
     gpiod_line_set_value(_line_amplifier, 0);
+    spdlog::info("GpioUtil::turn_on_amplifier(): Turned Amplifier On");
 }
 
 void GpioUtil::turn_on_display() {
     gpiod_line_set_value(_line_display, 1);
+    spdlog::info("GpioUtil::turn_on_display(): Turned Display On");
 }

@@ -15,19 +15,15 @@
 #include "kitchensound/pages/options_page.h"
 
 std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(
-        Configuration& conf,
-        StateController& ctrl,
-        ResourceManager& res,
-        Volume& vol,
-        GpioUtil& gpio) {
+        Configuration &conf,
+        StateController &ctrl,
+        ResourceManager &res,
+        Volume &vol) {
 
     std::unordered_map<PAGES, std::unique_ptr<BasePage>> pages;
-    pages.emplace(INACTIVE, std::make_unique<InactivePage>(ctrl, [&gpio](bool new_state){
-        if(new_state)
-            gpio.turn_on_amplifier();
-        else
-            gpio.turn_off_amplifier();
-    }));
+    pages.emplace(INACTIVE, std::make_unique<InactivePage>(ctrl, conf.get_display_standby(),
+                                                           conf.get_gpio_pin(Configuration::DISPLAY_BACKLIGHT),
+                                                           conf.get_gpio_pin(Configuration::AMPLIFIER_POWER)));
     pages.emplace(LOADING, std::make_unique<LoadingPage>(ctrl));
     pages.emplace(MENU_SELECTION, std::make_unique<MenuSelectionPage>(ctrl, res));
     auto stream_sel = std::make_unique<StationSelectionPage>(ctrl, res, conf.get_radio_stations());
