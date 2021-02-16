@@ -11,9 +11,9 @@
 #include "kitchensound/time_based_standby.h"
 #include "kitchensound/gpio_util.h"
 
-InactivePage::InactivePage(StateController& ctrl, Configuration::DisplayStandbyConfig standby, int display_gpio, int amplifier_gpio)
+InactivePage::InactivePage(StateController& ctrl, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio)
     : BasePage(INACTIVE, ctrl), _model{-1, MENU_SELECTION, false},
-    _standby{std::make_unique<TimeBasedStandby>(standby)}, _gpio{std::make_unique<GpioUtil>(display_gpio, amplifier_gpio)}
+    _standby{standby}, _gpio{gpio}
     {}
 
 InactivePage::~InactivePage() = default;
@@ -29,6 +29,7 @@ void InactivePage::enter_page(PAGES origin, void* payload) {
 
 void* InactivePage::leave_page(PAGES destination) {
     _standby->disarm();
+    _gpio->turn_on_display();
     _gpio->turn_on_amplifier();
     spdlog::info("InactivePage::leave_page(): Left");
     return nullptr;
@@ -79,6 +80,8 @@ void InactivePage::update_time() {
 void InactivePage::render(Renderer& renderer) {
     if(_standby->is_standby_active())
         return;
+    if(!_model.display_on && !_standby->is_standby_active())
+        _gpio->turn_on_display();
 
     auto remaining = _bp_model.current_time - _model.amp_cooldown_start;
     if (remaining < AMPLIFIER_TIMEOUT) {

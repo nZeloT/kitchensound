@@ -10,6 +10,7 @@
 #define RADIO_IMAGE "img/radio.png"
 
 StationSelectionPage::StationSelectionPage(StateController& ctrl, ResourceManager& res,
+                                           std::shared_ptr<MPDController>& mpd,
                                            std::vector<RadioStationStream> streams) :
         SelectionPage<RadioStationStream>(STREAM_SELECTION, ctrl, res, std::move(streams),
                                           [](ResourceManager& r, const RadioStationStream& s) {
@@ -20,7 +21,8 @@ StationSelectionPage::StationSelectionPage(StateController& ctrl, ResourceManage
                                           },
                                           [](const RadioStationStream& s) {
                                               return s.name;
-                                          }), _model{} {};
+                                          }), _mpd{mpd},
+                                          _model{} {};
 
 StationSelectionPage::~StationSelectionPage() = default;
 
@@ -36,7 +38,7 @@ void* StationSelectionPage::leave_page(PAGES destination)  {
     if(destination != STREAM_PLAYING && _model.times_out) {
         //model only times out if browsing page was called from stream playing
         //but the new destination isn't playing; this requires halting the mpd playback
-        MPDController::get().stop_playback();
+        _mpd->stop_playback();
     }
     if(destination == STREAM_PLAYING)
         return get_selected_stream();

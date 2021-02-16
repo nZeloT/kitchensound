@@ -9,13 +9,10 @@
 class BasePage;
 class Configuration;
 class StateController;
-class Volume;
 class ResourceManager;
-class GpioUtil;
 
 std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(Configuration& conf,
                                                                 StateController& ctrl,
-                                                                ResourceManager& res,
-                                                                Volume& vol);
+                                                                ResourceManager& res);
 
 #endif //KITCHENSOUND_PAGE_LOADER_H

@@ -9,14 +9,18 @@
 
 #define BLUETOOTH_IMAGE "img/bluetooth.png"
 
-BluetoothPlayingPage::BluetoothPlayingPage(StateController &ctrl, Volume& vol,
-                                           ResourceManager &res)
+BluetoothPlayingPage::BluetoothPlayingPage(StateController &ctrl,
+                                           ResourceManager &res,
+                                           std::shared_ptr<Volume>& vol,
+                                           std::shared_ptr<BTController>& btc)
         : VolumePage(BT_PLAYING, ctrl, vol), _res{res}, _model{},
           _text_status{std::make_unique<RenderText>()}, _text_meta{std::make_unique<RenderText>()},
-          _btc{std::make_unique<BTController>([&](auto status, auto meta) {
-              set_status(status);
-              set_meta(meta);
-          })} {};
+          _btc{btc} {
+    _btc->set_metadata_status_callback([&](auto status, auto meta) {
+        set_status(status);
+        set_meta(meta);
+    });
+};
 
 BluetoothPlayingPage::~BluetoothPlayingPage() = default;
 

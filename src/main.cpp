@@ -7,13 +7,11 @@
 #include "kitchensound/version.h"
 #include "kitchensound/sdl_util.h"
 #include "kitchensound/config.h"
-#include "kitchensound/volume.h"
 #include "kitchensound/input.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/state_controller.h"
 #include "kitchensound/pages/page_loader.h"
-#include "kitchensound/sound_file_playback.h"
 
 void shutdownHandler(int sigint) {
     spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
@@ -36,18 +34,10 @@ int main(int argc, char **argv) {
 
     auto renderer = Renderer{resource_mgr};
 
-    auto volume = Volume(conf.get_default_volume(),
-                         conf.get_alsa_device_name(Configuration::MIXER_CONTROL),
-                         conf.get_alsa_device_name(Configuration::MIXER_CARD));
-
-    //2.5 init alsa playback mechanics
-    init_playback(conf.get_alsa_device_name(Configuration::PCM_DEVICE),
-                  conf.get_res_folder());
-
     auto state_ctrl = StateController{};
 
     //3.1 initialize the render pages
-    state_ctrl.register_pages(load_pages(conf, state_ctrl, resource_mgr, volume));
+    state_ctrl.register_pages(load_pages(conf, state_ctrl, resource_mgr));
     state_ctrl.set_active_page(INACTIVE);
 
     //4. initialize the input devices
@@ -87,7 +77,6 @@ int main(int argc, char **argv) {
         state_ctrl.delay_next_frame();
     }
 
-    exit_playback();
     exit_sdl();
 
     return 0;

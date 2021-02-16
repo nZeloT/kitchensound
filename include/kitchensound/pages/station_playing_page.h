@@ -4,18 +4,22 @@
 #include "kitchensound/radio_station_stream.h"
 #include "kitchensound/pages/volume_page.h"
 
+class MPDController;
+
 class ResourceManager;
+
 class RenderText;
 
 class StationPlayingPage : public VolumePage {
 public:
-    StationPlayingPage(StateController &ctrl, ResourceManager &res,
-                       Volume &vol, RadioStationStream* initial_station);
+    StationPlayingPage(StateController &, ResourceManager &, std::shared_ptr<Volume> &,
+                       std::shared_ptr<MPDController> &, RadioStationStream *);
+
     ~StationPlayingPage() override;
 
-    void enter_page(PAGES origin, void* payload) override;
+    void enter_page(PAGES origin, void *payload) override;
 
-    void* leave_page(PAGES destination) override;
+    void *leave_page(PAGES destination) override;
 
     void handle_enter_key() override;
 
@@ -23,7 +27,7 @@ public:
 
 private:
 
-    void set_station_playing(RadioStationStream* stream);
+    void set_station_playing(RadioStationStream *stream);
 
     void set_meta_text(std::string const &new_meta);
 
@@ -39,7 +43,8 @@ private:
         std::string meta_text;
     } _model;
 
-    ResourceManager& _res;
+    ResourceManager &_res;
+    std::shared_ptr<MPDController> _mpd;
 
     std::unique_ptr<RenderText> _text_status;
     std::unique_ptr<RenderText> _text_meta;

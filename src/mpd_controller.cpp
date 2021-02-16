@@ -32,7 +32,7 @@ static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
 static bool run_metadata_poller = true;
 
 static int poll_metadata(void *ptr) {
-    auto ctrl_ptr = reinterpret_cast<MPDController *>(ptr);
+    auto metadata_callback = reinterpret_cast<std::function<void(std::string const&)>*>(ptr);
 
     spdlog::info("MPDController::poll_metadata(): Entering MPDMetadataPoller");
     auto connection = connect_to_mpd();
@@ -55,7 +55,7 @@ static int poll_metadata(void *ptr) {
 
             auto song_title = read_tag(song, MPD_TAG_TITLE);
             spdlog::info("MPDController::poll_metadata(): New Title: {0}", song_title);
-            ctrl_ptr->_update_handler(song_title);
+            (*metadata_callback)(song_title);
 
             mpd_song_free(song);
         }
@@ -71,7 +71,10 @@ static int poll_metadata(void *ptr) {
 }
 
 MPDController::MPDController()
-        : _update_handler(), _polling_thread{nullptr}, _initialized{false}, _connection{nullptr} {}
+        : _polling_thread{nullptr}, _connection{nullptr}, _metadata_callback{[](std::string const&){}} {
+    _connection = connect_to_mpd();
+    spdlog::info("MPDController::init(): Connected to MPD");
+}
 
 MPDController::~MPDController() {
     mpd_run_stop(_connection);
@@ -123,7 +126,7 @@ void MPDController::_start_polling() {
     if (_polling_thread != nullptr)
         throw std::runtime_error("Still have a running polling thread!");
 
-    _polling_thread = SDL_CreateThread(poll_metadata, "MPDMetadataPoller", this);
+    _polling_thread = SDL_CreateThread(poll_metadata, "MPDMetadataPoller", &_metadata_callback);
     if (_polling_thread == nullptr) {
         spdlog::error("MPDController::_start_polling(): Thread creation failed!");
         running = false;
@@ -141,9 +144,7 @@ void MPDController::_stop_polling() {
     }
 }
 
-void MPDController::init(std::function<void(const std::string &)> update_handler) {
-    _get()._update_handler = std::move(update_handler);
-    _get()._connection = connect_to_mpd();
-    _get()._initialized = true;
-    spdlog::info("MPDController::init(): Connected to MPD");
+void MPDController::set_metadata_callback(std::function<void(const std::string &)> update_handler) {
+    _metadata_callback = std::move(update_handler);
+
 }

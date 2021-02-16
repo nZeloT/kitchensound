@@ -4,7 +4,8 @@
 
 #include <spdlog/spdlog.h>
 
-GpioUtil::GpioUtil(int display_backlight_pin, int amplifier_power_pin) {
+GpioUtil::GpioUtil(int display_backlight_pin, int amplifier_power_pin)
+ : _line_display{nullptr}, _line_amplifier{nullptr}, _chip{nullptr} {
     _chip = gpiod_chip_open_by_number(0);
     _line_amplifier = gpiod_chip_get_line(_chip, amplifier_power_pin);
     _line_display   = gpiod_chip_get_line(_chip, display_backlight_pin);

@@ -13,7 +13,7 @@
 #include <spdlog/spdlog.h>
 #include <sdbus-c++/sdbus-c++.h>
 
-#include "kitchensound/sound_file_playback.h"
+#include "kitchensound/file_playback.h"
 
 constexpr char SERVICE_NAME[] = "org.bluez";
 
@@ -49,7 +49,7 @@ public:
         _name = name_prop.get<std::string>();
         spdlog::info("DBusBTDeviceMonitor::C-Tor(): Initial device state: {0}; {1}; {2}", _deviceId, _name, _connected);
         _deviceConnectedHandler(_deviceId, _connected);
-        if(!_name.empty())
+        if (!_name.empty())
             _deviceNameHandler(_deviceId, _name);
 
         try {
@@ -104,7 +104,7 @@ private:
 
     void check_name_property(std::map<std::string, sdbus::Variant> const &props) {
         auto val = props.find("Alias");
-        if(val != props.end()) {
+        if (val != props.end()) {
             _name = val->second.get<std::string>();
             spdlog::info("DBusBTDeviceMonitor::check_name_property(): Name Device Name received: {0}", _name);
             _deviceNameHandler(_deviceId, _name);
@@ -283,7 +283,7 @@ private:
         bool hasContent = false;
         if (it != std::end(meta)) {
             auto t = it->second.get<std::string>();
-            if(!t.empty())
+            if (!t.empty())
                 hasContent = true;
             s << t;
         }
@@ -293,7 +293,7 @@ private:
             if (hasContent)
                 s << " - ";
             auto t = it->second.get<std::string>();
-            if(!t.empty())
+            if (!t.empty())
                 hasContent = true;
             s << t;
         }
@@ -323,9 +323,11 @@ private:
 class DBusBTController {
 public:
 
-    explicit DBusBTController(std::function<void(const std::string &, const std::string &)> handler)
+    DBusBTController(std::shared_ptr<FilePlayback>& playback,
+            std::function<void(const std::string &, const std::string &)> handler)
             : _handler(std::move(handler)),
               _dbusConnection(sdbus::createSystemBusConnection()),
+              _playback{playback},
               _objectMonitor{}, _deviceMonitors{}, _playerMonitors{}, _connected(true),
               _connectedDevice{}, _status{}, _metadata{} {
 
@@ -356,8 +358,8 @@ private:
                                                                               device_disconnected(deviceId);
                                                                       },
                                                                       [this](std::string const &deviceId,
-                                                                              std::string const &name) {
-                                                                            device_name_changed(deviceId, name);
+                                                                             std::string const &name) {
+                                                                          device_name_changed(deviceId, name);
                                                                       },
                                                                       [this](std::string const &deviceId,
                                                                              sdbus::ObjectPath const &playerPath) {
@@ -389,7 +391,7 @@ private:
         _metadata = "";
 
         deactivate_discoverable();
-        playback_file("bt-connect.mp3");
+        _playback->playback("bt-connect.mp3");
 
         _handler(_status, _metadata);
 
@@ -402,7 +404,7 @@ private:
 
     void device_name_changed(std::string const &deviceId, std::string const &name) {
         _deviceName = std::string{name};
-        _status     = "Connected to " + _deviceName;
+        _status = "Connected to " + _deviceName;
         _handler(_status, _metadata);
     }
 
@@ -425,7 +427,7 @@ private:
         _metadata = "";
 
         activate_discoverable();
-        playback_file("bt-disconnect.mp3");
+        _playback->playback("bt-disconnect.mp3");
 
         _handler(_status, _metadata);
     }
@@ -457,6 +459,7 @@ private:
     std::string _metadata;
 
     std::function<void(const std::string &, const std::string &)> _handler;
+    std::shared_ptr<FilePlayback> _playback;
 
     std::map<std::string, std::unique_ptr<DBusBTMediaPlayerMonitor>> _playerMonitors;
     std::vector<std::unique_ptr<DBusBTDeviceMonitor>> _deviceMonitors;
@@ -469,16 +472,20 @@ static int run_dbusbtconnector(void *inst_ptr) {
     return 0;
 }
 
-BTController::BTController(std::function<void(const std::string &, const std::string &)> handler)
-        : _handler{std::move(handler)},
-          _dbus{std::make_unique<DBusBTController>([this](auto status, auto meta) {
+BTController::BTController(std::shared_ptr<FilePlayback>& playback)
+        : _cb_meta_status_update{[](std::string const&, std::string const&){}},
+          _dbus{std::make_unique<DBusBTController>(playback, [this](auto status, auto meta) {
               this->handle_update(status, meta);
-          })}, _thread{nullptr} {}
+          })}, _thread{nullptr}, _playback{playback} {}
 
 BTController::~BTController() = default;
 
+void BTController::set_metadata_status_callback(std::function<void(const std::string &, const std::string &)> new_cb) {
+    _cb_meta_status_update = std::move(new_cb);
+}
+
 void BTController::handle_update(const std::string &status, const std::string &meta) {
-    _handler(status, meta);
+    _cb_meta_status_update(status, meta);
 }
 
 void BTController::activate_bt() {
@@ -489,7 +496,7 @@ void BTController::activate_bt() {
     activate_discoverable();
 
     _thread = SDL_CreateThread(::run_dbusbtconnector, "DbusBTController", reinterpret_cast<void *>(_dbus.get()));
-    playback_file("bt-activate.mp3");
+    _playback->playback("bt-activate.mp3");
 }
 
 void BTController::deactivate_bt() {
@@ -502,5 +509,5 @@ void BTController::deactivate_bt() {
     proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(false);
     spdlog::info("BTController::deactivate_bt(): Bluetooth adapter powered off");
 
-    playback_file("bt-deactivate.mp3");
+    _playback->playback("bt-deactivate.mp3");
 }

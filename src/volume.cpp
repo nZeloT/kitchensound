@@ -1,11 +1,11 @@
 #include "kitchensound/volume.h"
 
-#include <iostream>
-
 #include <alsa/asoundlib.h>
 
-Volume::Volume(int start_vol, std::string mixer_control, std::string mixer_card)
-: _currentVol{0}, _mixer_card{std::move(mixer_card)}, _mixer_control{std::move(mixer_control)} {
+Volume::Volume(int start_vol, const std::string& mixer_control, const std::string& mixer_card)
+: _currentVol{0}, _mixer_control{}, _mixer_card{} {
+    _mixer_card = {mixer_card};
+    _mixer_control = {mixer_control};
     update_from_system();
     set_volume(start_vol);
 }

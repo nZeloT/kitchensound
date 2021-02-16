@@ -9,16 +9,16 @@
 #include "kitchensound/volume.h"
 #include "kitchensound/renderer.h"
 
-VolumePage::VolumePage(PAGES page, StateController& ctrl, Volume& vol)
-        : BasePage(page, ctrl), _volume{vol}, _vol_model{} {};
+VolumePage::VolumePage(PAGES page, StateController& ctrl, std::shared_ptr<Volume>& vol)
+        : BasePage(page, ctrl), _vol_model{}, _volume{vol} {};
 VolumePage::~VolumePage() = default;
 
 void VolumePage::handle_wheel_input(int delta) {
     if (delta != 0) {
         _vol_model.active_change_timeout = VOLUME_TIMEOUT;
-        auto new_val = _volume.get_volume() + delta;
+        auto new_val = _volume->get_volume() + delta;
         if (new_val < 0 || new_val > 100) return;
-        _volume.apply_delta(delta);
+        _volume->apply_delta(delta);
     }
 }
 
@@ -28,7 +28,7 @@ void VolumePage::render_volume(Renderer& renderer) {
     if (_vol_model.active_change_timeout < 0)
         return;
 
-    auto vol = _volume.get_volume();
+    auto vol = _volume->get_volume();
 
     std::ostringstream volume;
     volume << std::to_string(vol);

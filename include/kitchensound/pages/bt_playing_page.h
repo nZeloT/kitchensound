@@ -14,8 +14,10 @@ class ResourceManager;
 
 class BluetoothPlayingPage : public VolumePage {
 public:
-    BluetoothPlayingPage(StateController &ctrl, Volume& vol,
-                         ResourceManager &res);
+    BluetoothPlayingPage(StateController &ctrl,
+                         ResourceManager &res,
+                         std::shared_ptr<Volume>& vol,
+                         std::shared_ptr<BTController>& btc);
 
     ~BluetoothPlayingPage() override;
 
@@ -45,7 +47,7 @@ private:
 
     ResourceManager& _res;
 
-    std::unique_ptr<BTController> _btc;
+    std::shared_ptr<BTController> _btc;
 
     std::unique_ptr<RenderText> _text_status;
     std::unique_ptr<RenderText> _text_meta;

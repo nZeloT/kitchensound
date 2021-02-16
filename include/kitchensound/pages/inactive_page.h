@@ -1,7 +1,6 @@
 #ifndef KITCHENSOUND_INACTIVE_PAGE_H
 #define KITCHENSOUND_INACTIVE_PAGE_H
 
-#include "kitchensound/config.h"
 #include "kitchensound/pages/base_page.h"
 
 class StateController;
@@ -11,7 +10,7 @@ class GpioUtil;
 
 class InactivePage : public BasePage {
 public:
-    InactivePage(StateController& ctrl, Configuration::DisplayStandbyConfig standby, int display_gpio, int amplifier_gpio);
+    InactivePage(StateController& ctrl, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio);
     ~InactivePage() override;
     void enter_page(PAGES origin, void* payload) override;
     void* leave_page(PAGES destination) override;
@@ -23,8 +22,8 @@ public:
     void render(Renderer& renderer) override;
     void update_time() override;
 private:
-    std::unique_ptr<TimeBasedStandby> _standby;
-    std::unique_ptr<GpioUtil> _gpio;
+    std::shared_ptr<GpioUtil> _gpio;
+    std::shared_ptr<TimeBasedStandby> _standby;
     struct InactivePageModel {
         std::time_t amp_cooldown_start;
         PAGES last_seen;
