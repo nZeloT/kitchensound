@@ -5,6 +5,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include "kitchensound/input_event.h"
 #include "kitchensound/timeouts.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
@@ -54,22 +55,26 @@ void InactivePage::update() {
     BasePage::update();
 }
 
-void InactivePage::handle_power_key() {
-    _standby->reset_standby_cooldown();
-    if (_bp_model.current_time - _model.amp_cooldown_start >= AMPLIFIER_TIMEOUT)
-        _state.trigger_transition(_page, _model.last_seen);
+void InactivePage::handle_power_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN) {
+        _standby->reset_standby_cooldown();
+        if (_bp_model.current_time - _model.amp_cooldown_start >= AMPLIFIER_TIMEOUT)
+            _state.trigger_transition(_page, _model.last_seen);
+    }
 }
 
 void InactivePage::handle_wheel_input(int delta) {
     _standby->reset_standby_cooldown();
 }
 
-void InactivePage::handle_enter_key() {
-    _standby->reset_standby_cooldown();
+void InactivePage::handle_enter_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN)
+        _standby->reset_standby_cooldown();
 }
 
-void InactivePage::handle_mode_key() {
-    _standby->reset_standby_cooldown();
+void InactivePage::handle_mode_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN)
+        _standby->reset_standby_cooldown();
 }
 
 void InactivePage::update_time() {

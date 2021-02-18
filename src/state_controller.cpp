@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include "kitchensound/sdl_util.h"
+#include "kitchensound/input_event.h"
 
 StateController::StateController()
     : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE},
@@ -94,18 +95,18 @@ void StateController::transition_select_next_page() {
         throw std::runtime_error{"Tried to transition to Loading or unknown!"};
 }
 
-void StateController::react_wheel_input(int delta) {
-    _active_page->handle_wheel_input(delta);
+void StateController::react_wheel_input(InputEvent& inev) {
+    _active_page->handle_wheel_input(inev.value);
 }
 
-void StateController::react_confirm() {
-    _active_page->handle_enter_key();
+void StateController::react_confirm(InputEvent& inev) {
+    _active_page->handle_enter_key(inev);
 }
 
-void StateController::react_power_change() {
-    _active_page->handle_power_key();
+void StateController::react_power_change(InputEvent& inev) {
+    _active_page->handle_power_key(inev);
 }
 
-void StateController::react_menu_change() {
-    _active_page->handle_mode_key();
+void StateController::react_menu_change(InputEvent& inev) {
+    _active_page->handle_mode_key(inev);
 }

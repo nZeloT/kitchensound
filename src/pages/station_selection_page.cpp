@@ -2,7 +2,9 @@
 
 #include <spdlog/spdlog.h>
 
+
 #include "kitchensound/timeouts.h"
+#include "kitchensound/input_event.h"
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/mpd_controller.h"
 #include "kitchensound/state_controller.h"
@@ -56,11 +58,13 @@ void StationSelectionPage::activate_timeout() {
     spdlog::info("StationSelectionPage::activate_timeout(): active");
 }
 
-void StationSelectionPage::handle_enter_key() {
-    _state.trigger_transition(_page, STREAM_PLAYING);
-    _model.confirmed_selection = _sp_model.selected;
-    spdlog::info("StationSelectionPage::handle_enter_key(): Stream {0} selected; transitioning",
-                 _model.confirmed_selection);
+void StationSelectionPage::handle_enter_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN) {
+        _state.trigger_transition(_page, STREAM_PLAYING);
+        _model.confirmed_selection = _sp_model.selected;
+        spdlog::info("StationSelectionPage::handle_enter_key(): Stream {0} selected; transitioning",
+                     _model.confirmed_selection);
+    }
 }
 
 void StationSelectionPage::handle_wheel_input(int delta) {

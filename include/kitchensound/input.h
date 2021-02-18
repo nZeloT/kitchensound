@@ -6,13 +6,14 @@
 #include <string>
 #include <linux/input.h>
 
+struct InputEvent;
 class InputSource {
 public:
-    InputSource(const std::string& device, std::function<void (input_event &)> handler);
+    InputSource(const std::string& device, std::function<void (InputEvent &)> handler);
     ~InputSource();
     void check_and_handle();
 private:
-    std::function<void(input_event&)> _handler;
+    std::function<void(InputEvent&)> _handler;
     int _file_descriptor;
     input_event _ev;
 

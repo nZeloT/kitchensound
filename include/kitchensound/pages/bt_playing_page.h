@@ -25,7 +25,7 @@ public:
 
     void* leave_page(PAGES destination) override;
 
-    void handle_enter_key() override {};
+    void handle_enter_key(InputEvent&) override {};
 
     void render(Renderer& renderer) override;
 

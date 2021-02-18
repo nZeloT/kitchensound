@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include "kitchensound/input_event.h"
 #include "kitchensound/renderer.h"
 #include <kitchensound/os_util.h>
 
@@ -20,8 +21,9 @@ void *OptionsPage::leave_page(PAGES destination) {
     return nullptr;
 }
 
-void OptionsPage::handle_enter_key() {
-    _os->trigger_reboot();
+void OptionsPage::handle_enter_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN)
+        _os->trigger_reboot();
 }
 
 void OptionsPage::handle_wheel_input(int delta) {

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "kitchensound/input_event.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
 
@@ -31,10 +32,12 @@ void BasePage::render_time(Renderer& renderer) const {
     renderer.render_text(160, 15, time.str(), Renderer::SMALL);
 }
 
-void BasePage::handle_power_key() {
-    _state.trigger_transition(_page, INACTIVE);
+void BasePage::handle_power_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN)
+        _state.trigger_transition(_page, INACTIVE);
 }
 
-void BasePage::handle_mode_key() {
-    _state.trigger_transition(_page, MENU_SELECTION);
+void BasePage::handle_mode_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN)
+        _state.trigger_transition(_page, MENU_SELECTION);
 }

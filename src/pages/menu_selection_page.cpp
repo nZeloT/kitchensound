@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include "kitchensound/input_event.h"
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/state_controller.h"
 
@@ -26,10 +27,12 @@ MenuSelectionPage::MenuSelectionPage(StateController& ctrl, ResourceManager& res
 
 MenuSelectionPage::~MenuSelectionPage() = default;
 
-void MenuSelectionPage::handle_enter_key() {
-    auto dest = _sp_model.data[_sp_model.selected].ref_page;
-    _state.trigger_transition(_page, dest);
-    spdlog::info("MenuSelectionPage::handle_enter_key(): transitioning from Mode Selection to {0}", dest);
+void MenuSelectionPage::handle_enter_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN) {
+        auto dest = _sp_model.data[_sp_model.selected].ref_page;
+        _state.trigger_transition(_page, dest);
+        spdlog::info("MenuSelectionPage::handle_enter_key(): transitioning from Mode Selection to {0}", dest);
+    }
 }
 
 void MenuSelectionPage::enter_page(PAGES orig, void* payload) {

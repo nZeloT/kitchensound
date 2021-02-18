@@ -10,21 +10,23 @@ class StateController;
 
 class Renderer;
 
+struct InputEvent;
+
 class BasePage {
 public:
     virtual ~BasePage();
 
     virtual void enter_page(PAGES origin, void *payload) { this->update_time(); };
 
-    virtual void handle_power_key();
+    virtual void handle_power_key(InputEvent&);
 
-    virtual void handle_mode_key();
+    virtual void handle_mode_key(InputEvent&);
 
     virtual void *leave_page(PAGES destination) = 0;
 
     virtual void handle_wheel_input(int delta) = 0;
 
-    virtual void handle_enter_key() = 0;
+    virtual void handle_enter_key(InputEvent&) = 0;
 
     virtual void render(Renderer &renderer) = 0;
 

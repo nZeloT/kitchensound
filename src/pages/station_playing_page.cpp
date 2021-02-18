@@ -1,5 +1,6 @@
 #include "kitchensound/pages/station_playing_page.h"
 
+#include "kitchensound/input_event.h"
 #include "kitchensound/mpd_controller.h"
 #include "kitchensound/render_text.h"
 #include "kitchensound/resource_manager.h"
@@ -35,8 +36,9 @@ void StationPlayingPage::set_meta_text(const std::string &new_meta) {
     }
 }
 
-void StationPlayingPage::handle_enter_key() {
-    _state.trigger_transition(_page, STREAM_SELECTION);
+void StationPlayingPage::handle_enter_key(InputEvent& inev) {
+    if(inev.value == INEV_KEY_DOWN)
+        _state.trigger_transition(_page, STREAM_SELECTION);
 }
 
 void StationPlayingPage::render(Renderer &renderer) {

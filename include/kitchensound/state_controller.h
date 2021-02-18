@@ -8,6 +8,7 @@
 #include "kitchensound/pages/base_page.h"
 
 class Renderer;
+struct InputEvent;
 
 class StateController {
 public:
@@ -25,13 +26,13 @@ public:
 
     void trigger_transition(PAGES origin, PAGES destination);
 
-    void react_wheel_input(int delta);
+    void react_wheel_input(InputEvent&);
 
-    void react_menu_change();
+    void react_menu_change(InputEvent&);
 
-    void react_confirm();
+    void react_confirm(InputEvent&);
 
-    void react_power_change();
+    void react_power_change(InputEvent&);
 
     void delay_next_frame();
 

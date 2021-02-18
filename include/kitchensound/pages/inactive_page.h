@@ -16,9 +16,9 @@ public:
     void* leave_page(PAGES destination) override;
     void update() override;
     void handle_wheel_input(int delta) override;
-    void handle_enter_key() override;
-    void handle_mode_key() override;
-    void handle_power_key() override;
+    void handle_enter_key(InputEvent&) override;
+    void handle_mode_key(InputEvent&) override;
+    void handle_power_key(InputEvent&) override;
     void render(Renderer& renderer) override;
     void update_time() override;
 private:

@@ -42,24 +42,16 @@ int main(int argc, char **argv) {
 
     //4. initialize the input devices
     InputSource wheelAxis{conf.get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto &ev) {
-        state_ctrl.react_wheel_input(ev.value);
+        state_ctrl.react_wheel_input(ev);
     }};
     InputSource enterKey{conf.get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto &ev) {
-        spdlog::info("main(): Enter Key Event -> Event Value {0}", ev.value);
-        if (ev.value == 1) { //key down
-            //handling button ENTER input
-            state_ctrl.react_confirm();
-        }
+        state_ctrl.react_confirm(ev);
     }};
     InputSource menuKey{conf.get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto &ev) {
-        if (ev.value == 1) { //key down
-            state_ctrl.react_menu_change();
-        }
+        state_ctrl.react_menu_change(ev);
     }};
     InputSource powerKey{conf.get_input_device(Configuration::POWER_KEY), [&state_ctrl](auto &ev) {
-        if (ev.value == 1) { //key down
-            state_ctrl.react_power_change();
-        }
+        state_ctrl.react_power_change(ev);
     }};
 
     while (running) {

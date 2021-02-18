@@ -21,7 +21,7 @@ public:
 
     void handle_wheel_input(int delta) override;
 
-    void handle_enter_key() override;
+    void handle_enter_key(InputEvent&) override;
 
     void render(Renderer &renderer) override;
 
