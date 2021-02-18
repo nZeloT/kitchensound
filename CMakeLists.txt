@@ -41,7 +41,8 @@ add_executable(kitchensound src/main.cpp
         src/file_playback.cpp
         src/sdl_util.cpp
         src/gpio_util.cpp
-        src/init_system_conns.cpp)
+        src/init_system_conns.cpp
+        src/os_util.cpp)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})

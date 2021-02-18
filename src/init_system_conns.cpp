@@ -1,10 +1,13 @@
 #include "kitchensound/init_system_conns.h"
 
+#include <ctime>
+
 #include "kitchensound/config.h"
 #include "kitchensound/bt_controller.h"
 #include "kitchensound/file_playback.h"
 #include "kitchensound/gpio_util.h"
 #include "kitchensound/mpd_controller.h"
+#include "kitchensound/os_util.h"
 #include "kitchensound/time_based_standby.h"
 #include "kitchensound/volume.h"
 
@@ -32,6 +35,10 @@ std::shared_ptr<BTController> init_bt_controller(std::shared_ptr<FilePlayback>& 
     return std::make_shared<BTController>(playback);
 }
 
-std::shared_ptr<MPDController> init_mpd_controller(Configuration& conf) {
+std::shared_ptr<MPDController> init_mpd_controller() {
     return std::make_shared<MPDController>();
+}
+
+std::shared_ptr<OsUtil> init_os_util() {
+    return std::make_shared<OsUtil>(std::time(nullptr));
 }

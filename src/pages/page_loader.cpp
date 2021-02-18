@@ -32,6 +32,8 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(
 
     auto mpd_controller = init_mpd_controller();
 
+    auto os_util = init_os_util();
+
     pages.emplace(INACTIVE, std::make_unique<InactivePage>(ctrl, standby, gpio));
     pages.emplace(LOADING, std::make_unique<LoadingPage>(ctrl));
     pages.emplace(MENU_SELECTION, std::make_unique<MenuSelectionPage>(ctrl, res));
@@ -40,7 +42,7 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(
     pages.emplace(STREAM_SELECTION, std::move(stream_sel));
     pages.emplace(STREAM_PLAYING, std::make_unique<StationPlayingPage>(ctrl, res, volume, mpd_controller, station));
     pages.emplace(BT_PLAYING, std::make_unique<BluetoothPlayingPage>(ctrl, res, volume, bt_controller));
-    pages.emplace(OPTIONS, std::make_unique<OptionsPage>(ctrl));
+    pages.emplace(OPTIONS, std::make_unique<OptionsPage>(ctrl, os_util));
 
     return pages;
 }

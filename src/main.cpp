@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
         state_ctrl.react_wheel_input(ev.value);
     }};
     InputSource enterKey{conf.get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto &ev) {
+        spdlog::info("main(): Enter Key Event -> Event Value {0}", ev.value);
         if (ev.value == 1) { //key down
             //handling button ENTER input
             state_ctrl.react_confirm();

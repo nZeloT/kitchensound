@@ -12,12 +12,13 @@
 FilePlayback::FilePlayback(const std::string &pcm_device, const std::string &res_path)
         : _use_volumedev{nullptr}, _alsa_driver_id{-1}, _buffer{nullptr}, _buffer_size{0},
           _mpg_handle{nullptr} {
-    _absolute_res_root = std::filesystem::absolute(res_path);
+    _absolute_res_root = std::filesystem::canonical(res_path);
     ao_initialize();
     _alsa_driver_id = ao_driver_id("alsa");
     _use_volumedev = reinterpret_cast<ao_option *>(malloc(sizeof(ao_option)));
     _use_volumedev->key = (char *) "dev";
     _use_volumedev->value = strdup(pcm_device.c_str());
+    _use_volumedev->next = nullptr;
     mpg123_init();
     int err;
     _mpg_handle = mpg123_new(nullptr, &err);
@@ -35,9 +36,8 @@ FilePlayback::~FilePlayback() {
 }
 
 void FilePlayback::playback(std::string const &file_name) {
-    spdlog::info("playback_file(): trying to playback `{0}`", file_name);
-
-    auto path = std::filesystem::path{_absolute_res_root}.concat("sound/").concat(file_name);
+    auto path = std::filesystem::path{_absolute_res_root}.concat("/sound/").concat(file_name);
+    spdlog::info("playback_file(): trying to playback `{0}`", path.string());
     if (mpg123_open(_mpg_handle, path.c_str()) != MPG123_OK) {
         spdlog::error("playback_file(): {0}", mpg123_strerror(_mpg_handle));
         return;
