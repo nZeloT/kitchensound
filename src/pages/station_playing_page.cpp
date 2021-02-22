@@ -31,7 +31,7 @@ StationPlayingPage::~StationPlayingPage() = default;
 
 void StationPlayingPage::handle_enter_key(InputEvent& inev) {
     PlayingPage::handle_enter_key(inev);
-    if(inev.value == INEV_KEY_UP)
+    if(inev.value == INEV_KEY_SHORT)
         _state.trigger_transition(_page, STREAM_SELECTION);
 }
 

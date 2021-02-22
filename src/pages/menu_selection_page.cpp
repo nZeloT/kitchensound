@@ -28,7 +28,7 @@ void MenuSelectionPage::get_image(const MenuModel &m, void ** image_data_ptr) {
 }
 
 void MenuSelectionPage::handle_enter_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN) {
+    if(inev.value == INEV_KEY_SHORT) {
         auto dest = _sp_model.data[_sp_model.selected].ref_page;
         _state.trigger_transition(_page, dest);
         spdlog::info("MenuSelectionPage::handle_enter_key(): transitioning from Mode Selection to {0}", dest);

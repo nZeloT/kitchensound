@@ -58,7 +58,7 @@ void InactivePage::update() {
 }
 
 void InactivePage::handle_power_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN) {
+    if(inev.value == INEV_KEY_SHORT) {
         _standby->reset_standby_cooldown();
         if (_bp_model.current_time - _model.amp_cooldown_start >= AMPLIFIER_TIMEOUT)
             _state.trigger_transition(_page, _model.last_seen);
@@ -70,12 +70,12 @@ void InactivePage::handle_wheel_input(int delta) {
 }
 
 void InactivePage::handle_enter_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN)
+    if(inev.value == INEV_KEY_SHORT)
         _standby->reset_standby_cooldown();
 }
 
 void InactivePage::handle_mode_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN)
+    if(inev.value == INEV_KEY_SHORT)
         _standby->reset_standby_cooldown();
 }
 

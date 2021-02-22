@@ -66,7 +66,7 @@ void StationSelectionPage::activate_timeout() {
 }
 
 void StationSelectionPage::handle_enter_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_UP) {
+    if(inev.value == INEV_KEY_SHORT) {
         _state.trigger_transition(_page, STREAM_PLAYING);
         _model.confirmed_selection = _sp_model.selected;
         spdlog::info("StationSelectionPage::handle_enter_key(): Stream {0} selected; transitioning",

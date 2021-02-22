@@ -39,7 +39,7 @@ void OptionsPage::update_time() {
 }
 
 void OptionsPage::handle_enter_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN){
+    if(inev.value == INEV_KEY_SHORT){
         if(_model.selection_idx == 3)
             _os->trigger_shutdown();
         else if(_model.selection_idx == 4)

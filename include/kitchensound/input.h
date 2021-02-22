@@ -13,12 +13,13 @@ public:
     ~InputSource();
     void check_and_handle();
 private:
+    void reset();
+
     std::function<void(InputEvent&)> _handler;
     int _file_descriptor;
     input_event _ev;
 
     bool _released;
-    bool _long_press_sent;
     int _calls_since_press;
 };
 

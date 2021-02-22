@@ -33,11 +33,11 @@ void BasePage::render_time(Renderer& renderer) const {
 }
 
 void BasePage::handle_power_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN)
+    if(inev.value == INEV_KEY_SHORT)
         _state.trigger_transition(_page, INACTIVE);
 }
 
 void BasePage::handle_mode_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN)
+    if(inev.value == INEV_KEY_SHORT)
         _state.trigger_transition(_page, MENU_SELECTION);
 }
