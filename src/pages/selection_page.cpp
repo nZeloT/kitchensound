@@ -13,12 +13,13 @@
 
 
 template<class T>
-SelectionPage<T>::SelectionPage(PAGES page, StateController& ctrl, ResourceManager& res, std::vector<T> data,
-                                std::function<void *(ResourceManager&, const T&)> get_img,
-                                std::function<std::string(const T&)> get_text)
-    : BasePage(page, ctrl), _res(res), _sp_model{}, _get_img{std::move(get_img)}, _get_text{std::move(get_text)} {
+SelectionPage<T>::SelectionPage(PAGES page, StateController& ctrl, ResourceManager& res,
+                                std::vector<T> data)
+    : BasePage(page, ctrl), _res(res), _sp_model{}{
     _sp_model.data = std::move(data);
     _sp_model.limit = _sp_model.data.size();
+    for(auto& e : _sp_model.data)
+        _sp_model.img_data.push_back(nullptr);
 }
 
 template<class T>
@@ -29,6 +30,13 @@ void SelectionPage<T>::handle_wheel_input(int delta) {
     _sp_model.selected += delta;
     if (_sp_model.selected < 0) _sp_model.selected += _sp_model.data.size();
     _sp_model.selected %= _sp_model.limit;
+}
+
+template <class T>
+void SelectionPage<T>::load_images() {
+    for(int i = 0; i < _sp_model.limit; i++){
+        get_image(_sp_model.data[i], &_sp_model.img_data[i]);
+    }
 }
 
 template<class T>
@@ -50,12 +58,12 @@ void SelectionPage<T>::render(Renderer& renderer) {
         }
 
         //2. render the artwork
-        void* image_ptr = _get_img(_res, element);
-        auto image = reinterpret_cast<SDL_Surface*>(image_ptr);
-        renderer.render_image(image, offsetX - 24, offsetY - 24, 48, 48);
+        auto image = _sp_model.img_data[i];
+        if(image != nullptr)
+            renderer.render_image(image, offsetX - 24, offsetY - 24, 48, 48);
 
         //3. render the element name
-        auto text = _get_text(element);
+        auto text = get_text(element);
         renderer.render_text(offsetX, offsetY+35, text, Renderer::SMALL);
     }
 

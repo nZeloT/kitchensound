@@ -15,7 +15,9 @@
 InactivePage::InactivePage(StateController& ctrl, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio)
     : BasePage(INACTIVE, ctrl), _model{-1, MENU_SELECTION, false},
     _standby{standby}, _gpio{gpio}
-    {}
+    {
+        standby->arm();
+    }
 
 InactivePage::~InactivePage() = default;
 

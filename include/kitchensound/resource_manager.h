@@ -6,6 +6,7 @@
 #include <map>
 #include <queue>
 #include <filesystem>
+#include <functional>
 
 class CacheManager;
 class ResourceManager {
@@ -13,7 +14,7 @@ public:
     ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root);
     ~ResourceManager();
     void* get_static(std::string const& name) { return get(_static, name)->data; };
-    void* get_cached(std::string const& identifier);
+    void get_cached(std::string const& identifier, std::function<void(std::string const&, void*)>);
 
 private:
     friend CacheManager;
@@ -34,6 +35,7 @@ private:
         ResourceState state;
         long last_state_upd;
         void* data;
+        std::function<void(std::string const&, void*)> cb;
     };
 
     static const Resource * get(std::map<std::string, Resource> const& m, std::string const& s);
@@ -41,8 +43,8 @@ private:
     void load_image(std::string const& identifier, std::string const& path, bool is_static = true);
     void load_font(std::string const& identifier, std::string const& path, int size, bool is_static = true);
 
-    void try_load_cached(std::string const& identifier);
-    void retry_load_cached(std::string const& identifier);
+    void try_load_cached(std::string const& identifier, std::function<void(std::string const&, void*)>);
+    void retry_load_cached(std::string const& identifier, std::function<void(std::string const&, void*)>);
     void cache_load_failed(std::string const& identifier);
     void cache_load_success(std::string const& identifier, void* data);
 
@@ -56,6 +58,8 @@ private:
 
     std::filesystem::path _res_root;
     std::filesystem::path _cache_root;
+
+    std::function<void(std::string const&, void*)> _empty_cb;
 
     std::unique_ptr<CacheManager> _cache;
 };

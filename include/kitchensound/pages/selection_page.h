@@ -18,21 +18,25 @@ public:
 
 protected:
     SelectionPage(PAGES page, StateController& ctrl,
-                  ResourceManager& res, std::vector<T> data,
-                  std::function<void *(ResourceManager& res, const T& elem)> get_img,
-                  std::function<std::string(const T& elem)> get_text);
+                  ResourceManager& res,
+                  std::vector<T> data);
     ~SelectionPage() override;
+
+    void load_images();
+
+    virtual std::string get_text(const T&) = 0;
+    virtual void get_image(const T&, void**) = 0;
+
     ResourceManager& _res;
 
     struct SelectionPageModel {
-        int offset;
-        int selected;
-        int limit;
+        int offset{};
+        int selected{};
+        int limit{};
 
         std::vector<T> data;
+        std::vector<void*> img_data;
     } _sp_model;
-    std::function<void *(ResourceManager& res, const T& elem)> _get_img;
-    std::function<std::string(const T& elem)> _get_text;
 };
 
 #endif //KITCHENSOUND_SELECTION_PAGE_H

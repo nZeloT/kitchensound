@@ -11,6 +11,10 @@ public:
     void handle_enter_key(InputEvent&) override;
     void enter_page(PAGES orig, void* payload) override;
     void* leave_page(PAGES dest) override;
+
+private:
+    std::string get_text(const MenuModel&) override;
+    void get_image(const MenuModel&, void**) override;
 };
 
 #endif //KITCHENSOUND_MENU_SELECTION_PAGE_H

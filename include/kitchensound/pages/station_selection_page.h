@@ -28,6 +28,9 @@ public:
     RadioStationStream *get_selected_stream();
 
 private:
+    std::string get_text(const RadioStationStream&) override;
+    void get_image(const RadioStationStream&, void**) override;
+
     void activate_timeout();
 
     std::shared_ptr<MPDController> _mpd;

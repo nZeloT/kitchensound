@@ -14,17 +14,10 @@
 StationSelectionPage::StationSelectionPage(StateController& ctrl, ResourceManager& res,
                                            std::shared_ptr<MPDController>& mpd,
                                            std::vector<RadioStationStream> streams) :
-        SelectionPage<RadioStationStream>(STREAM_SELECTION, ctrl, res, std::move(streams),
-                                          [](ResourceManager& r, const RadioStationStream& s) {
-                                              void* image_ptr = r.get_cached(s.image_url);
-                                              if(image_ptr == nullptr)
-                                                  image_ptr = r.get_static(RADIO_IMAGE);
-                                              return image_ptr;
-                                          },
-                                          [](const RadioStationStream& s) {
-                                              return s.name;
-                                          }), _mpd{mpd},
-                                          _model{} {};
+        SelectionPage<RadioStationStream>(STREAM_SELECTION, ctrl, res, std::move(streams)), _mpd{mpd},
+                                          _model{} {
+    load_images();
+};
 
 StationSelectionPage::~StationSelectionPage() = default;
 
@@ -34,6 +27,7 @@ void StationSelectionPage::enter_page(PAGES origin, void* payload)  {
     _model.remaining_time = -1;
     if(origin == STREAM_PLAYING)
         activate_timeout();
+    load_images();
 }
 
 void* StationSelectionPage::leave_page(PAGES destination)  {
@@ -52,6 +46,19 @@ RadioStationStream* StationSelectionPage::get_selected_stream() {
     return & _sp_model.data[_model.confirmed_selection];
 }
 
+std::string StationSelectionPage::get_text(const RadioStationStream &s) {
+    return s.name;
+}
+
+void StationSelectionPage::get_image(const RadioStationStream &s, void ** img_data_ptr) {
+    _res.get_cached(s.image_url, [this, img_data_ptr](auto s, void* img){
+        if(img == nullptr)
+            *img_data_ptr = _res.get_static(RADIO_IMAGE);
+        else
+            *img_data_ptr = img;
+    });
+}
+
 void StationSelectionPage::activate_timeout() {
     _model.times_out = true;
     _model.remaining_time = BROWSING_TIMEOUT;
@@ -59,7 +66,7 @@ void StationSelectionPage::activate_timeout() {
 }
 
 void StationSelectionPage::handle_enter_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_DOWN) {
+    if(inev.value == INEV_KEY_UP) {
         _state.trigger_transition(_page, STREAM_PLAYING);
         _model.confirmed_selection = _sp_model.selected;
         spdlog::info("StationSelectionPage::handle_enter_key(): Stream {0} selected; transitioning",

@@ -37,12 +37,14 @@ add_executable(kitchensound src/main.cpp
         src/pages/loading_page.cpp
         src/pages/inactive_page.cpp
         src/pages/page_loader.cpp
+        src/pages/playing_page.cpp
         src/version.cpp
         src/file_playback.cpp
         src/sdl_util.cpp
         src/gpio_util.cpp
         src/init_system_conns.cpp
-        src/os_util.cpp)
+        src/os_util.cpp
+        )
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})

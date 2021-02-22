@@ -14,7 +14,7 @@
 #include "kitchensound/cache_manager.h"
 
 ResourceManager::ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root)
- : _cache(), _res_root{std::move(res_root)}, _cache_root{std::move(cache_root)} {
+ : _cache(), _res_root{std::move(res_root)}, _cache_root{std::move(cache_root)}, _empty_cb{[](auto s, auto p){}} {
     load_all_static();
 }
 
@@ -36,6 +36,7 @@ void ResourceManager::load_all_static() {
     load_image("img/arrow_right.png", _res_root.string() + "img/arrow_right.png");
     load_image("img/bluetooth.png",  _res_root.string() +"img/bluetooth.png");
     load_image("img/gears.png", _res_root.string() + "img/gears.png");
+    load_image("img/favorite.png", _res_root.string() + "img/favorite.png");
 
     load_font("SMALL", _res_root.string() + "font/DroidSans.ttf", 18);
     load_font("LARGE", _res_root.string() + "font/DroidSans.ttf", 24);
@@ -88,10 +89,10 @@ void ResourceManager::load_image(const std::string &identifier, const std::strin
 
     if (is_static)
         _static.emplace(std::string{identifier},
-                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image)});
+                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image), _empty_cb});
     else
         _cached.emplace(std::string{identifier},
-                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image)});
+                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image), _empty_cb});
 }
 
 void ResourceManager::load_font(const std::string &identifier, const std::string &path, int size, bool is_static) {
@@ -103,41 +104,44 @@ void ResourceManager::load_font(const std::string &identifier, const std::string
 
     if (is_static)
         _static.emplace(std::string{identifier},
-                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font)});
+                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font), _empty_cb});
     else
         _cached.emplace(std::string{identifier},
-                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font)});
+                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font), _empty_cb});
 }
 
-void *ResourceManager::get_cached(const std::string &identifier) {
+void ResourceManager::get_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
     auto _id = std::string{identifier};
-    if(_id.empty())
-        return nullptr;
+    if(_id.empty()){
+        image_cb(_id, nullptr);
+        return;
+    }
 
     auto loaded = get(_cached, _id);
     if (loaded == nullptr) {
         //not found means it isn't even scheduled for loading
-        try_load_cached(_id);
-        return nullptr;
+        try_load_cached(_id, std::move(image_cb));
+        return;
     }
 
     if(loaded->state == FAILED && std::time(nullptr) - loaded->last_state_upd > 80000) {
         //retry fetching the resource
-        retry_load_cached(_id);
+        retry_load_cached(_id, std::move(image_cb));
+        return;
     }
 
-    return loaded->data;
+    image_cb(_id, loaded->data);
 }
 
-void ResourceManager::try_load_cached(const std::string &identifier) {
+void ResourceManager::try_load_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
     if(!_cache)
         _cache = std::make_unique<CacheManager>(*this, _cache_root);
     spdlog::info("ResourceManager::try_load_cached(): Try loading `{}`", identifier);
-    _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr});
+    _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr, .cb = std::move(image_cb)});
     _cache->schedule_for_fetch(std::string{identifier});
 }
 
-void ResourceManager::retry_load_cached(const std::string &identifier) {
+void ResourceManager::retry_load_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
     auto r = _cached.find(identifier);
     if (r == std::end(_cached))
         return;
@@ -145,6 +149,7 @@ void ResourceManager::retry_load_cached(const std::string &identifier) {
     spdlog::info("ResourceManager::retry_load_cached(): retry loading `{}`", id);
     r->second.state = SHEDULED;
     r->second.last_state_upd = std::time(nullptr);
+    r->second.cb = std::move(image_cb);
     _cache->schedule_for_fetch(id);
 }
 
@@ -155,6 +160,8 @@ void ResourceManager::cache_load_failed(const std::string &identifier) {
 
     r->second.state = FAILED;
     r->second.last_state_upd = std::time(nullptr);
+    r->second.cb(identifier, nullptr);
+    r->second.cb = _empty_cb;
 }
 
 void ResourceManager::cache_load_success(const std::string &identifier, void *data) {
@@ -165,4 +172,6 @@ void ResourceManager::cache_load_success(const std::string &identifier, void *da
     r->second.state = LOADED;
     r->second.last_state_upd = std::time(nullptr);
     r->second.data = data;
+    r->second.cb(identifier, data);
+    r->second.cb = _empty_cb;
 }

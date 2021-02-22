@@ -13,19 +13,19 @@ const std::vector<MenuModel> MENUS = {
 };
 
 MenuSelectionPage::MenuSelectionPage(StateController& ctrl, ResourceManager& res)
-        : SelectionPage<MenuModel>(MENU_SELECTION, ctrl, res, MENUS,
-                                   [](ResourceManager& r, const MenuModel &m) {
-                                       void *image_ptr = r.get_static(m.static_image);
-                                       if (image_ptr == nullptr)
-                                           throw std::runtime_error{
-                                                   "MenuSelectionPage::C-Tor(): Failed to load static image!"};
-                                       return image_ptr;
-                                   },
-                                   [](const MenuModel &m) {
-                                       return m.name;
-                                   }) {}
+        : SelectionPage<MenuModel>(MENU_SELECTION, ctrl, res, MENUS) {
+    load_images();
+}
 
 MenuSelectionPage::~MenuSelectionPage() = default;
+
+std::string MenuSelectionPage::get_text(const MenuModel &m) {
+    return m.name;
+}
+
+void MenuSelectionPage::get_image(const MenuModel &m, void ** image_data_ptr) {
+    *image_data_ptr = _res.get_static(m.static_image);
+}
 
 void MenuSelectionPage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_DOWN) {
