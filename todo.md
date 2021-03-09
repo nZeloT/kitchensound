@@ -1,17 +1,17 @@
 # TODO
+0. Kitchensound
+   - add option to display Error messages / last log output
+   - check for cross-build size
+   - refactor threading away by handling everything non-blocking sequentially
+   - add a new time helper class to get rid of all the manual timers 
+     sometimes counting seconds, sometimes iterations
 1. Alsa
     - Add equalizer to alsa configuration
     - http://www.gerrelt.nl/RaspberryPi/wordpress/equalizer/
     - https://www.hifiberry.com/docs/software/guide-adding-equalization-using-alsaeq/
 2. Resilience
     - add WiFi auto reconnect
-    - add option for manual shutdown
-    - add option to display Error messages
-3. Display
-    - implement Bluelight Filter during night hours
-4. Other
-    - measures to speedup boot and reduce power consumption: https://github.com/megatron-uk/sdlRFController
-    - make the sd card readonly; only useful with buildroot: https://learn.adafruit.com/read-only-raspberry-pi/
+5. Other
     - maybe use buildroot to setup a minimal image https://buildroot.org/
 
 ## Internet Radio

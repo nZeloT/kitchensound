@@ -12,6 +12,7 @@
 9. update the repositories using ``sudo apt update``
 
 ### 2. Install Dependencies
+- MPD >= 0.22 (self compiling is recommended)
 - SDL2 >= 2.0.12 (self compiling is recommended, as the debian package also installs the x-server which is unnecessary)
 - SDL_ttf >= 2.0.15 (self compiling is needed when self compiling SDL2)
 - SDL_image >= 2.0.5 (self compiling is needed when self compiling SDL2)
@@ -21,16 +22,73 @@
 - libasound (from repo, stable, currently 1.1.8)
 - libao (from repo, stable, currently 1.2.2)
 - libmpg123 (from repo, stable, currently 1.25)
-- libcurlpp (from repo, stable, currentl 0.8.1)
+- libcurlpp (from repo, stable, currently 0.8.1)
 - libspdlog (from repo, stable, currently 1.3.1)
 - libgpiod (from repo, stable, currently 1.2)
 
-1. to install recomended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev libao-dev libmpg123-dev libcurlpp-dev libspdlog-dev libgpiod-dev``
-2. install the development base packages to compile SDL, it's plugins and sdbus-c++
-3. download the appropriate source files, compile and install the libs
+1. to install recomended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev 
+   libao-dev libmpg123-dev libcurlpp-dev libspdlog-dev libgpiod-dev``
+2. install the development base packages to compile MPD, SDL2, it's plugins and sdbus-c++
 
 
-## 3. Systemd Configuration
+## 3. Compiling required dependencies
+#### MPD
+1. download and extract MPD source tarball
+2. download and extract boost source tarball
+3. from the repos install ``meson ninja-build libflac-dev libvorbis-dev libopus-dev libogg-dev
+   libaudiofile-dev libsndfile1-dev libfaad-dev libsamplerate0-dev libcurl4-gnutls-dev libasound2-dev
+   libsystemd-dev libicu-dev``
+4. define `BOOST_ROOT` and `BOOST_INCLUDEDIR` accordingly
+5. manipulate the `src/lib/alsa/meson.build`, `src/lib/curl/meson.build` to include `boost_dep`
+   as static library dependency
+6. invoke meson using ``meson . build/release --buildtype=release``
+7. configure the setup with ``meson configure build/release/ -Dzzip=disabled -Dzlib=disabled -Dzeroconf=disabled -Dyajl=disabled
+   -Dwildmidi=disabled -Dwebdav=disabled -Dwavpack=disabled -Dwave_encoder=false -Dvorbisenc=disabled -Dupnp=disabled -Dudisks=disabl
+   ed -Dtwolame=disabled -Dtrmor=disabled -Dtidal=disabled -Dsqlite=disabled -Dsoxr=disabled -Dsoundcloud=disabled -Dsola
+   ris_output=disabled -Dsndio=disabled -Dsidplay=disabled -Dshout=disabled -Dshine=disabled -Drecorder=false -Dqobuz=disabled -Dpuls
+   e=disabled -Dpipe=false -Doss=disabled -Dopenal=disabled -Dnfs=disabled -Dneighbor=false -Dmpcdec=disabled -Dmodplug=disabled -Dmm
+   s=disabled -Dmikmod=disabled -Dlibmpdclient=disabled -Dlame=disabled -Djack=disabled -Diso9660=disabled -Dinotify=false -Dhttpd=fa
+   lse -Dhtml_manual=false -Dgme=disabled -Dfluidsynth=disabled -Dfifo=false -Ddsd=false -Ddocumentation=disabled -Dexpat=disabled -D
+   database=false -Dcdio_paranoia=disabled -Dbzip2=disabled -Dao=disabled -Dadplug=disabled -Dcue=false -Dchromaprint=disabled``
+8. start building with ``ninja -C build/release``
+9. test the mpd build by starting it and using mpc to control it
+10. install using ``ninja -C build/release install``
+11. remove the now unnecessary header files for the previously installed libraries
+12. delete the extracted boost files
+13. delete the extracted MPD sources
+
+### SDL2
+1. download the current SDL2 tarball and extract it
+2. configure with ``--disable-atomic --disable-audio --disable-events --disable-joystick --disable-haptic 
+   --disable-sensor --disable-power --disable-filesystem --disable-threads --disable-timers --disable-oss 
+   --disable-alsa --disable-alsa-shared --disable-jack --disable-jack-shared --disable-esd --disable-esd-shared 
+   --disable-pipewire --disable-pipewire-shared --disable-pulseaudio --disable-pulseaudio-shared --disable-arts 
+   --disable-arts-shared --disable-nas --disable-nas-shared --disable-sndio --disable-sndio-shared --disable-fusionsound 
+   --disable-fusionsound-shared --disable-diskaudio --disable-dummyaudio --disable-libsamplerate 
+   --disable-libsamplerate-shared --disable-video-wayland --disable-wayland-qt-touch --disable-wayland-shared 
+   --disable-video-x11 --disable-x11-shared --disable-video-x11-xcursor --disable-video-x11-xdbe 
+   --disable-video-x11-xinerama --disable-video-x11-xinput --disable-video-x11-xrandr 
+   --disable-video-x11-scrnsaver --disable-video-x11-xshape --disable-video-x11-vm --disable-video-vivante 
+   --disable-video-cocoa --disable-video-metal --disable-video-directfb --disable-directfb-shared 
+   --disable-video-ksmdrm --disable-ksmdrm-shared --disable-video-dummy --disable-dbus --disable-ime --disable-ibus 
+   --disable-fcitx --disable-joystick-mfi --disable-pthreads --disable-pthread-sem --disable-xinput --disable-wasapi 
+   --disable-sdl-dlopen --disable-hidapi --disable-hidapi-liusb --disable-joystick-virtual``
+3. build and install sdl using make
+4. remove the downloaded tarball and extracted files
+
+#### SDL_image, SDL_ttf
+1. no special instructions, follow their guide
+2. delete tarball and extracted files after installing
+
+#### sdbus-c++
+1. no special instructions, follow their guide
+2. delete tarball and extracted files after installing
+
+## 3a Setup cross compilation for faster kitchensound compile speed (only needed when actively developing)
+1. follow the instructions [here](https://github.com/Pro/raspi-toolchain/)
+2. use the provided cross build script
+
+## 4. Systemd Configuration
 - to setup systemd autolaunch on boot and auto restart service use the following commands to copy the provided systemd service configuration
 - ``sudo cp ./res/systemd/_kitchensound.servcie /lib/systemd/system/kitchensound.service``
 - ``sudo chmod 644 /lib/systemd/system/kitchensound.service``
@@ -38,7 +96,7 @@
 - ``sudo systemctl enable kitchensound.service``
 - ``sudo reboot``
 
-## 4. Alsa Configuration
+## 5. Alsa Configuration
 This explanatory example demonstrates the alsa configuration setup with an additional softvol device
 to allow for volume control (also see the [doc](https://alsa.opensrc.org/Softvol))
 ````
@@ -56,7 +114,7 @@ pcm.volumedev {
 }
 ````
 
-## 5. MPD Configuration
+## 6. MPD Configuration
 Explanatory example of minimal mpd configuration specifically to only load the necessary plugins for playing network streams.
 Also refer to the official doc [here](https://www.musicpd.org/doc/html/user.html#configuring-audio-outputs) and 
 [here](https://www.musicpd.org/doc/html/plugins.html#output-plugins).
@@ -86,18 +144,18 @@ audio_output {
 }
 ```
 
-## 6. Bluetooth - Audio + Metadata
+## 7. Bluetooth - Audio + Metadata
 - BT Audio Setup Skript: https://github.com/nicokaiser/rpi-audio-receiver/blob/master/install-bluetooth.sh
 - https://github.com/Arkq/bluez-alsa
 - adjust ``bluealsa-aplay.service`` such that ``bluealsa-aplay``  is called with ``-d volumedev``
 - Sounds: run the ``res/sound/sound_fetcher.sh`` script to download the bluetooth sounds I use from [Zapsplat](https://zapsplat.com)
 
-## 7. DBus
+## 8. DBus
 - Um per DBus auf die BT Infos zuzugreifen, kann man die Anwendung etweder als root launchen oder dem user "pi" erlauben die DBus destination "org.bluez" zu callen
 - für Option zwei das File ``./res/dbus/_...`` nach ``/usr/share/dbus-1/system.d/`` kopieren
 - dbus introspection/analysis is best done with ``busctl``
 
-## 8. PolKit
+## 9. PolKit
 - to enable system reboot and shutdown without manual ssh login and running the software as root (using sudo) a local exception is needed
 - therefore use the following excerpt (also found in ``res/polkit``:
 ```
@@ -108,24 +166,24 @@ ResultAny=yes
 ```
 - the excerpt is a combination of [StackOverflow Solutions](https://askubuntu.com/questions/493627/power-button-shutdown-permission-override) and official documentation [Doc](https://www.freedesktop.org/software/polkit/docs/0.105/pklocalauthority.8.html)
 
-## 9. GPIO
+## 10. GPIO
 - to enable gpio access to the software without launching it as root add the user to the ``gpio`` group by calling ``sudo usermod -a -G gpio <myuser>``
 
-## 10. pHAT DAC
+## 11. pHAT DAC
 - https://pinout.xyz/pinout/phat_dac# + I use the ground pin on the lower left
 - https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/
 
-## 11. Joy-IT Rotary Encoder
+## 12. Joy-IT Rotary Encoder
 - Mit DToverlay, geht auch analog für buttons
 - https://blog.ploetzli.ch/2018/ky-040-rotary-encoder-linux-raspberry-pi/
 - Dann kann man mit open(“/dev/input/event0”, O_READONLY | O_NONBLOCKING) nen file descriptor bekommen das read() wird damit non-blocking, falls was gelesen werden kann wird eine input_event structure gefüllt
 
-## 12. MX Cherry Red Keys
+## 13. MX Cherry Red Keys
 - Mit DTOverlay kann jeder button wie eine normale Tastatur Taste angebunden werden
 - Da die GPIO pins schon pull up /down wiederstände haben kann man die direkt anschließen
 - Analog zum Rot Enc. kann man die als nonblocking readonly devices öffnen das value Attribute der input_event struct wird dabei 0 = Release, 1 = press, 2 = autorepeat
 
-## 13. Display
+## 14. Display
 - display driver and manual overlay + fbcp: https://github.com/notro/fbtft/wiki/FBTFT-RPI-overlays
 - https://github.com/tasanakorn/rpi-fbcp
 - https://github.com/philenotfound/rpi_elecfreaks_22_tft_dt_overlay

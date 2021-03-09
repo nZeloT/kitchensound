@@ -5,14 +5,15 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-find_package(spdlog REQUIRED)
 
-find_package(SDL2 REQUIRED)
+find_path(LOCAL_INCLUDES NAMES libconfig.h++ HINTS /usr/local/include REQUIRED)
+message(STATUS "LOCAL_INCLUDES => ${LOCAL_INCLUDES}")
 
-find_package(sdbus-c++ REQUIRED)
+find_path(SDL2_INCLUDE NAMES SDL.h HINTS /usr/local/include/SDL2 REQUIRED)
+message(STATUS "SDL2_INCLUDE => ${SDL2_INCLUDE}")
 
-include(FindPkgConfig)
-pkg_check_modules(ALSA REQUIRED alsa)
+find_path(CURL_INCLUDE NAMES curl/curl.h HINTS /usr/include/arm-linux-gnueabihf REQUIRED)
+message(STATUS "CURL_INCLUDE => ${CURL_INCLUDE}")
 
 add_executable(kitchensound src/main.cpp
         src/renderer.cpp
@@ -47,10 +48,11 @@ add_executable(kitchensound src/main.cpp
         )
 
 target_include_directories(kitchensound PUBLIC include)
-target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE_DIRS})
-target_include_directories(kitchensound PUBLIC ${ALSA_INCLUDE_DIRS})
+target_include_directories(kitchensound PUBLIC ${LOCAL_INCLUDES})
+target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE})
+target_include_directories(kitchensound PUBLIC ${CURL_INCLUDE})
 target_link_libraries(kitchensound stdc++fs)
-target_link_libraries(kitchensound ${SDL2_LIBRARIES})
+target_link_libraries(kitchensound SDL2)
 target_link_libraries(kitchensound SDL2_ttf)
 target_link_libraries(kitchensound SDL2_image)
 target_link_libraries(kitchensound ao)
@@ -58,9 +60,8 @@ target_link_libraries(kitchensound mpg123)
 target_link_libraries(kitchensound config++)
 target_link_libraries(kitchensound mpdclient)
 target_link_libraries(kitchensound Threads::Threads)
-target_link_libraries(kitchensound SDBusCpp::sdbus-c++)
-target_link_libraries(kitchensound ${ALSA_LIBRARIES})
+target_link_libraries(kitchensound sdbus-c++)
+target_link_libraries(kitchensound asound)
 target_link_libraries(kitchensound curlpp)
 target_link_libraries(kitchensound curl)
-target_link_libraries(kitchensound spdlog::spdlog)
 target_link_libraries(kitchensound gpiod)
