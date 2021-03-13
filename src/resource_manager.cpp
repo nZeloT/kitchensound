@@ -62,7 +62,7 @@ void ResourceManager::unload_all() {
 void *ResourceManager::load_image_raw(const std::string &path) {
     auto image = IMG_Load(path.c_str());
     if (image == nullptr)
-        spdlog::warn("ResourceManager::load_image_raw(): IMG_Load(): {0}", SDL_GetError());
+        SPDLOG_WARN("Failed to load image -> {0}", SDL_GetError());
     return reinterpret_cast<void *>(image);
 }
 
@@ -72,7 +72,7 @@ void *ResourceManager::load_font_raw(const std::string &path, int size) {
 
     auto font = TTF_OpenFont(path.c_str(), size);
     if (font == nullptr) {
-        spdlog::warn("ResourceManager::load_font_raw(): TTF_OpenFont(): {0}", SDL_GetError());
+        SPDLOG_WARN("Font loading error -> {0}", SDL_GetError());
     } else {
         TTF_SetFontKerning(font, SDL_ENABLE);
     }
@@ -83,8 +83,7 @@ void *ResourceManager::load_font_raw(const std::string &path, int size) {
 void ResourceManager::load_image(const std::string &identifier, const std::string &path, bool is_static) {
     auto image = load_image_raw(path);
     if (image == nullptr) {
-        spdlog::error("ResourceManager::load_image(): Failed to load static image; Quitting!", SDL_GetError());
-        throw std::runtime_error("Error loading radio image!");
+        throw std::runtime_error("Failed to load static image! -> " + path);
     }
 
     if (is_static)
@@ -98,8 +97,7 @@ void ResourceManager::load_image(const std::string &identifier, const std::strin
 void ResourceManager::load_font(const std::string &identifier, const std::string &path, int size, bool is_static) {
     auto font = load_font_raw(path, size);
     if (font == nullptr) {
-        spdlog::error("ResourceManager::load_font(): Failed to load static font!", SDL_GetError());
-        throw std::runtime_error("Error loading font");
+        throw std::runtime_error("Failed to load static font! -> " + path);
     }
 
     if (is_static)
@@ -136,7 +134,7 @@ void ResourceManager::get_cached(const std::string &identifier, std::function<vo
 void ResourceManager::try_load_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
     if(!_cache)
         _cache = std::make_unique<CacheManager>(*this, _cache_root);
-    spdlog::info("ResourceManager::try_load_cached(): Try loading `{}`", identifier);
+    SPDLOG_INFO("Try loading -> {0}", identifier);
     _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr, .cb = std::move(image_cb)});
     _cache->schedule_for_fetch(std::string{identifier});
 }
@@ -146,7 +144,7 @@ void ResourceManager::retry_load_cached(const std::string &identifier, std::func
     if (r == std::end(_cached))
         return;
     auto id = std::string{identifier};
-    spdlog::info("ResourceManager::retry_load_cached(): retry loading `{}`", id);
+    SPDLOG_INFO("Retry loading -> {0}", id);
     r->second.state = SHEDULED;
     r->second.last_state_upd = std::time(nullptr);
     r->second.cb = std::move(image_cb);

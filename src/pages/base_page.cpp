@@ -3,26 +3,30 @@
 #include <sstream>
 #include <iomanip>
 
+#include "kitchensound/timeouts.h"
 #include "kitchensound/input_event.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/timer.h"
+
+BasePage::BasePage(PAGES page, StateController &ctrl)
+    : _bp_model{0, 0, 20}, _state{ctrl},_page{page},
+      _update_time_timer{std::make_unique<Timer>(CLOCK_UPDATE_DELAY, true, [this](){
+          this->update_time();
+      })}
+    {}
 
 BasePage::~BasePage() = default;
 
-void BasePage::update() {
-    ++_bp_model.update_time_frame_cnt;
-    if(_bp_model.update_time_frame_cnt > _bp_model.update_time_frame_skip) {
-        update_time();
-        _bp_model.update_time_frame_cnt = 0;
-    }
+void BasePage::update(long ms_delta_time) {
+    _update_time_timer->update(ms_delta_time);
 }
 
 void BasePage::update_time() {
-    _bp_model.current_time = std::time(nullptr);
-    auto tmp = std::localtime(&_bp_model.current_time);
+    auto now = std::time(nullptr);
+    auto tmp = std::localtime(&now);
     _bp_model.hour = tmp->tm_hour;
     _bp_model.minute = tmp->tm_min;
-    _bp_model.update_time_frame_cnt = 0;
 }
 
 void BasePage::render_time(Renderer& renderer) const {

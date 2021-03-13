@@ -3,5 +3,5 @@
 #include <spdlog/spdlog.h>
 
 void log_version_text() {
-    spdlog::info("Kitchensound v0.5.8");
+    SPDLOG_INFO("Kitchensound v0.6.0");
 }

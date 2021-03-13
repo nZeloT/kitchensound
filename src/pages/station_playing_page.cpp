@@ -46,6 +46,9 @@ void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
 
         _mpd->stop_playback();
         _mpd->playback_stream(_model.station.url);
+    }else{
+        //already playing the stream; possibly some time went by not updating the metadata, so force an update now
+        _mpd->force_metadata_update();
     }
 }
 

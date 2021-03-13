@@ -17,7 +17,7 @@ std::shared_ptr<GpioUtil> init_gpio(Configuration&);
 std::shared_ptr<FilePlayback> init_playback(Configuration&);
 std::shared_ptr<TimeBasedStandby> init_standby(Configuration&);
 std::shared_ptr<BTController> init_bt_controller(std::shared_ptr<FilePlayback>&);
-std::shared_ptr<MPDController> init_mpd_controller();
+std::shared_ptr<MPDController> init_mpd_controller(Configuration&);
 std::shared_ptr<OsUtil> init_os_util();
 
 

@@ -62,15 +62,14 @@ void StationSelectionPage::get_image(const RadioStationStream &s, void ** img_da
 void StationSelectionPage::activate_timeout() {
     _model.times_out = true;
     _model.remaining_time = BROWSING_TIMEOUT;
-    spdlog::info("StationSelectionPage::activate_timeout(): active");
+    SPDLOG_INFO("Activated timeout.");
 }
 
 void StationSelectionPage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
         _state.trigger_transition(_page, STREAM_PLAYING);
         _model.confirmed_selection = _sp_model.selected;
-        spdlog::info("StationSelectionPage::handle_enter_key(): Stream {0} selected; transitioning",
-                     _model.confirmed_selection);
+        SPDLOG_INFO("Transitioning with new stream -> {0}", _model.confirmed_selection);
     }
 }
 

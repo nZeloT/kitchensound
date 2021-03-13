@@ -9,18 +9,25 @@ Configuration::Configuration(const std::string &file) {
 Configuration::~Configuration() = default;
 
 std::string Configuration::get_input_device(INPUT_SOURCES source) {
+    std::string device;
     switch (source) {
         case WHEEL_AXIS:
-            return (const char *) conf.lookup("input.wheel_axis");
+            device =  conf.lookup("input.wheel_axis").c_str();
+            break;
         case ENTER_KEY:
-            return (const char *) conf.lookup("input.enter_key");
+            device = conf.lookup("input.enter_key").c_str();
+            break;
         case MENU_KEY:
-            return (const char *) conf.lookup("input.menu_key");
+            device = conf.lookup("input.menu_key").c_str();
+            break;
         case POWER_KEY:
-            return (const char *) conf.lookup("input.power_key");
+            device = conf.lookup("input.power_key").c_str();
+            break;
         default:
             throw std::runtime_error("Found unsupported INPUT_SOURCE!");
     };
+    SPDLOG_INFO("Read input device for source -> {0}; {1}", source, device);
+    return device;
 }
 
 std::vector<RadioStationStream> Configuration::get_radio_stations() {
@@ -36,7 +43,7 @@ std::vector<RadioStationStream> Configuration::get_radio_stations() {
         if (s.exists("image_url"))
             stream.image_url = (const char *) s.lookup("image_url");
 
-        spdlog::info("Configuration::get_radio_stations(): Read radio station {0} with url {1} and image {2}", stream.name, stream.url, stream.image_url);
+        SPDLOG_INFO("Read radio station -> {0}; {1}; {2};", stream.name, stream.url, stream.image_url);
         entries.push_back(std::move(stream));
     }
 
@@ -46,7 +53,7 @@ std::vector<RadioStationStream> Configuration::get_radio_stations() {
 long Configuration::get_default_volume() {
     int v;
     conf.lookupValue("default_volume", v);
-    spdlog::info("Configuration::get_default:volume(): Read default volume of {0}", v);
+    SPDLOG_INFO("Read default volume -> {0}", v);
     return static_cast<long>(v);
 }
 
@@ -70,6 +77,23 @@ Configuration::DisplayStandbyConfig Configuration::get_display_standby() {
         s.end_hour = end_hour;
     } else
         throw std::runtime_error("Failed to load the display standby times");
+
+    SPDLOG_INFO("Read display standby config -> {0}; {1}:{2} - {3}:{4};",
+                s.enabled, s.start_hour, s.start_minute, s.end_hour, s.end_minute);
+    return s;
+}
+
+Configuration::MPDConfig Configuration::get_mpd_config() {
+    auto& mpdconf = conf.lookup("mpd");
+    MPDConfig s{};
+    if(!mpdconf.exists("address") || !mpdconf.exists("port")){
+        throw std::runtime_error{"Either mpd.address or mpd.port is missing in the configuration!"};
+    }
+    s.address = mpdconf.lookup("address").c_str();
+    s.port    = mpdconf.lookup("port");
+
+    SPDLOG_INFO("Read mpd configuration -> {0}:{1}", s.address, s.port);
+
     return s;
 }
 
@@ -92,15 +116,14 @@ int Configuration::get_gpio_pin(GPIO_PIN request_pin) {
     int pin;
     if(!conf.lookupValue(path, pin)){
         pin = def;
-        spdlog::warn("Configuration::get_gpio_pin(): Failed to fetch requested pin {0}, defaulting to {1}", request_pin, def);
+        SPDLOG_WARN("Failed to read requested pin, defaulting -> {0}; {1}", request_pin, def);
     }else
-        spdlog::info("Configuration::get_gpio_pin(): Fetched pin {0} for gpio {1}", pin, request_pin);
+        SPDLOG_INFO("Read pin for gpio -> {0}; {1}", pin, request_pin);
 
     return pin;
 }
 
 std::string Configuration::get_alsa_device_name(ALSA_DEVICES requested_device) {
-    spdlog::info("Configuration::get_alsa_device_name(): Requesting alsa device name for key {0}", requested_device);
     std::string path;
     std::string def;
     switch(requested_device) {
@@ -123,23 +146,22 @@ std::string Configuration::get_alsa_device_name(ALSA_DEVICES requested_device) {
     std::string device = conf.lookup(path);
     if(device.empty()){
         device = def;
-        spdlog::warn("Configuration::get_alsa_device_name(): Failed to fetch requested alsa device {0}, defaulting to {1}", requested_device, def);
+        SPDLOG_WARN("Failed to read alsa device name, defaulting -> {0}; {1}", requested_device, def);
     } else
-        spdlog::info("Configuration::get_alsa_device_name(): Read {0} for requested alsa device {1}", device, requested_device);
+        SPDLOG_INFO("Read alsa device name -> {0}; {1}", requested_device, device);
 
     return device;
 }
 
 std::filesystem::path Configuration::get_folder(std::string const& conf_path, std::string const& def) {
-    spdlog::info("Configuration::get_folder(): Requesting value for key {0}", conf_path);
     std::string tmp = conf.lookup(conf_path);
     std::filesystem::path folder;
     if(tmp.empty()){
         folder = std::filesystem::path{def};
-        spdlog::warn("Configuration::get_folder(): Failed to fetch {0}. Defaulting to `{1}`", conf_path, folder.string());
+        SPDLOG_WARN("Failed to read, defaulting -> {0}; {1}", conf_path, folder.string());
     }else {
         folder = std::filesystem::path{tmp};
-        spdlog::info("Configuration::get_res_folder(): Read {0} as `{1}`", conf_path, folder.string());
+        SPDLOG_INFO("Read path -> {0}; {1}", conf_path, folder.string());
     }
     return folder;
 }

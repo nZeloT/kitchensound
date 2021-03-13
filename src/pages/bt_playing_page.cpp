@@ -30,11 +30,11 @@ void BluetoothPlayingPage::enter_page(PAGES origin, void* payload) {
     set_source_text("Not Connected");
     set_metadata_text("");
     _btc->activate_bt();
-    spdlog::info("BluetoothPlayingPage::enter_page(): Entered.");
+    SPDLOG_INFO("Entered.");
 }
 
 void* BluetoothPlayingPage::leave_page(PAGES destination) {
     _btc->deactivate_bt();
-    spdlog::info("BluetoothPlayingPage::leave_page(): Left.");
+    SPDLOG_INFO("Left.");
     return nullptr;
 }

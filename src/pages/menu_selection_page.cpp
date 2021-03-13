@@ -31,16 +31,16 @@ void MenuSelectionPage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
         auto dest = _sp_model.data[_sp_model.selected].ref_page;
         _state.trigger_transition(_page, dest);
-        spdlog::info("MenuSelectionPage::handle_enter_key(): transitioning from Mode Selection to {0}", dest);
+        SPDLOG_INFO("Transitioning from menu -> {0}", dest);
     }
 }
 
 void MenuSelectionPage::enter_page(PAGES orig, void* payload) {
     BasePage::enter_page(orig, payload);
-    spdlog::info("MenuSelectionPage::enter_page(): from origin {0}", orig);
+    SPDLOG_INFO("Enter from -> {0}", orig);
 }
 
 void* MenuSelectionPage::leave_page(PAGES dest) {
-    spdlog::info("MenuSelectionPage::leave_page(): to destination {0}", dest);
+    SPDLOG_INFO("Leaving to -> {0}", dest);
     return nullptr;
 }

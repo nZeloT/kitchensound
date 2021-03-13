@@ -5,16 +5,20 @@
 
 #include <spdlog/spdlog.h>
 
-#include "kitchensound/input_event.h"
 #include "kitchensound/timeouts.h"
+#include "kitchensound/input_event.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
 #include "kitchensound/time_based_standby.h"
+#include "kitchensound/timer.h"
 #include "kitchensound/gpio_util.h"
 
 InactivePage::InactivePage(StateController& ctrl, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio)
-    : BasePage(INACTIVE, ctrl), _model{-1, MENU_SELECTION, false},
-    _standby{standby}, _gpio{gpio}
+    : BasePage(INACTIVE, ctrl), _model{MENU_SELECTION, false, false},
+    _standby{standby}, _gpio{gpio},
+    _amp_cooldown_timer{std::make_unique<Timer>(AMPLIFIER_DELAY, false, [this](){
+        this->_model.amp_cooldown_active = false;
+    })}
     {
         standby->arm();
     }
@@ -23,44 +27,44 @@ InactivePage::~InactivePage() = default;
 
 void InactivePage::enter_page(PAGES origin, void* payload) {
     this->update_time();
-    _model.amp_cooldown_start = _bp_model.current_time;
+    _amp_cooldown_timer->reset();
+    _model.amp_cooldown_active = true;
     _model.last_seen = origin;
     _gpio->turn_off_amplifier();
     _standby->arm();
-    spdlog::info("InactivePage::enter_page(): Entered.");
+    SPDLOG_INFO("Entered page.");
 }
 
 void* InactivePage::leave_page(PAGES destination) {
     _standby->disarm();
     _gpio->turn_on_display();
     _gpio->turn_on_amplifier();
-    spdlog::info("InactivePage::leave_page(): Left");
+    SPDLOG_INFO("Left page.");
     return nullptr;
 }
 
-void InactivePage::update() {
+void InactivePage::update(long ms_delta_time) {
+    _amp_cooldown_timer->update(ms_delta_time);
     if(_standby->is_standby_active()){
         if(_model.display_on){
             _gpio->turn_off_display();
             _model.display_on = false;
-            _bp_model.update_time_frame_skip = 30;
             _bp_model.update_delay_time = 500;
         }
     }else{
         if(!_model.display_on){
             _gpio->turn_on_display();
             _model.display_on = true;
-            _bp_model.update_time_frame_skip = 250;
             _bp_model.update_delay_time = 20;
         }
     }
-    BasePage::update();
+    BasePage::update(ms_delta_time);
 }
 
 void InactivePage::handle_power_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
         _standby->reset_standby_cooldown();
-        if (_bp_model.current_time - _model.amp_cooldown_start >= AMPLIFIER_TIMEOUT)
+        if (!_model.amp_cooldown_active)
             _state.trigger_transition(_page, _model.last_seen);
     }
 }
@@ -90,11 +94,9 @@ void InactivePage::render(Renderer& renderer) {
     if(!_model.display_on && !_standby->is_standby_active())
         _gpio->turn_on_display();
 
-    auto remaining = _bp_model.current_time - _model.amp_cooldown_start;
-    if (remaining < AMPLIFIER_TIMEOUT) {
-
+    if (_model.amp_cooldown_active) {
         //display cooldown
-        int width = std::ceil(320 * (AMPLIFIER_TIMEOUT - remaining + 0.0) / (AMPLIFIER_TIMEOUT + 0.0));
+        int width = std::ceil(320 * (1 - _amp_cooldown_timer->progress_percentage()));
         renderer.render_rect(0, 230, width, 10, Renderer::FOREGROUND);
     }
 

@@ -20,13 +20,13 @@ constexpr char SERVICE_NAME[] = "org.bluez";
 void activate_discoverable() {
     auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
     proxy->setProperty("Discoverable").onInterface("org.bluez.Adapter1").toValue(true);
-    spdlog::info("BTController::activate_discoverable(): BT adapter made discoverable");
+    SPDLOG_INFO("BT adapter made discoverable");
 }
 
 void deactivate_discoverable() {
     auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
     proxy->setProperty("Discoverable").onInterface("org.bluez.Adapter1").toValue(false);
-    spdlog::info("BTController::deactivate_discoverable(): BT adapter made undiscoverable");
+    SPDLOG_INFO("BT adapter mad undiscoverable");
 }
 
 class DBusBTDeviceMonitor {
@@ -47,7 +47,7 @@ public:
         _connected = prop.get<bool>();
         auto name_prop = _proxy->getProperty("Alias").onInterface(DEVICE_INTERFACE);
         _name = name_prop.get<std::string>();
-        spdlog::info("DBusBTDeviceMonitor::C-Tor(): Initial device state: {0}; {1}; {2}", _deviceId, _name, _connected);
+        SPDLOG_INFO("Initial device state -> {0} {1} {2}", _deviceId, _name, _connected);
         _deviceConnectedHandler(_deviceId, _connected);
         if (!_name.empty())
             _deviceNameHandler(_deviceId, _name);
@@ -57,7 +57,7 @@ public:
             _playerPath = prop.get<sdbus::ObjectPath>();
             _devicePlayerChanged(_deviceId, _playerPath);
         } catch (sdbus::Error const &error) {
-            spdlog::error(error.getMessage());
+            SPDLOG_ERROR(error.getMessage());
         }
 
         //1. register change handler
@@ -83,7 +83,7 @@ private:
     void on_properties_changed(const std::string &interfaceName,
                                const std::map<std::string, sdbus::Variant> &changedProperties,
                                const std::vector<std::string> &invalidatedProperties) {
-        spdlog::info("DBusBTDeviceMonitor::on_properties_changed(): {0}", interfaceName);
+        SPDLOG_INFO("Properties changed on -> {0}", interfaceName);
         if (interfaceName == DEVICE_INTERFACE) {
             check_connected_property(changedProperties);
             check_name_property(changedProperties);
@@ -96,8 +96,7 @@ private:
         auto val = props.find("Connected");
         if (val != props.end()) {
             _connected = val->second.get<bool>();
-            spdlog::info("DBusBTDeviceMonitor::check_connected_property(): New Device status: {0}; {1}", _deviceId,
-                         _connected);
+            SPDLOG_INFO("New device status -> {0}; {1}", _deviceId, _connected);
             _deviceConnectedHandler(_deviceId, _connected);
         }
     }
@@ -106,7 +105,7 @@ private:
         auto val = props.find("Alias");
         if (val != props.end()) {
             _name = val->second.get<std::string>();
-            spdlog::info("DBusBTDeviceMonitor::check_name_property(): Name Device Name received: {0}", _name);
+            SPDLOG_INFO("New device name received -> {0}; {1}", _deviceId, _name);
             _deviceNameHandler(_deviceId, _name);
         }
     }
@@ -115,8 +114,7 @@ private:
         auto val = props.find("Player");
         if (val != props.end()) {
             _playerPath = val->second.get<sdbus::ObjectPath>();
-            spdlog::info("DBusBTDeviceMonitor::check_media_player_property(): Player Property changed: {0}; {1}",
-                         _deviceId, _playerPath);
+            SPDLOG_INFO("Player Property changed -> {0}; {1}", _deviceId, _playerPath);
             _devicePlayerChanged(_deviceId, _playerPath);
         }
     }
@@ -174,19 +172,19 @@ private:
         int pos;
         if ((pos = objectPath.find("/dev_")) != std::string::npos) {
             //is it a known device?
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): {0}", objectPath);
+            SPDLOG_INFO("Added -> {0}", objectPath);
             int len = objectPath.find_first_of("/", pos + 1);
             if (len != std::string::npos) {
                 len -= pos;
                 --len;
             }
             auto deviceId = objectPath.substr(pos + 1, len);
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): Found device Id: {0}", deviceId);
+            SPDLOG_INFO("Found device id -> {0}", deviceId);
 
             //is the device id already known?
             auto known = std::find(begin(_known), end(_known), deviceId);
             if (known == std::end(_known)) {
-                spdlog::info("DBusBTObjectMonitor::on_interfaces_added(): Is formerly unknown device");
+                SPDLOG_INFO("Is formerly unknown device.");
                 _known.push_back(deviceId);
                 _deviceChange(deviceId, true);
             }
@@ -198,18 +196,18 @@ private:
         if ((devPos = objectPath.find("/dev")) != std::string::npos) {
             int len = objectPath.find_first_of("/", devPos + 1);
             if (len != std::string::npos) {
-                spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): Not the device itself is removed");
+                SPDLOG_INFO("Not the device itself removed.");
                 return; //its not the device beeing removed ...
             }
 
             auto deviceId = objectPath.substr(devPos + 1, len);
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): Found device Id: {0}", deviceId);
+            SPDLOG_INFO("Found device id -> {0}", deviceId);
 
             auto known = std::find(begin(_known), end(_known), deviceId);
             if (known == std::end(_known))
                 return; //removing unknown device ...
 
-            spdlog::info("DBusBTObjectMonitor::on_interfaces_removed(): removing device {0}", deviceId);
+            SPDLOG_INFO("Removing device -> {0}", deviceId);
             _known.erase(known);
         }
     }
@@ -235,9 +233,9 @@ public:
 
             //potentially has Title, Artist, Album
             build_metadata_string(metadata);
-            spdlog::info("DBusBTMediaPlayerMonitor::C-Tor(): {0}", _metadata);
+            SPDLOG_INFO("New metadata string -> {0}", _metadata);
         } catch (sdbus::Error &error) {
-            spdlog::error("DBusBTMediaPlayerMonitor::C-Tor(): {0}", error.getMessage());
+            SPDLOG_ERROR(error.getMessage());
         }
 
         if (_enabled)
@@ -255,7 +253,7 @@ public:
     }
 
     void set_enabled(bool enabled) {
-        spdlog::info("DBusBTMediaPlayerMonitor::set_enabled(): {0} : {1}", _player, enabled);
+        SPDLOG_INFO("Set player to enabled -> {0}; {1}", _player, enabled);
         _enabled = enabled;
     }
 
@@ -264,7 +262,7 @@ private:
     static constexpr char MEDIAPLAYER_INTF[] = "org.bluez.MediaPlayer1";
 
     void on_properties_changed(std::string const &intf, std::map<std::string, sdbus::Variant> const &props) {
-        spdlog::info("DBusBTMediaPlayerMonitor::on_properties_changed(): {0}", intf);
+        SPDLOG_INFO("Property changed on interface -> {0}", intf);
         if (intf == MEDIAPLAYER_INTF) {
             //try to find the track property
             auto it = std::find_if(begin(props), end(props), [](const auto &p) {
@@ -309,7 +307,7 @@ private:
         }
 
         _metadata = s.str();
-        spdlog::info("DBusBTMediaPlayerMonitor::build_metadata_string(): {0}", _metadata);
+        SPDLOG_INFO("New metadata string -> {0}", _metadata);
     }
 
     bool _enabled;
@@ -331,7 +329,7 @@ public:
               _objectMonitor{}, _deviceMonitors{}, _playerMonitors{}, _connected(true),
               _connectedDevice{}, _status{}, _metadata{} {
 
-        spdlog::info("DBusBTController::C-Tor(): crteated connection; creating DBusBTObjectMonitor");
+        SPDLOG_INFO("Created dbus connection; creating DBusBTObjectMonitor;");
         _objectMonitor = std::make_unique<DBusBTObjectMonitor>(*_dbusConnection,
                                                                [this](const std::string &device, bool added) {
                                                                    if (added) {
@@ -491,7 +489,7 @@ void BTController::handle_update(const std::string &status, const std::string &m
 void BTController::activate_bt() {
     auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
     proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(true);
-    spdlog::info("BTController::activate_bt(): Bluetooth adapter powered on");
+    SPDLOG_INFO("BT adapter powered on.");
 
     activate_discoverable();
 
@@ -507,7 +505,7 @@ void BTController::deactivate_bt() {
 
     auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
     proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(false);
-    spdlog::info("BTController::deactivate_bt(): Bluetooth adapter powered off");
+    SPDLOG_INFO("BT adapter powered off.");
 
     _playback->playback("bt-deactivate.mp3");
 }

@@ -27,6 +27,11 @@ public:
         long end_minute;
     };
 
+    struct MPDConfig {
+        std::string address;
+        int port;
+    };
+
     enum GPIO_PIN {
         DISPLAY_BACKLIGHT,
         AMPLIFIER_POWER
@@ -47,6 +52,7 @@ public:
     int get_gpio_pin(GPIO_PIN request_pin);
     std::string get_alsa_device_name(ALSA_DEVICES requested_device);
     DisplayStandbyConfig get_display_standby();
+    MPDConfig get_mpd_config();
     std::filesystem::path get_res_folder();
     std::filesystem::path get_cache_folder();
 

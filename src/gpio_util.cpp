@@ -25,20 +25,20 @@ GpioUtil::~GpioUtil() {
 
 void GpioUtil::turn_off_amplifier() {
     gpiod_line_set_value(_line_amplifier, 1);
-    spdlog::info("GpioUtil::turn_off_amplifier(): Turned Amplifier OFF");
+    SPDLOG_INFO("Turn amplifier OFF");
 }
 
 void GpioUtil::turn_off_display() {
     gpiod_line_set_value(_line_display, 0);
-    spdlog::info("GpioUtil::turn_off_display(): Turned Display OFF");
+    SPDLOG_INFO("Turn display OFF");
 }
 
 void GpioUtil::turn_on_amplifier() {
     gpiod_line_set_value(_line_amplifier, 0);
-    spdlog::info("GpioUtil::turn_on_amplifier(): Turned Amplifier On");
+    SPDLOG_INFO("Turn amplifier ON");
 }
 
 void GpioUtil::turn_on_display() {
     gpiod_line_set_value(_line_display, 1);
-    spdlog::info("GpioUtil::turn_on_display(): Turned Display On");
+    SPDLOG_INFO("Turn display ON");
 }

@@ -15,6 +15,8 @@ message(STATUS "SDL2_INCLUDE => ${SDL2_INCLUDE}")
 find_path(CURL_INCLUDE NAMES curl/curl.h HINTS /usr/include/arm-linux-gnueabihf REQUIRED)
 message(STATUS "CURL_INCLUDE => ${CURL_INCLUDE}")
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frecord-gcc-switches")
+
 add_executable(kitchensound src/main.cpp
         src/renderer.cpp
         src/input.cpp
@@ -45,7 +47,7 @@ add_executable(kitchensound src/main.cpp
         src/gpio_util.cpp
         src/init_system_conns.cpp
         src/os_util.cpp
-        )
+        src/timer.cpp)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${LOCAL_INCLUDES})

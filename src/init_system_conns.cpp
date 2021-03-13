@@ -35,8 +35,8 @@ std::shared_ptr<BTController> init_bt_controller(std::shared_ptr<FilePlayback>& 
     return std::make_shared<BTController>(playback);
 }
 
-std::shared_ptr<MPDController> init_mpd_controller() {
-    return std::make_shared<MPDController>();
+std::shared_ptr<MPDController> init_mpd_controller(Configuration &conf) {
+    return std::make_shared<MPDController>(conf.get_mpd_config());
 }
 
 std::shared_ptr<OsUtil> init_os_util() {

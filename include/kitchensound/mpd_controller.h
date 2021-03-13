@@ -2,32 +2,30 @@
 #define KITCHENSOUND_MPD_CONTROLLER_H
 
 #include <string>
-#include <functional>
 #include <memory>
+#include <functional>
 
-class mpd_connection;
-class SDL_Thread;
+#include "kitchensound/config.h"
+
 
 class MPDController {
 public:
-    MPDController();
+    explicit MPDController(Configuration::MPDConfig);
     ~MPDController();
 
     void playback_stream(const std::string& stream_url);
 
     void stop_playback();
 
+    void force_metadata_update();
+
+    void update(long ms_delta_time);
+
     void set_metadata_callback(std::function<void(const std::string&)>);
 
 private:
-    bool _check_and_try();
-
-    void _start_polling();
-    void _stop_polling();
-
-    mpd_connection *_connection;
-    SDL_Thread *_polling_thread;
-    std::function<void(const std::string&)> _metadata_callback;
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif //KITCHENSOUND_MPD_CONTROLLER_H

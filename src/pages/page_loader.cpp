@@ -30,7 +30,7 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(
 
     auto bt_controller = init_bt_controller(playback);
 
-    auto mpd_controller = init_mpd_controller();
+    auto mpd_controller = init_mpd_controller(conf);
 
     auto os_util = init_os_util();
 

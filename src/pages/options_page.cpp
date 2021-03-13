@@ -23,11 +23,11 @@ OptionsPage::~OptionsPage() = default;
 void OptionsPage::enter_page(PAGES origin, void *payload) {
     update_time();
     _model.selection_idx = 0;
-    spdlog::info("OptionsPage::enter_page(): from origin {0}", origin);
+    SPDLOG_INFO("Entered from -> {0}", origin);
 }
 
 void *OptionsPage::leave_page(PAGES destination) {
-    spdlog::info("OptionsPage::leave_page(): to destination {0}", destination);
+    SPDLOG_INFO("Leaving to -> {0}", destination);
     return nullptr;
 }
 

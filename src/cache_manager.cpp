@@ -15,8 +15,7 @@ static std::string fetch_file(std::string const &url, std::filesystem::path& cac
     auto url_hash = std::hash<std::string>{}(url);
     auto cache_id = std::string{cache_root.string() + std::to_string(url_hash)};
 
-    spdlog::info("CacheManager::fetch_file(): Try'in to fetch from `{0}` with hash `{1}` into cache id `{2}`",
-                 url, url_hash, cache_id);
+    SPDLOG_INFO("Try'in to fetch from `{0}` with hash `{1}` into cache id `{2}`", url, url_hash, cache_id);
 
     bool failed = true;
     try {
@@ -32,9 +31,9 @@ static std::string fetch_file(std::string const &url, std::filesystem::path& cac
 
         failed = false;
     } catch (curlpp::RuntimeError& error) {
-        spdlog::error("CacheManager::fetch_file(): Received RuntimeError with `{}`", error.what());
+        SPDLOG_ERROR("Received runtime error -> {0}", error.what());
     } catch (curlpp::LogicError& error) {
-        spdlog::error("CacheManager::fetch_file(): Received LogicError with `{}`", error.what());
+        SPDLOG_ERROR("Received logic error -> {0}", error.what());
     }
 
     if (failed)
@@ -45,7 +44,7 @@ static std::string fetch_file(std::string const &url, std::filesystem::path& cac
 
 static int image_fetcher(void *cache_mgr) {
     auto cache = reinterpret_cast<CacheManager *>(cache_mgr);
-    spdlog::info("CacheManager::Fetcher: Launched and active");
+    SPDLOG_INFO("Launched and active.");
     while (fetcher_active) {
         if (cache->_to_load.empty()) {
             SDL_Delay(2048);
@@ -60,27 +59,27 @@ static int image_fetcher(void *cache_mgr) {
             cache->load_failed(next_url);
         cache->_to_load.pop();
     }
-    spdlog::info("CacheManager::Fetcher: Terminated.");
+    SPDLOG_INFO("Terminated.");
     return 0;
 }
 
 CacheManager::CacheManager(ResourceManager &res, std::filesystem::path& cache_root)
         : _res{res}, _cache_root{cache_root} {
     std::filesystem::create_directory(cache_root);
-    spdlog::info("CacheManager::C-Tor: launching fetcher thread");
+    SPDLOG_INFO("Launching fetcher thread.");
     _fetcher_thread = SDL_CreateThread(image_fetcher, "Image Fetcher", reinterpret_cast<void *>(this));
 }
 
 CacheManager::~CacheManager() {
     fetcher_active = false;
     int rval;
-    spdlog::info("CacheManager::D-Tor: Waiting for the fetcher thread to terminate.");
+    SPDLOG_INFO("Waiting for the fetcher thread to terminate.");
     SDL_WaitThread(_fetcher_thread, &rval);
 }
 
 void CacheManager::schedule_for_fetch(const std::string &url) {
     auto _url = std::string {url};
-    spdlog::info("CacheManager::schedule_for_fetch: adding `{}` to fetch queue.", _url);
+    SPDLOG_INFO("Adding to fetch queue -> {}", _url);
     _to_load.push(_url);
 }
 

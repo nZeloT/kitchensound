@@ -3,6 +3,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <chrono>
+
 #include "kitchensound/running.h"
 #include "kitchensound/version.h"
 #include "kitchensound/sdl_util.h"
@@ -14,11 +16,12 @@
 #include "kitchensound/pages/page_loader.h"
 
 void shutdownHandler(int sigint) {
-    spdlog::info("Received Software Signal: {0}", std::to_string(sigint));
+    SPDLOG_INFO("Received software signal -> {0}", std::to_string(sigint));
     running = false;
 }
 
 int main(int argc, char **argv) {
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%!] %v");
     log_version_text();
 
     //0. set the shutdown handler for SIGINT and SIGTERM
@@ -54,8 +57,11 @@ int main(int argc, char **argv) {
         state_ctrl.react_power_change(ev);
     }};
 
+    auto new_time = std::chrono::system_clock::now(), last_time = std::chrono::system_clock::now();
     while (running) {
-        state_ctrl.update();
+        new_time = std::chrono::system_clock::now();
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(new_time - last_time);
+        state_ctrl.update(delta.count());
 
         renderer.start_pass();
         state_ctrl.render(renderer);

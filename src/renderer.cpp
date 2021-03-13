@@ -24,24 +24,24 @@ Renderer::Renderer(ResourceManager& res)
                     SDL_WINDOW_FULLSCREEN
             );
     if (nullptr == _window) {
-        spdlog::error("Renderer::C-Tor(): SDL_CreateWindow(): {0}", SDL_GetError());
+        SPDLOG_ERROR("sdl create window error -> {0}", SDL_GetError());
         throw std::runtime_error("Error creating SDL Window");
     }
 
     _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
     if (nullptr == _renderer) {
-        spdlog::error("Renderer::C-Tor(): SDL_CreateRenderer(): {0}", SDL_GetError());
+        SPDLOG_ERROR("sdl create renderer error -> {0}", SDL_GetError());
         throw std::runtime_error("Error creating SDL _renderer");
     }
     SDL_RendererInfo info;
     SDL_GetRendererInfo(_renderer, &info);
-    spdlog::info("Renderer::C-Tor(): SDL_RENDER_DRIVER selected : {0}", info.name);
+    SPDLOG_INFO("sdl render driver -> {0}", info.name);
 
     SDL_ShowCursor(SDL_DISABLE);
 
     load_resources(res);
 
-    spdlog::info("Renderer::C-Tor(): Initialization finished!");
+    SPDLOG_INFO("Renderer initialized");
 }
 
 Renderer::~Renderer() {
@@ -53,7 +53,7 @@ void Renderer::load_resources(ResourceManager& res) {
     _font_small = reinterpret_cast<TTF_Font*>(res.get_static("SMALL"));
     _font_large = reinterpret_cast<TTF_Font*>(res.get_static("LARGE"));
     _font_hughe = reinterpret_cast<TTF_Font*>(res.get_static("HUGHE"));
-    spdlog::info("Renderer::load_resources(): Loaded font resources.");
+    SPDLOG_INFO("Obtained font resources");
 }
 
 void Renderer::start_pass() {

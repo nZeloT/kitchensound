@@ -37,15 +37,15 @@ FilePlayback::~FilePlayback() {
 
 void FilePlayback::playback(std::string const &file_name) {
     auto path = std::filesystem::path{_absolute_res_root}.concat("/sound/").concat(file_name);
-    spdlog::info("playback_file(): trying to playback `{0}`", path.string());
+    SPDLOG_INFO("Trying to playback -> '{0}'", path.string());
     if (mpg123_open(_mpg_handle, path.c_str()) != MPG123_OK) {
-        spdlog::error("playback_file(): {0}", mpg123_strerror(_mpg_handle));
+        SPDLOG_ERROR("File open error -> {0}", mpg123_strerror(_mpg_handle));
         return;
     };
     int channels, encoding;
     long rate;
     if (mpg123_getformat(_mpg_handle, &rate, &channels, &encoding) != MPG123_OK) {
-        spdlog::error("playback_file(): {0}", mpg123_strerror(_mpg_handle));
+        SPDLOG_ERROR("Playback error -> {0}", mpg123_strerror(_mpg_handle));
         return;
     };
 
@@ -57,7 +57,7 @@ void FilePlayback::playback(std::string const &file_name) {
     format.matrix = nullptr;
     auto dev = ao_open_live(_alsa_driver_id, &format, _use_volumedev);
     if (dev == nullptr) {
-        spdlog::error("playback_file(): failed to open ao_device!");
+        SPDLOG_ERROR("Failed to open ao_device -> {0}", _use_volumedev->value);
         return;
     }
 

@@ -2,23 +2,11 @@
 
 #include <sstream>
 
-#include <SDL.h>
 #include <spdlog/spdlog.h>
 #include <mpd/client.h>
 
-#include "kitchensound/running.h"
-
-mpd_connection *connect_to_mpd() {
-    return mpd_connection_new("localhost", 6600, 30000);
-}
-
-bool check_for_error(mpd_connection *connection) {
-    if (mpd_connection_get_error(connection) != MPD_ERROR_SUCCESS) {
-        spdlog::error("MPDController::check_for_error(): mpd_connection_get_error(): {0}", mpd_connection_get_error_message(connection));
-        return true;
-    }
-    return false;
-}
+#include "kitchensound/timeouts.h"
+#include "kitchensound/timer.h"
 
 static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
     uint i = 0;
@@ -29,122 +17,157 @@ static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
     return tag_value.str();
 }
 
-static bool run_metadata_poller = true;
+struct MPDController::Impl {
+    explicit Impl(Configuration::MPDConfig conf)
+    : _mpd_config{std::move(conf)}, _cb_metadata{[](const std::string&){}},
+      _connection{nullptr}, _is_polling{false}, _current_meta{},
+      _polling_timer{MPD_POLLING_DELAY, false, [this](){
+          this->poll_metadata();
+      }} {
+        reset_connection();
+        mpd_connection_set_keepalive(_connection, true);
+    };
 
-static int poll_metadata(void *ptr) {
-    auto metadata_callback = reinterpret_cast<std::function<void(std::string const&)>*>(ptr);
+    ~Impl() {
+        close_connection();
+    };
 
-    spdlog::info("MPDController::poll_metadata(): Entering MPDMetadataPoller");
-    auto connection = connect_to_mpd();
-    spdlog::info("MPDController::poll_metadata(): MPDMetadataPoller connected!");
+    void playback_stream(const std::string& stream_url){
+        SPDLOG_INFO("Starting stream -> {0}", stream_url);
 
-    while (running && run_metadata_poller) {
-        spdlog::info("New poll");
-        auto status = mpd_run_status(connection);
-        if (mpd_status_get_state(status) == MPD_STATE_PLAY) {
-            auto song = mpd_run_current_song(connection);
-            if (check_for_error(connection)) {
-                mpd_connection_free(connection);
-                spdlog::error("MPDController::poll_metadata(): Found erroneous connection to MPD; Trying to reconnect;");
-                connection = connect_to_mpd();
-                if (check_for_error(connection)) {
-                    running = false;
-                    throw std::runtime_error("Failed to reconnect to MPD!");
-                }
-            }
+        mpd_run_add(_connection, stream_url.c_str());
+        auto err = check_for_error();
 
-            auto song_title = read_tag(song, MPD_TAG_TITLE);
-            spdlog::info("MPDController::poll_metadata(): New Title: {0}", song_title);
-            (*metadata_callback)(song_title);
-
-            mpd_song_free(song);
+        if(!err) {
+            mpd_run_play(_connection);
+            err = check_for_error();
         }
 
-        SDL_Delay(5000); // poll every 5 sec
+        if(err)
+            throw std::runtime_error("Error occurred while trying to play stream!");
+
+        _polling_timer.reset();
+        _is_polling = true;
     }
 
-    spdlog::info("MPDController::poll_metadata(): Exiting MPDMetadataPoller");
-    mpd_connection_free(connection);
-    spdlog::info("MPDController::poll_metadata(): MPDMetadataPolelr disconnected!");
+    void stop_playback(){
+        SPDLOG_INFO("Stopping MPD playback");
 
-    return 0;
-}
+        mpd_run_stop(_connection);
+        auto err = check_for_error();
+        if (!err) {
+            mpd_run_clear(_connection);
+            err = check_for_error();
+        }
+        if (err)
+            throw std::runtime_error("Error occurred while trying to clear queue!");
 
-MPDController::MPDController()
-        : _polling_thread{nullptr}, _connection{nullptr}, _metadata_callback{[](std::string const&){}} {
-    _connection = connect_to_mpd();
-    spdlog::info("MPDController::init(): Connected to MPD");
-}
+        _is_polling = false;
+    }
 
-MPDController::~MPDController() {
-    mpd_run_stop(_connection);
-    mpd_run_clear(_connection);
-    spdlog::info("MPDController::D-Tor(): Disconnecting from MPD!");
-    mpd_connection_free(_connection);
-    _connection = nullptr;
+    void update(long ms_delta_time){
+        if(_is_polling)
+            _polling_timer.update(ms_delta_time);
+    }
+
+    void poll_metadata() {
+        auto status = mpd_run_status(_connection);
+        check_for_error();
+
+        if (status != nullptr && mpd_status_get_state(status) == MPD_STATE_PLAY) {
+            auto song = mpd_run_current_song(_connection);
+            if (!check_for_error()) {
+                auto song_title = read_tag(song, MPD_TAG_TITLE);
+                if(_current_meta != song_title) {
+                    SPDLOG_INFO("Metadata changed -> {0}", song_title);
+                    _cb_metadata(song_title);
+                    _current_meta = song_title;
+                }
+
+                mpd_song_free(song);
+            }
+        }
+
+        if(_is_polling)
+            _polling_timer.reset();
+    }
+
+    bool check_for_error(bool after_reset = false) {
+        if(_connection == nullptr)
+            throw std::runtime_error{"MPD Connection is null! This should not happen!"};
+
+        mpd_error err_code;
+        bool encountered_error = false;
+
+        if((err_code = mpd_connection_get_error(_connection)) != MPD_ERROR_SUCCESS) {
+            SPDLOG_ERROR("mpd connection error -> {0}", mpd_connection_get_error_message(_connection));
+            encountered_error = true;
+        }
+
+        if(err_code == MPD_ERROR_OOM || err_code == MPD_ERROR_TIMEOUT
+        || err_code == MPD_ERROR_SYSTEM || err_code == MPD_ERROR_RESOLVER
+        || err_code == MPD_ERROR_CLOSED){
+            if(!after_reset)
+                reset_connection();
+            else
+                throw std::runtime_error{"Can't establish MPD connection!"};
+        }
+
+        return encountered_error;
+    }
+
+    void reset_connection() {
+        if(_connection != nullptr)
+            close_connection();
+
+        _connection = mpd_connection_new(_mpd_config.address.c_str(), _mpd_config.port, 30000);
+        check_for_error(true);
+
+        SPDLOG_INFO("Connected to MPD.");
+    }
+
+    void close_connection() {
+        mpd_run_stop(_connection);
+        mpd_run_clear(_connection);
+        mpd_connection_free(_connection);
+        SPDLOG_INFO("Disconnected from MPD.");
+        _connection = nullptr;
+    }
+
+    void set_metadata_callback(std::function<void(const std::string&)> cb){
+        _cb_metadata = std::move(cb);
+    }
+
+
+    mpd_connection* _connection;
+    bool _is_polling;
+    const Configuration::MPDConfig _mpd_config;
+    Timer _polling_timer;
+    std::string _current_meta;
+    std::function<void(const std::string&)> _cb_metadata;
 };
 
+MPDController::MPDController(Configuration::MPDConfig config)
+        : _impl{std::make_unique<MPDController::Impl>(std::move(config))} {}
+
+MPDController::~MPDController() = default;
+
+void MPDController::update(long ms_delta_time) {
+    _impl->update(ms_delta_time);
+}
+
 void MPDController::playback_stream(const std::string &stream_url) {
-    spdlog::info("MPDController::playback_stream(): Starting stream");
-    mpd_run_add(_connection, stream_url.c_str());
-    if (_check_and_try())
-        throw std::runtime_error("Error occurred while trying to add stream!");
-
-    spdlog::info("MPDController::playback_stream(): Added new stream, starting playback");
-    mpd_run_play(_connection);
-    if (_check_and_try())
-        throw std::runtime_error("Error occurred while trying to play stream!");
-
-    run_metadata_poller = true;
-    _start_polling();
+    _impl->playback_stream(stream_url);
 }
 
 void MPDController::stop_playback() {
-    spdlog::info("MPDController::stop_playback(): Stopping playback");
-    mpd_run_stop(_connection);
-    if (_check_and_try())
-        throw std::runtime_error("Error occurred while trying to add stop stream!");
-
-    mpd_run_clear(_connection);
-    if (_check_and_try())
-        throw std::runtime_error("Error occurred while trying to clear queue!");
-
-    spdlog::info("MPDController::stop_playback(): Stopping polling");
-    _stop_polling();
+    _impl->stop_playback();
 }
 
-bool MPDController::_check_and_try() {
-    if (check_for_error(_connection)) {
-        mpd_connection_free(_connection);
-        _connection = connect_to_mpd();
-        return check_for_error(_connection);
-    }
-    return false;
-}
-
-void MPDController::_start_polling() {
-    if (_polling_thread != nullptr)
-        throw std::runtime_error("Still have a running polling thread!");
-
-    _polling_thread = SDL_CreateThread(poll_metadata, "MPDMetadataPoller", &_metadata_callback);
-    if (_polling_thread == nullptr) {
-        spdlog::error("MPDController::_start_polling(): Thread creation failed!");
-        running = false;
-        throw std::runtime_error("Thread creation failed!");
-    }
-}
-
-void MPDController::_stop_polling() {
-    run_metadata_poller = false;
-    if (_polling_thread != nullptr) {
-        spdlog::warn("MPDController::_stop_polling(): Polling thread != nullptr => waiting for it to stop");
-        int thread_return;
-        SDL_WaitThread(_polling_thread, &thread_return);
-        _polling_thread = nullptr;
-    }
+void MPDController::force_metadata_update() {
+    _impl->poll_metadata();
 }
 
 void MPDController::set_metadata_callback(std::function<void(const std::string &)> update_handler) {
-    _metadata_callback = std::move(update_handler);
-
+    _impl->set_metadata_callback(std::move(update_handler));
 }

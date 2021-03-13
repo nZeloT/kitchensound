@@ -49,5 +49,5 @@ void VolumePage::render_volume(Renderer& renderer) {
 void VolumePage::enter_page(PAGES origin, void* payload) {
     //_volume.update_from_system();
     //_vol_model.new_value = _volume.get_default_volume();
-    spdlog::info("VolumePage::enter_page(): Entered.");
+    SPDLOG_INFO("Entered from -> {0}", origin);
 }
