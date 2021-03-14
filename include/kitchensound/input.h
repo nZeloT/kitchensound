@@ -2,14 +2,16 @@
 #define KITCHENSOUND_INPUT_H
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <linux/input.h>
 
 struct InputEvent;
+class Timer;
+class TimerManager;
+
 class InputSource {
 public:
-    InputSource(const std::string& device, std::function<void (InputEvent &)> handler);
+    InputSource(TimerManager& tm, const std::string& device, std::function<void (InputEvent &)> handler);
     ~InputSource();
     void check_and_handle();
 private:
@@ -20,7 +22,8 @@ private:
     input_event _ev;
 
     bool _released;
-    int _calls_since_press;
+    bool _is_long_press;
+    Timer& _long_press_timer;
 };
 
 #endif //KITCHENSOUND_INPUT_H

@@ -27,18 +27,18 @@ std::shared_ptr<FilePlayback> init_playback(Configuration &conf) {
                                           conf.get_res_folder());
 }
 
-std::shared_ptr<TimeBasedStandby> init_standby(Configuration &conf) {
-    return std::make_shared<TimeBasedStandby>(conf.get_display_standby());
+std::shared_ptr<TimeBasedStandby> init_standby(Configuration &conf, TimerManager& tm) {
+    return std::make_shared<TimeBasedStandby>(conf.get_display_standby(), tm);
 }
 
 std::shared_ptr<BTController> init_bt_controller(std::shared_ptr<FilePlayback>& playback){
     return std::make_shared<BTController>(playback);
 }
 
-std::shared_ptr<MPDController> init_mpd_controller(Configuration &conf) {
-    return std::make_shared<MPDController>(conf.get_mpd_config());
+std::shared_ptr<MPDController> init_mpd_controller(Configuration &conf, TimerManager& tm) {
+    return std::make_shared<MPDController>(conf.get_mpd_config(), tm);
 }
 
-std::shared_ptr<OsUtil> init_os_util() {
-    return std::make_shared<OsUtil>(std::time(nullptr));
+std::shared_ptr<OsUtil> init_os_util(TimerManager& tm) {
+    return std::make_shared<OsUtil>(tm, std::time(nullptr));
 }

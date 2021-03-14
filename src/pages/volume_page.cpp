@@ -8,14 +8,21 @@
 
 #include "kitchensound/volume.h"
 #include "kitchensound/renderer.h"
+#include "kitchensound/timer.h"
+#include "kitchensound/timer_manager.h"
 
-VolumePage::VolumePage(PAGES page, StateController& ctrl, std::shared_ptr<Volume>& vol)
-        : BasePage(page, ctrl), _vol_model{}, _volume{vol} {};
+VolumePage::VolumePage(PAGES page, StateController& ctrl, TimerManager& tm, std::shared_ptr<Volume>& vol)
+        : BasePage(page, ctrl, tm), _volume_bar_visible{false}, _volume{vol},
+          _volume_bar_timeout{tm.request_timer(VOLUME_TIMEOUT, false, [this](){
+              this->_volume_bar_visible = false;
+          })}
+{};
 VolumePage::~VolumePage() = default;
 
 void VolumePage::handle_wheel_input(int delta) {
     if (delta != 0) {
-        _vol_model.active_change_timeout = VOLUME_TIMEOUT;
+        _volume_bar_visible = true;
+        _volume_bar_timeout.reset();
         auto new_val = _volume->get_volume() + delta;
         if (new_val < 0 || new_val > 100) return;
         _volume->apply_delta(delta);
@@ -23,9 +30,7 @@ void VolumePage::handle_wheel_input(int delta) {
 }
 
 void VolumePage::render_volume(Renderer& renderer) {
-    if (_vol_model.active_change_timeout >= 0)
-        --_vol_model.active_change_timeout;
-    if (_vol_model.active_change_timeout < 0)
+    if (!_volume_bar_visible)
         return;
 
     auto vol = _volume->get_volume();

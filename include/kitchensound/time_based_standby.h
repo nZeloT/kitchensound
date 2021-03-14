@@ -2,12 +2,15 @@
 #define KITCHENSOUND_TIME_BASED_STANDBY_H
 
 #include <ctime>
+#include <functional>
 
 #include "kitchensound/config.h"
 
+class TimerManager;
+
 class TimeBasedStandby {
 public:
-    explicit TimeBasedStandby(Configuration::DisplayStandbyConfig standby);
+    explicit TimeBasedStandby(Configuration::DisplayStandbyConfig, TimerManager&);
 
     void arm() { _armed = true; };
 
@@ -15,9 +18,9 @@ public:
 
     void update_time();
 
-    void reset_standby_cooldown();
-
     bool is_standby_active();
+
+    void set_change_callback(std::function<void(bool)>);
 
 private:
     std::tm *_current_time;
@@ -43,7 +46,8 @@ private:
     TimeInterval _interval_a;
     TimeInterval _interval_b;
 
-    int _cooldown_timer;
+    bool _currently_active;
+    std::function<void(bool)> _change_callback;
 };
 
 #endif //KITCHENSOUND_TIME_BASED_STANDBY_H

@@ -8,7 +8,7 @@ class MPDController;
 
 class StationPlayingPage : public PlayingPage {
 public:
-    StationPlayingPage(StateController &, ResourceManager &, std::shared_ptr<Volume> &,
+    StationPlayingPage(StateController &, TimerManager&, ResourceManager &, std::shared_ptr<Volume> &,
                        std::shared_ptr<MPDController> &, RadioStationStream *);
 
     ~StationPlayingPage() override;

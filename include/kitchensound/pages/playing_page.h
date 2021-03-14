@@ -6,10 +6,11 @@
 class RenderText;
 class ResourceManager;
 struct InputEvent;
+class TimerManager;
 
 class PlayingPage : public VolumePage {
 public:
-    PlayingPage(PAGES page, StateController&, ResourceManager&, std::shared_ptr<Volume>&);
+    PlayingPage(PAGES page, StateController&, TimerManager&, ResourceManager&, std::shared_ptr<Volume>&);
     ~PlayingPage() override;
 
     void handle_enter_key(InputEvent&) override;

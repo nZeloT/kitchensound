@@ -59,20 +59,7 @@
 
 ### SDL2
 1. download the current SDL2 tarball and extract it
-2. configure with ``--disable-atomic --disable-audio --disable-events --disable-joystick --disable-haptic 
-   --disable-sensor --disable-power --disable-filesystem --disable-threads --disable-timers --disable-oss 
-   --disable-alsa --disable-alsa-shared --disable-jack --disable-jack-shared --disable-esd --disable-esd-shared 
-   --disable-pipewire --disable-pipewire-shared --disable-pulseaudio --disable-pulseaudio-shared --disable-arts 
-   --disable-arts-shared --disable-nas --disable-nas-shared --disable-sndio --disable-sndio-shared --disable-fusionsound 
-   --disable-fusionsound-shared --disable-diskaudio --disable-dummyaudio --disable-libsamplerate 
-   --disable-libsamplerate-shared --disable-video-wayland --disable-wayland-qt-touch --disable-wayland-shared 
-   --disable-video-x11 --disable-x11-shared --disable-video-x11-xcursor --disable-video-x11-xdbe 
-   --disable-video-x11-xinerama --disable-video-x11-xinput --disable-video-x11-xrandr 
-   --disable-video-x11-scrnsaver --disable-video-x11-xshape --disable-video-x11-vm --disable-video-vivante 
-   --disable-video-cocoa --disable-video-metal --disable-video-directfb --disable-directfb-shared 
-   --disable-video-ksmdrm --disable-ksmdrm-shared --disable-video-dummy --disable-dbus --disable-ime --disable-ibus 
-   --disable-fcitx --disable-joystick-mfi --disable-pthreads --disable-pthread-sem --disable-xinput --disable-wasapi 
-   --disable-sdl-dlopen --disable-hidapi --disable-hidapi-liusb --disable-joystick-virtual``
+2. configure with ``--disable-atomic --disable-audio --disable-joystick --disable-haptic --disable-sensor --disable-power --disable-threads --disable-timers --disable-oss --disable-alsa --disable-alsa-shared --disable-jack --disable-jack-shared --disable-esd --disable-esd-shared --disable-pulseaudio --disable-pulseaudio-shared --disable-arts --disable-arts-shared --disable-nas --disable-nas-shared --disable-sndio --disable-sndio-shared --disable-fusionsound --disable-fusionsound-shared --disable-diskaudio --disable-dummyaudio --disable-libsamplerate --disable-libsamplerate-shared --disable-video-vulkan --disable-video-rpi --disable-video-opengles1 --disable-video-wayland --disable-wayland-shared --disable-video-x11 --disable-x11-shared --disable-video-x11-xcursor --disable-video-x11-xdbe --disable-video-x11-xinerama --disable-video-x11-xinput --disable-video-x11-xrandr --disable-video-x11-scrnsaver --disable-video-x11-xshape --disable-video-x11-vm --disable-video-vivante --disable-video-cocoa --disable-video-metal --disable-video-directfb --disable-directfb-shared --disable-video-dummy --disable-dbus --disable-ime --disable-ibus --disable-fcitx --disable-joystick-mfi --disable-pthreads --disable-pthread-sem --disable-wasapi --disable-sdl-dlopen --disable-hidapi --disable-joystick-virtual``
 3. build and install sdl using make
 4. remove the downloaded tarball and extracted files
 

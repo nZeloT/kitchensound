@@ -20,7 +20,7 @@ public:
 
     void set_active_page(PAGES page);
 
-    void update(long ms_delta_time);
+    void update();
 
     void render(Renderer& renderer);
 

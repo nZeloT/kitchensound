@@ -10,6 +10,8 @@ class StateController;
 
 class Renderer;
 
+class TimerManager;
+
 class Timer;
 
 struct InputEvent;
@@ -32,24 +34,22 @@ public:
 
     virtual void render(Renderer &renderer) = 0;
 
-    virtual void update(long ms_delta_time);
-
     virtual int get_update_delay_time() { return _bp_model.update_delay_time; };
 
 protected:
-    BasePage(PAGES page, StateController &ctrl);
+    BasePage(PAGES page, StateController &ctrl, TimerManager&);
 
     void render_time(Renderer &renderer) const;
 
-    virtual void update_time();
-
     StateController &_state;
-    PAGES _page;
 
+    PAGES _page;
 private:
     friend class InactivePage;
 
-    std::unique_ptr<Timer> _update_time_timer;
+    void update_time();
+
+    Timer& _update_time;
 
     struct BasePageModel {
         int hour;

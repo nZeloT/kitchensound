@@ -8,10 +8,11 @@
 
 class StateController;
 class Renderer;
+class TimerManager;
 
 class LoadingPage : public BasePage {
 public:
-    explicit LoadingPage(StateController& ctrl);
+    LoadingPage(StateController& ctrl, TimerManager&);
     ~LoadingPage() override;
     void enter_page(PAGES origin, void* payload) override;
     void* leave_page(PAGES destination) override { return nullptr; };

@@ -8,19 +8,16 @@
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
 #include "kitchensound/timer.h"
+#include "kitchensound/timer_manager.h"
 
-BasePage::BasePage(PAGES page, StateController &ctrl)
+BasePage::BasePage(PAGES page, StateController &ctrl, TimerManager& tm)
     : _bp_model{0, 0, 20}, _state{ctrl},_page{page},
-      _update_time_timer{std::make_unique<Timer>(CLOCK_UPDATE_DELAY, true, [this](){
+      _update_time{tm.request_timer(CLOCK_UPDATE_DELAY, true, [this](){
           this->update_time();
       })}
     {}
 
 BasePage::~BasePage() = default;
-
-void BasePage::update(long ms_delta_time) {
-    _update_time_timer->update(ms_delta_time);
-}
 
 void BasePage::update_time() {
     auto now = std::time(nullptr);

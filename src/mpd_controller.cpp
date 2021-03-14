@@ -7,6 +7,7 @@
 
 #include "kitchensound/timeouts.h"
 #include "kitchensound/timer.h"
+#include "kitchensound/timer_manager.h"
 
 static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
     uint i = 0;
@@ -18,12 +19,12 @@ static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
 }
 
 struct MPDController::Impl {
-    explicit Impl(Configuration::MPDConfig conf)
+    explicit Impl(Configuration::MPDConfig conf, TimerManager& tm)
     : _mpd_config{std::move(conf)}, _cb_metadata{[](const std::string&){}},
       _connection{nullptr}, _is_polling{false}, _current_meta{},
-      _polling_timer{MPD_POLLING_DELAY, false, [this](){
+      _polling_timer{tm.request_timer(MPD_POLLING_DELAY, false, [this](){
           this->poll_metadata();
-      }} {
+      })} {
         reset_connection();
         mpd_connection_set_keepalive(_connection, true);
     };

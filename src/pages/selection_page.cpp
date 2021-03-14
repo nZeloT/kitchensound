@@ -13,9 +13,9 @@
 
 
 template<class T>
-SelectionPage<T>::SelectionPage(PAGES page, StateController& ctrl, ResourceManager& res,
+SelectionPage<T>::SelectionPage(PAGES page, StateController& ctrl, TimerManager& tm, ResourceManager& res,
                                 std::vector<T> data)
-    : BasePage(page, ctrl), _res(res), _sp_model{}{
+    : BasePage(page, ctrl, tm), _res(res), _sp_model{}{
     _sp_model.data = std::move(data);
     _sp_model.limit = _sp_model.data.size();
     for(auto& e : _sp_model.data)

@@ -4,19 +4,26 @@
 
 Timer::Timer(const long ms_time, const bool auto_repeat, std::function<void()> trigger)
     : _ms_time{ms_time}, _auto_repeat{auto_repeat}, _trigger{std::move(trigger)},
-    _ms_remaining{0}, _was_triggered{false} {}
+    _ms_remaining{0}, _is_stopped{false} {}
 
 Timer::~Timer() = default;
 
 
 void Timer::update(const int ms_delta_time) {
+    if(_is_stopped)
+        return;
+
     _ms_remaining -= ms_delta_time;
-    if(!_was_triggered && _ms_remaining <= 0){
+    if(_ms_remaining <= 0){
         _trigger();
-        if(_auto_repeat)
+        if(_auto_repeat) {
             _ms_remaining += _ms_time;
-        else
-            _was_triggered = true;
+            if(_ms_remaining < 0) {
+                //more time than expected passed; resetting to the requested time delay to prevent numerous executions
+                _ms_remaining = _ms_time;
+            }
+        }else
+            _is_stopped = true;
     }
 }
 
@@ -27,9 +34,18 @@ void Timer::reset() {
     }
 
     _ms_remaining = _ms_time;
-    _was_triggered = false;
+    _is_stopped = false;
+}
+
+void Timer::trigger_and_reset() {
+    _trigger();
+    reset();
 }
 
 double Timer::progress_percentage() {
     return std::max(0.0d, 1 - ((_ms_remaining + 0.0d) / (_ms_time + 0.0d)));
+}
+
+void Timer::stop() {
+    _is_stopped = true;
 }

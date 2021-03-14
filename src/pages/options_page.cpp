@@ -2,14 +2,20 @@
 
 #include <spdlog/spdlog.h>
 
+#include "kitchensound/timeouts.h"
 #include "kitchensound/input_event.h"
 #include "kitchensound/renderer.h"
-#include <kitchensound/os_util.h>
+#include "kitchensound/os_util.h"
+#include "kitchensound/timer_manager.h"
 
 #define PAGE_SIZE 7
 
-OptionsPage::OptionsPage(StateController &ctrl, std::shared_ptr<OsUtil>& os)
-        : BasePage(OPTIONS, ctrl), _os{os}, _model{0, 0, 0, {}} {
+OptionsPage::OptionsPage(StateController &ctrl, TimerManager& tm, std::shared_ptr<OsUtil>& os)
+        : BasePage(OPTIONS, ctrl, tm), _os{os}, _model{0, 0, 0, {}} {
+    tm.request_timer(std::min(OS_UTIL_TIME_UPD, OS_UTIL_IP_UPD), true, [this](){
+       this->update_model();
+    });
+
     _model.data.emplace_back("IPv4:\t" + _os->get_local_ip_address());
     _model.data.emplace_back("Sys.up.:\t" + _os->get_system_uptime());
     _model.data.emplace_back("Prg.up.:\t" + _os->get_program_uptime());
@@ -21,7 +27,7 @@ OptionsPage::OptionsPage(StateController &ctrl, std::shared_ptr<OsUtil>& os)
 OptionsPage::~OptionsPage() = default;
 
 void OptionsPage::enter_page(PAGES origin, void *payload) {
-    update_time();
+    _os->refresh_values();
     _model.selection_idx = 0;
     SPDLOG_INFO("Entered from -> {0}", origin);
 }
@@ -31,8 +37,7 @@ void *OptionsPage::leave_page(PAGES destination) {
     return nullptr;
 }
 
-void OptionsPage::update_time() {
-    BasePage::update_time();
+void OptionsPage::update_model() {
     _model.data[0] = "Ipv4:\t" + _os->get_local_ip_address();
     _model.data[1] = "Sys.up.:\t" + _os->get_system_uptime();
     _model.data[2] = "Prg.up.:\t" + _os->get_program_uptime();

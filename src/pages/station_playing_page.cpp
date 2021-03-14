@@ -8,9 +8,9 @@
 
 #define RADIO_IMAGE "img/radio.png"
 
-StationPlayingPage::StationPlayingPage(StateController &ctrl, ResourceManager &res, std::shared_ptr<Volume> &vol,
+StationPlayingPage::StationPlayingPage(StateController &ctrl, TimerManager& tm, ResourceManager &res, std::shared_ptr<Volume> &vol,
                                        std::shared_ptr<MPDController> &mpd, RadioStationStream *initial_station) :
-        PlayingPage(STREAM_PLAYING, ctrl, res, vol),
+        PlayingPage(STREAM_PLAYING, ctrl, tm, res, vol),
         _mpd{mpd}, _model{} {
 
     _mpd->set_metadata_callback([&](auto new_meta) {

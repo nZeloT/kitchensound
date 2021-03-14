@@ -13,6 +13,7 @@
 #include "kitchensound/renderer.h"
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/timer_manager.h"
 #include "kitchensound/pages/page_loader.h"
 
 void shutdownHandler(int sigint) {
@@ -21,7 +22,7 @@ void shutdownHandler(int sigint) {
 }
 
 int main(int argc, char **argv) {
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%!] %v");
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%s - %! : %#] %v");
     log_version_text();
 
     //0. set the shutdown handler for SIGINT and SIGTERM
@@ -39,21 +40,23 @@ int main(int argc, char **argv) {
 
     auto state_ctrl = StateController{};
 
+    auto timer_mgr = TimerManager{};
+
     //3.1 initialize the render pages
-    state_ctrl.register_pages(load_pages(conf, state_ctrl, resource_mgr));
+    state_ctrl.register_pages(load_pages(conf, state_ctrl, timer_mgr, resource_mgr));
     state_ctrl.set_active_page(INACTIVE);
 
     //4. initialize the input devices
-    InputSource wheelAxis{conf.get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto &ev) {
+    InputSource wheelAxis{timer_mgr, conf.get_input_device(Configuration::WHEEL_AXIS), [&state_ctrl](auto &ev) {
         state_ctrl.react_wheel_input(ev);
     }};
-    InputSource enterKey{conf.get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto &ev) {
+    InputSource enterKey{timer_mgr, conf.get_input_device(Configuration::ENTER_KEY), [&state_ctrl](auto &ev) {
         state_ctrl.react_confirm(ev);
     }};
-    InputSource menuKey{conf.get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto &ev) {
+    InputSource menuKey{timer_mgr, conf.get_input_device(Configuration::MENU_KEY), [&state_ctrl](auto &ev) {
         state_ctrl.react_menu_change(ev);
     }};
-    InputSource powerKey{conf.get_input_device(Configuration::POWER_KEY), [&state_ctrl](auto &ev) {
+    InputSource powerKey{timer_mgr, conf.get_input_device(Configuration::POWER_KEY), [&state_ctrl](auto &ev) {
         state_ctrl.react_power_change(ev);
     }};
 
@@ -61,7 +64,9 @@ int main(int argc, char **argv) {
     while (running) {
         new_time = std::chrono::system_clock::now();
         auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(new_time - last_time);
-        state_ctrl.update(delta.count());
+
+        state_ctrl.update(); // process page transitions
+        timer_mgr.update(delta.count());
 
         renderer.start_pass();
         state_ctrl.render(renderer);

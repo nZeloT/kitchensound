@@ -8,14 +8,17 @@
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/mpd_controller.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/timer.h"
 
 #define RADIO_IMAGE "img/radio.png"
 
-StationSelectionPage::StationSelectionPage(StateController& ctrl, ResourceManager& res,
+StationSelectionPage::StationSelectionPage(StateController& ctrl, TimerManager& tm, ResourceManager& res,
                                            std::shared_ptr<MPDController>& mpd,
                                            std::vector<RadioStationStream> streams) :
-        SelectionPage<RadioStationStream>(STREAM_SELECTION, ctrl, res, std::move(streams)), _mpd{mpd},
-                                          _model{} {
+        SelectionPage<RadioStationStream>(STREAM_SELECTION, ctrl, tm, res, std::move(streams)),
+                _mpd{mpd}, _model{}, _auto_leave_timer{std::make_unique<Timer>(AUTO_LEAVE_BROWSING, false, [this](){
+                    this->_state.trigger_transition(this->_page, STREAM_PLAYING);
+                })} {
     load_images();
 };
 
@@ -24,7 +27,6 @@ StationSelectionPage::~StationSelectionPage() = default;
 void StationSelectionPage::enter_page(PAGES origin, void* payload)  {
     this->update_time();
     _model.times_out = false;
-    _model.remaining_time = -1;
     if(origin == STREAM_PLAYING)
         activate_timeout();
     load_images();
@@ -61,7 +63,7 @@ void StationSelectionPage::get_image(const RadioStationStream &s, void ** img_da
 
 void StationSelectionPage::activate_timeout() {
     _model.times_out = true;
-    _model.remaining_time = BROWSING_TIMEOUT;
+    _auto_leave_timer->reset();
     SPDLOG_INFO("Activated timeout.");
 }
 
@@ -76,16 +78,11 @@ void StationSelectionPage::handle_enter_key(InputEvent& inev) {
 void StationSelectionPage::handle_wheel_input(int delta) {
     SelectionPage<RadioStationStream>::handle_wheel_input(delta);
     if (_model.times_out)
-        _model.remaining_time = BROWSING_TIMEOUT;
+        _auto_leave_timer->reset();
 }
 
-void StationSelectionPage::render(Renderer& renderer) {
-    if (_model.times_out && _model.remaining_time > 0) {
-        --_model.remaining_time;
-    }
-    if (_model.times_out && _model.remaining_time == 0) {
-        _state.trigger_transition(_page, STREAM_PLAYING);
-    }
-
-    SelectionPage<RadioStationStream>::render(renderer);
+void StationSelectionPage::update(long ms_delta_update) {
+    if(_model.times_out)
+        _auto_leave_timer->update(ms_delta_update);
+    BasePage::update(ms_delta_time);
 }

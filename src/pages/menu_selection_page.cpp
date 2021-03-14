@@ -12,8 +12,8 @@ const std::vector<MenuModel> MENUS = {
         {"Optionen", OPTIONS, "img/gears.png"}
 };
 
-MenuSelectionPage::MenuSelectionPage(StateController& ctrl, ResourceManager& res)
-        : SelectionPage<MenuModel>(MENU_SELECTION, ctrl, res, MENUS) {
+MenuSelectionPage::MenuSelectionPage(StateController& ctrl, TimerManager& tm, ResourceManager& res)
+        : SelectionPage<MenuModel>(MENU_SELECTION, ctrl, tm, res, MENUS) {
     load_images();
 }
 

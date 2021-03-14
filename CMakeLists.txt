@@ -47,7 +47,7 @@ add_executable(kitchensound src/main.cpp
         src/gpio_util.cpp
         src/init_system_conns.cpp
         src/os_util.cpp
-        src/timer.cpp)
+        src/timer.cpp src/timer_manager.cpp)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${LOCAL_INCLUDES})

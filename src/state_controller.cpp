@@ -35,11 +35,9 @@ void StateController::trigger_transition(PAGES origin, PAGES destination) {
 
 }
 
-void StateController::update(long ms_delta_time) {
+void StateController::update() {
     if(_transitions != NONE)
         process_transition();
-
-    _active_page->update(ms_delta_time);
 }
 
 void StateController::render(Renderer& renderer) {

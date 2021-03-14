@@ -7,10 +7,11 @@
 
 #include "kitchensound/config.h"
 
+class TimerManager;
 
 class MPDController {
 public:
-    explicit MPDController(Configuration::MPDConfig);
+    MPDController(Configuration::MPDConfig, TimerManager&);
     ~MPDController();
 
     void playback_stream(const std::string& stream_url);

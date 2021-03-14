@@ -1,10 +1,8 @@
 #include "kitchensound/pages/loading_page.h"
 
-#include <utility>
-
 #include "kitchensound/renderer.h"
 
-LoadingPage::LoadingPage(StateController &ctrl) : BasePage(LOADING, ctrl), _model{} {}
+LoadingPage::LoadingPage(StateController &ctrl, TimerManager& tm) : BasePage(LOADING, ctrl, tm), _model{} {}
 
 LoadingPage::~LoadingPage() = default;
 
@@ -14,7 +12,6 @@ void LoadingPage::render(Renderer &renderer) {
 }
 
 void LoadingPage::enter_page(PAGES origin, void* payload) {
-    this->update_time();
     _model.msg = "Loading...";
 }
 

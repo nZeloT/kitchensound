@@ -7,10 +7,12 @@
 #include "kitchensound/pages/playing_page.h"
 
 class BTController;
+class TimerManager;
 
 class BluetoothPlayingPage : public PlayingPage {
 public:
     BluetoothPlayingPage(StateController &ctrl,
+                         TimerManager& tm,
                          ResourceManager &res,
                          std::shared_ptr<Volume>& vol,
                          std::shared_ptr<BTController>& btc);

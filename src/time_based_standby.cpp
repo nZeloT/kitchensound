@@ -1,9 +1,11 @@
 #include "kitchensound/time_based_standby.h"
 
 #include "kitchensound/timeouts.h"
+#include "kitchensound/timer_manager.h"
 
-TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c)
-        : _interval_a{}, _interval_b{}, _armed{}, _current_time{nullptr} {
+TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c, TimerManager& tm)
+        : _interval_a{}, _interval_b{}, _armed{}, _currently_active{false}, _current_time{nullptr},
+        _change_callback{[](auto b){}}{
     update_time();
 
     _enabled = c.enabled;
@@ -32,19 +34,20 @@ TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c)
         _interval_a.end_min = c.end_minute;
     }
 
-    _cooldown_timer = STANDBY_TIMEOUT;
+    _currently_active = is_standby_active();
+
+    tm.request_timer(CLOCK_UPDATE_DELAY, true, [this]() {
+       this->update_time();
+       auto old_state = this->_currently_active;
+       this->_currently_active = this->is_standby_active();
+       if(old_state != this->_currently_active)
+           this->_change_callback(this->_currently_active);
+    });
 }
 
 void TimeBasedStandby::update_time() {
     auto now = std::time(nullptr);
     _current_time = std::localtime(&now);
-    if (_armed && _cooldown_timer > 0)
-        --_cooldown_timer;
-
-}
-
-void TimeBasedStandby::reset_standby_cooldown() {
-    _cooldown_timer = STANDBY_TIMEOUT;
 }
 
 bool TimeBasedStandby::is_standby_active() {
@@ -56,7 +59,9 @@ bool TimeBasedStandby::is_standby_active() {
                    (_interval_b.active &&
                     (_interval_a.is_active(_current_time) || _interval_b.is_active(_current_time)))
                    || _interval_a.is_active(_current_time)
-           )
+           );
+}
 
-           && _cooldown_timer == 0;
+void TimeBasedStandby::set_change_callback(std::function<void(bool)> cb) {
+    _change_callback = std::move(cb);
 }

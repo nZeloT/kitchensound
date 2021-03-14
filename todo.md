@@ -1,10 +1,14 @@
 # TODO
 0. Kitchensound
    - add option to display Error messages / last log output
-   - check for cross-build size
    - refactor threading away by handling everything non-blocking sequentially
+    - mpd controller is done
+    - bt_controller
+    - cache_manager
    - add a new time helper class to get rid of all the manual timers 
-     sometimes counting seconds, sometimes iterations
+    - cache/resource manager
+   
+   - remove ctime dependency in favor of std::chrono
 1. Alsa
     - Add equalizer to alsa configuration
     - http://www.gerrelt.nl/RaspberryPi/wordpress/equalizer/

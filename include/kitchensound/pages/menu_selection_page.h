@@ -6,7 +6,7 @@
 
 class MenuSelectionPage : public SelectionPage<MenuModel> {
 public:
-    MenuSelectionPage(StateController& ctrl, ResourceManager& res);
+    MenuSelectionPage(StateController& ctrl, TimerManager& tm, ResourceManager& res);
     ~MenuSelectionPage() override;
     void handle_enter_key(InputEvent&) override;
     void enter_page(PAGES orig, void* payload) override;

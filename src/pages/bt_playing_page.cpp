@@ -10,10 +10,11 @@
 #define BLUETOOTH_IMAGE "img/bluetooth.png"
 
 BluetoothPlayingPage::BluetoothPlayingPage(StateController &ctrl,
+                                           TimerManager& tm,
                                            ResourceManager &res,
                                            std::shared_ptr<Volume>& vol,
                                            std::shared_ptr<BTController>& btc)
-        : PlayingPage(BT_PLAYING, ctrl, res, vol),
+        : PlayingPage(BT_PLAYING, ctrl, tm, res, vol),
           _btc{btc} {
     set_image("", BLUETOOTH_IMAGE);
     _btc->set_metadata_status_callback([&](auto status, auto meta) {

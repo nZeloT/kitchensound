@@ -7,10 +7,11 @@
 #include "kitchensound/pages/selection_page.h"
 
 class MPDController;
+class Timer;
 
 class StationSelectionPage : public SelectionPage<RadioStationStream> {
 public:
-    StationSelectionPage(StateController &ctrl, ResourceManager &res, std::shared_ptr<MPDController> &,
+    StationSelectionPage(StateController &ctrl, TimerManager& tm, ResourceManager &res, std::shared_ptr<MPDController> &,
                          std::vector<RadioStationStream> streams);
 
     ~StationSelectionPage() override;
@@ -23,7 +24,7 @@ public:
 
     void handle_enter_key(InputEvent&) override;
 
-    void render(Renderer &renderer) override;
+    void update(long ms_delta_update) override;
 
     RadioStationStream *get_selected_stream();
 
@@ -34,12 +35,12 @@ private:
     void activate_timeout();
 
     std::shared_ptr<MPDController> _mpd;
+    std::unique_ptr<Timer> _auto_leave_timer;
 
     struct StationBrowsingPageModel {
         int confirmed_selection;
 
         bool times_out;
-        int remaining_time;
     } _model;
 };
 

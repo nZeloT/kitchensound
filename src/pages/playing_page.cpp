@@ -7,8 +7,8 @@
 
 #define FAV_IMAGE "img/favorite.png"
 
-PlayingPage::PlayingPage(PAGES page, StateController &ctrl, ResourceManager& res, std::shared_ptr<Volume> &vol)
- : VolumePage(page, ctrl, vol), _text_source{std::make_unique<RenderText>()},
+PlayingPage::PlayingPage(PAGES page, StateController &ctrl, TimerManager& tm, ResourceManager& res, std::shared_ptr<Volume> &vol)
+ : VolumePage(page, ctrl, tm, vol), _text_source{std::make_unique<RenderText>()},
  _text_metadata{std::make_unique<RenderText>()}, _model{}, _res{res} {
     _model.fav_img_ptr = _res.get_static(FAV_IMAGE);
 }

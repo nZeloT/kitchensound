@@ -6,6 +6,7 @@
 #include "kitchensound/pages/base_page.h"
 
 class StateController;
+class TimerManager;
 class ResourceManager;
 class Renderer;
 
@@ -18,6 +19,7 @@ public:
 
 protected:
     SelectionPage(PAGES page, StateController& ctrl,
+                  TimerManager& tm,
                   ResourceManager& res,
                   std::vector<T> data);
     ~SelectionPage() override;

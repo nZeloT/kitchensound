@@ -122,7 +122,7 @@ void ResourceManager::get_cached(const std::string &identifier, std::function<vo
         return;
     }
 
-    if(loaded->state == FAILED && std::time(nullptr) - loaded->last_state_upd > 80000) {
+    if(loaded->state == FAILED && std::time(nullptr) - loaded->last_state_upd > 80000) { // TODO use timer?
         //retry fetching the resource
         retry_load_cached(_id, std::move(image_cb));
         return;

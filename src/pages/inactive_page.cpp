@@ -11,23 +11,33 @@
 #include "kitchensound/state_controller.h"
 #include "kitchensound/time_based_standby.h"
 #include "kitchensound/timer.h"
+#include "kitchensound/timer_manager.h"
 #include "kitchensound/gpio_util.h"
 
-InactivePage::InactivePage(StateController& ctrl, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio)
-    : BasePage(INACTIVE, ctrl), _model{MENU_SELECTION, false, false},
+InactivePage::InactivePage(StateController& ctrl, TimerManager& tm, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio)
+    : BasePage(INACTIVE, ctrl, tm), _model{MENU_SELECTION, false, false, false, false},
     _standby{standby}, _gpio{gpio},
-    _amp_cooldown_timer{std::make_unique<Timer>(AMPLIFIER_DELAY, false, [this](){
+    _amp_cooldown_timer{tm.request_timer(AMPLIFIER_DELAY, false, [this](){
         this->_model.amp_cooldown_active = false;
+        this->update_state();
+    })},
+    _user_active_timer{tm.request_timer(STANDBY_TIMEOUT, false, [this](){
+        this->_model.user_cooldown_active = false;
+        this->update_state();
     })}
-    {
-        standby->arm();
-    }
+{
+    _standby->set_change_callback([this](auto new_state) {
+        this->_model.standby_active = new_state;
+        this->update_state();
+    });
+    _standby->arm();
+}
 
 InactivePage::~InactivePage() = default;
 
 void InactivePage::enter_page(PAGES origin, void* payload) {
     this->update_time();
-    _amp_cooldown_timer->reset();
+    _amp_cooldown_timer.reset();
     _model.amp_cooldown_active = true;
     _model.last_seen = origin;
     _gpio->turn_off_amplifier();
@@ -43,56 +53,57 @@ void* InactivePage::leave_page(PAGES destination) {
     return nullptr;
 }
 
-void InactivePage::update(long ms_delta_time) {
-    _amp_cooldown_timer->update(ms_delta_time);
-    if(_standby->is_standby_active()){
-        if(_model.display_on){
-            _gpio->turn_off_display();
-            _model.display_on = false;
-            _bp_model.update_delay_time = 500;
-        }
-    }else{
-        if(!_model.display_on){
-            _gpio->turn_on_display();
-            _model.display_on = true;
-            _bp_model.update_delay_time = 20;
-        }
+void InactivePage::update_state() {
+    if (!_model.user_cooldown_active
+        && _model.standby_active
+        && _model.display_on) {
+        _gpio->turn_off_display();
+        _model.display_on = false;
+        _bp_model.update_delay_time = 500;
     }
-    BasePage::update(ms_delta_time);
+
+    if (!_model.standby_active
+        && !_model.display_on) {
+        _gpio->turn_on_display();
+        _model.display_on = true;
+        _bp_model.update_delay_time = 20;
+    }
 }
 
 void InactivePage::handle_power_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
-        _standby->reset_standby_cooldown();
+        _user_active_timer.reset();
+        _model.user_cooldown_active = true;
         if (!_model.amp_cooldown_active)
             _state.trigger_transition(_page, _model.last_seen);
     }
 }
 
 void InactivePage::handle_wheel_input(int delta) {
-    _standby->reset_standby_cooldown();
+    _user_active_timer.reset();
+    _model.user_cooldown_active = true;
 }
 
 void InactivePage::handle_enter_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_SHORT)
-        _standby->reset_standby_cooldown();
+    if(inev.value == INEV_KEY_SHORT){
+        _user_active_timer.reset();
+        _model.user_cooldown_active = true;
+    }
 }
 
 void InactivePage::handle_mode_key(InputEvent& inev) {
-    if(inev.value == INEV_KEY_SHORT)
-        _standby->reset_standby_cooldown();
-}
-
-void InactivePage::update_time() {
-    _standby->update_time();
-    BasePage::update_time();
+    if(inev.value == INEV_KEY_SHORT){
+        _user_active_timer.reset();
+        _model.user_cooldown_active = true;
+    }
 }
 
 void InactivePage::render(Renderer& renderer) {
-    if(_standby->is_standby_active())
+    if(_model.standby_active)
         return;
-    if(!_model.display_on && !_standby->is_standby_active())
-        _gpio->turn_on_display();
+
+    //if(!_model.display_on && !_standby->is_standby_active()) //TODO why was that needed?
+    //    _gpio->turn_on_display();
 
     if (_model.amp_cooldown_active) {
         //display cooldown
