@@ -5,25 +5,29 @@
 
 #include "kitchensound/pages/base_page.h"
 
+struct ApplicationBackbone;
+
 class OsUtil;
-class TimerManager;
+class Timer;
 
 class OptionsPage : public BasePage {
 public:
 
-    OptionsPage(StateController& ctrl, TimerManager& tm, std::shared_ptr<OsUtil>&);
+    OptionsPage(ApplicationBackbone&, std::shared_ptr<OsUtil>&);
     ~OptionsPage() override;
-    void enter_page(PAGES origin, void* payload) override;
+    void enter_page(PAGES, void*) override;
     void* leave_page(PAGES destination) override;
     void handle_enter_key(InputEvent&) override;
     void handle_wheel_input(int delta) override;
 
-    void render(Renderer& renderer) override;
+    void render() override;
 
 private:
     void update_model();
 
     std::shared_ptr<OsUtil> _os;
+
+    std::unique_ptr<Timer> _value_update;
 
     struct {
         int selection_idx;

@@ -7,15 +7,16 @@
 
 #include "kitchensound/renderer.h"
 #include "kitchensound/resource_manager.h"
+#include "kitchensound/application_backbone.h"
 
 #include "kitchensound/radio_station_stream.h"
 #include "kitchensound/menu_model.h"
 
 
 template<class T>
-SelectionPage<T>::SelectionPage(PAGES page, StateController& ctrl, TimerManager& tm, ResourceManager& res,
+SelectionPage<T>::SelectionPage(PAGES page, ApplicationBackbone& bb,
                                 std::vector<T> data)
-    : BasePage(page, ctrl, tm), _res(res), _sp_model{}{
+    : BasePage(page, bb), _sp_model{}{
     _sp_model.data = std::move(data);
     _sp_model.limit = _sp_model.data.size();
     for(auto& e : _sp_model.data)
@@ -40,8 +41,10 @@ void SelectionPage<T>::load_images() {
 }
 
 template<class T>
-void SelectionPage<T>::render(Renderer& renderer) {
-    this->render_time(renderer);
+void SelectionPage<T>::render() {
+    this->render_time();
+
+    auto& renderer = _bb.rend;
     //each page contains up to four stations
     //render each of the stations in a loop and then place the page indicator below
 
@@ -54,38 +57,38 @@ void SelectionPage<T>::render(Renderer& renderer) {
 
         //1. render a possible selection background
         if (_sp_model.selected == i) {
-            renderer.render_rect(offsetX-80, offsetY-32, 160, 90, Renderer::HIGHLIGHT);
+            renderer->render_rect(offsetX-80, offsetY-32, 160, 90, Renderer::HIGHLIGHT);
         }
 
         //2. render the artwork
         auto image = _sp_model.img_data[i];
         if(image != nullptr)
-            renderer.render_image(image, offsetX - 24, offsetY - 24, 48, 48);
+            renderer->render_image(image, offsetX - 24, offsetY - 24, 48, 48);
 
         //3. render the element name
         auto text = get_text(element);
-        renderer.render_text(offsetX, offsetY+35, text, Renderer::SMALL);
+        renderer->render_text(offsetX, offsetY+35, text, Renderer::SMALL);
     }
 
     // render the page indicators
     auto has_paging = false;
     if (_sp_model.offset > 0) {
         //render left indicator
-        auto image = reinterpret_cast<SDL_Surface*>(_res.get_static(ARROW_RIGHT));
-        renderer.render_image(image, 4, 210, 24, 24);
+        auto image = reinterpret_cast<SDL_Surface*>(_bb.res->get_static(ARROW_RIGHT));
+        renderer->render_image(image, 4, 210, 24, 24);
         has_paging = true;
     }
     if (_sp_model.offset + _sp_model.limit < _sp_model.limit) {
         //render right indicator
-        auto image = reinterpret_cast<SDL_Surface*>(_res.get_static(ARROW_LEFT));
-        renderer.render_image(image, 292, 210, 24, 24);
+        auto image = reinterpret_cast<SDL_Surface*>(_bb.res->get_static(ARROW_LEFT));
+        renderer->render_image(image, 292, 210, 24, 24);
         has_paging = true;
     }
 
     //render the page number
     if (has_paging) {
         int page_num = _sp_model.offset / _sp_model.limit;
-        renderer.render_text(160, 225, std::to_string(page_num), Renderer::SMALL);
+        renderer->render_text(160, 225, std::to_string(page_num), Renderer::SMALL);
     }
 }
 

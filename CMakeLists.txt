@@ -3,14 +3,8 @@ project(kitchensound)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package(Threads REQUIRED)
-
 find_path(LOCAL_INCLUDES NAMES libconfig.h++ HINTS /usr/local/include REQUIRED)
 message(STATUS "LOCAL_INCLUDES => ${LOCAL_INCLUDES}")
-
-find_path(SDL2_INCLUDE NAMES SDL.h HINTS /usr/local/include/SDL2 REQUIRED)
-message(STATUS "SDL2_INCLUDE => ${SDL2_INCLUDE}")
 
 find_path(CURL_INCLUDE NAMES curl/curl.h HINTS /usr/include/arm-linux-gnueabihf REQUIRED)
 message(STATUS "CURL_INCLUDE => ${CURL_INCLUDE}")
@@ -47,11 +41,13 @@ add_executable(kitchensound src/main.cpp
         src/gpio_util.cpp
         src/init_system_conns.cpp
         src/os_util.cpp
-        src/timer.cpp src/timer_manager.cpp)
+        src/timer.cpp
+        src/fd_registry.cpp
+        src/application_backbone.cpp
+)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${LOCAL_INCLUDES})
-target_include_directories(kitchensound PUBLIC ${SDL2_INCLUDE})
 target_include_directories(kitchensound PUBLIC ${CURL_INCLUDE})
 target_link_libraries(kitchensound stdc++fs)
 target_link_libraries(kitchensound SDL2)
@@ -61,9 +57,7 @@ target_link_libraries(kitchensound ao)
 target_link_libraries(kitchensound mpg123)
 target_link_libraries(kitchensound config++)
 target_link_libraries(kitchensound mpdclient)
-target_link_libraries(kitchensound Threads::Threads)
-target_link_libraries(kitchensound sdbus-c++)
+target_link_libraries(kitchensound systemd)
 target_link_libraries(kitchensound asound)
-target_link_libraries(kitchensound curlpp)
 target_link_libraries(kitchensound curl)
 target_link_libraries(kitchensound gpiod)

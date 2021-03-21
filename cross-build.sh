@@ -11,8 +11,8 @@ export RASPBIAN_ROOTFS=$HOME/rpi/rootfs
 export PATH=/opt/cross-pi-gcc/bin:/opt/cross-pi-gcc/libexec/gcc/arm-linux-gnueabihf/8.3.0:$PATH
 export RASPBERRY_VERSION=1
 
-cmake -GNinja -DCMAKE_TOOLCHAIN_FILE=$DIR/Toolchain-rpi.cmake -DCMAKE_BUILD_TYPE=Release $DIR
-ninja -j 8
+cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=$DIR/Toolchain-rpi.cmake -DCMAKE_BUILD_TYPE=Release $DIR
+make -j 8
 
 if [ -f $DIR/cmake-build-cross-release/kitchensound ]; then
 	echo "Transfering succesful build"

@@ -6,22 +6,20 @@
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/pages/playing_page.h"
 
+struct ApplicationBackbone;
 class BTController;
-class TimerManager;
 
 class BluetoothPlayingPage : public PlayingPage {
 public:
-    BluetoothPlayingPage(StateController &ctrl,
-                         TimerManager& tm,
-                         ResourceManager &res,
-                         std::shared_ptr<Volume>& vol,
-                         std::shared_ptr<BTController>& btc);
+    BluetoothPlayingPage(ApplicationBackbone&,
+                         std::shared_ptr<Volume>&,
+                         std::shared_ptr<BTController>&);
 
     ~BluetoothPlayingPage() override;
 
-    void enter_page(PAGES origin, void* payload) override;
+    void enter_page(PAGES, void*) override;
 
-    void* leave_page(PAGES destination) override;
+    void* leave_page(PAGES) override;
 
     void handle_enter_key(InputEvent&) override {};
 

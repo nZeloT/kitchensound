@@ -5,12 +5,13 @@
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/application_backbone.h"
 
 #define RADIO_IMAGE "img/radio.png"
 
-StationPlayingPage::StationPlayingPage(StateController &ctrl, TimerManager& tm, ResourceManager &res, std::shared_ptr<Volume> &vol,
+StationPlayingPage::StationPlayingPage(ApplicationBackbone& bb, std::shared_ptr<Volume> &vol,
                                        std::shared_ptr<MPDController> &mpd, RadioStationStream *initial_station) :
-        PlayingPage(STREAM_PLAYING, ctrl, tm, res, vol),
+        PlayingPage(STREAM_PLAYING, bb, vol),
         _mpd{mpd}, _model{} {
 
     _mpd->set_metadata_callback([&](auto new_meta) {
@@ -32,7 +33,7 @@ StationPlayingPage::~StationPlayingPage() = default;
 void StationPlayingPage::handle_enter_key(InputEvent& inev) {
     PlayingPage::handle_enter_key(inev);
     if(inev.value == INEV_KEY_SHORT)
-        _state.trigger_transition(_page, STREAM_SELECTION);
+        _bb.ctrl->trigger_transition(_page, STREAM_SELECTION);
 }
 
 void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
@@ -53,11 +54,11 @@ void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
 }
 
 void StationPlayingPage::enter_page(PAGES origin, void *payload) {
-    BasePage::update_time();
-    VolumePage::enter_page(origin, payload);
+    PlayingPage::enter_page(origin, payload);
     if (origin != STREAM_SELECTION) {
         _mpd->stop_playback();
         _mpd->playback_stream(_model.station.url);
+        set_source_text(_model.station.name);
         set_image(_model.station.image_url, RADIO_IMAGE);
     } else {
         if (payload == nullptr)
@@ -71,5 +72,6 @@ void *StationPlayingPage::leave_page(PAGES destination) {
     if (destination != STREAM_SELECTION) {
         _mpd->stop_playback();
     }
+    PlayingPage::leave_page(destination);
     return nullptr;
 }

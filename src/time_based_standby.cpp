@@ -1,11 +1,18 @@
 #include "kitchensound/time_based_standby.h"
 
 #include "kitchensound/timeouts.h"
-#include "kitchensound/timer_manager.h"
+#include "kitchensound/timer.h"
 
-TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c, TimerManager& tm)
+TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c, std::unique_ptr<FdRegistry>& fdr)
         : _interval_a{}, _interval_b{}, _armed{}, _currently_active{false}, _current_time{nullptr},
-        _change_callback{[](auto b){}}{
+        _change_callback{[](auto b){}},
+        _update_timer{std::make_unique<Timer>(fdr, "Standby Clock Update", CLOCK_UPDATE_DELAY, true, [this]() {
+            this->update_time();
+            auto old_state = this->_currently_active;
+            this->_currently_active = this->is_standby_active();
+            if(old_state != this->_currently_active)
+                this->_change_callback(this->_currently_active);
+        })}{
     update_time();
 
     _enabled = c.enabled;
@@ -35,15 +42,9 @@ TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c, TimerM
     }
 
     _currently_active = is_standby_active();
-
-    tm.request_timer(CLOCK_UPDATE_DELAY, true, [this]() {
-       this->update_time();
-       auto old_state = this->_currently_active;
-       this->_currently_active = this->is_standby_active();
-       if(old_state != this->_currently_active)
-           this->_change_callback(this->_currently_active);
-    });
 }
+
+TimeBasedStandby::~TimeBasedStandby() = default;
 
 void TimeBasedStandby::update_time() {
     auto now = std::time(nullptr);

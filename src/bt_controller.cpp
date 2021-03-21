@@ -1,511 +1,637 @@
 #include "kitchensound/bt_controller.h"
 
-#include <cstdio>
 #include <memory>
-#include <stdexcept>
-#include <array>
 #include <string>
-#include <map>
-#include <sstream>
-
-#include <SDL.h>
+#include <regex>
+#include <unordered_map>
+#include <cstdarg>
+#include <sys/epoll.h>
 
 #include <spdlog/spdlog.h>
-#include <sdbus-c++/sdbus-c++.h>
 
 #include "kitchensound/file_playback.h"
+#include "kitchensound/fd_registry.h"
+#include "kitchensound/timer.h"
 
-constexpr char SERVICE_NAME[] = "org.bluez";
+#define BLUEZ_SERVICE_NAME "org.bluez"
+#define DBUS_OBJECT_MANAGER_INTERFACE "org.freedesktop.DBus.ObjectManager"
+#define DBUS_PROPERTIES_INTERFACE "org.freedesktop.DBus.Properties"
 
-void activate_discoverable() {
-    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
-    proxy->setProperty("Discoverable").onInterface("org.bluez.Adapter1").toValue(true);
-    SPDLOG_INFO("BT adapter made discoverable");
-}
+#define BLUEZ_DEVICE_INTERFACE "org.bluez.Device1"
+#define BLUEZ_MEDIA_INTERFACE "org.bluez.MediaPlayer1"
 
-void deactivate_discoverable() {
-    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
-    proxy->setProperty("Discoverable").onInterface("org.bluez.Adapter1").toValue(false);
-    SPDLOG_INFO("BT adapter mad undiscoverable");
-}
 
-class DBusBTDeviceMonitor {
-
-public:
-    DBusBTDeviceMonitor(sdbus::IConnection &conn, const std::string &deviceId,
-                        std::function<void(std::string const &, bool)> deviceConnectedHandler,
-                        std::function<void(std::string const &, std::string const &)> deviceNameHandler,
-                        std::function<void(std::string const &, sdbus::ObjectPath const &)> devicePlayerChange) :
-            _proxy{std::move(sdbus::createProxy(conn, SERVICE_NAME, "/org/bluez/hci0/" + deviceId))},
-            _deviceConnectedHandler(std::move(deviceConnectedHandler)),
-            _deviceNameHandler(std::move(deviceNameHandler)),
-            _devicePlayerChanged(std::move(devicePlayerChange)),
-            _deviceId(deviceId) {
-
-        //0. check current device _state
-        auto prop = _proxy->getProperty("Connected").onInterface(DEVICE_INTERFACE);
-        _connected = prop.get<bool>();
-        auto name_prop = _proxy->getProperty("Alias").onInterface(DEVICE_INTERFACE);
-        _name = name_prop.get<std::string>();
-        SPDLOG_INFO("Initial device state -> {0} {1} {2}", _deviceId, _name, _connected);
-        _deviceConnectedHandler(_deviceId, _connected);
-        if (!_name.empty())
-            _deviceNameHandler(_deviceId, _name);
-
-        try {
-            prop = _proxy->getProperty("Player").onInterface(MEDIAPLAYER_INTF);
-            _playerPath = prop.get<sdbus::ObjectPath>();
-            _devicePlayerChanged(_deviceId, _playerPath);
-        } catch (sdbus::Error const &error) {
-            SPDLOG_ERROR(error.getMessage());
-        }
-
-        //1. register change handler
-        _proxy->uponSignal("PropertiesChanged").onInterface(INTERFACE_NAME)
-                .call([this](const std::string &interfaceName,
-                             const std::map<std::string, sdbus::Variant> &changedProperties,
-                             const std::vector<std::string> &invalidatedProperties) {
-                    this->on_properties_changed(interfaceName, changedProperties, invalidatedProperties);
-                });
-
-        _proxy->finishRegistration();
-    }
-
-    ~DBusBTDeviceMonitor() = default;
-
-    [[nodiscard]] std::string getDeviceId() { return _deviceId; };
-
-private:
-    static constexpr char INTERFACE_NAME[] = "org.freedesktop.DBus.Properties";
-    static constexpr char DEVICE_INTERFACE[] = "org.bluez.Device1";
-    static constexpr char MEDIAPLAYER_INTF[] = "org.bluez.MediaControl1";
-
-    void on_properties_changed(const std::string &interfaceName,
-                               const std::map<std::string, sdbus::Variant> &changedProperties,
-                               const std::vector<std::string> &invalidatedProperties) {
-        SPDLOG_INFO("Properties changed on -> {0}", interfaceName);
-        if (interfaceName == DEVICE_INTERFACE) {
-            check_connected_property(changedProperties);
-            check_name_property(changedProperties);
-        } else if (interfaceName == MEDIAPLAYER_INTF) {
-            check_media_player_property(changedProperties);
-        }
-    }
-
-    void check_connected_property(std::map<std::string, sdbus::Variant> const &props) {
-        auto val = props.find("Connected");
-        if (val != props.end()) {
-            _connected = val->second.get<bool>();
-            SPDLOG_INFO("New device status -> {0}; {1}", _deviceId, _connected);
-            _deviceConnectedHandler(_deviceId, _connected);
-        }
-    }
-
-    void check_name_property(std::map<std::string, sdbus::Variant> const &props) {
-        auto val = props.find("Alias");
-        if (val != props.end()) {
-            _name = val->second.get<std::string>();
-            SPDLOG_INFO("New device name received -> {0}; {1}", _deviceId, _name);
-            _deviceNameHandler(_deviceId, _name);
-        }
-    }
-
-    void check_media_player_property(std::map<std::string, sdbus::Variant> const &props) {
-        auto val = props.find("Player");
-        if (val != props.end()) {
-            _playerPath = val->second.get<sdbus::ObjectPath>();
-            SPDLOG_INFO("Player Property changed -> {0}; {1}", _deviceId, _playerPath);
-            _devicePlayerChanged(_deviceId, _playerPath);
-        }
-    }
-
-    bool _connected;
-    std::string _name;
-    sdbus::ObjectPath _playerPath;
-
-    std::string _deviceId;
-    std::unique_ptr<sdbus::IProxy> _proxy;
-    std::function<void(std::string const &, bool)> _deviceConnectedHandler;
-    std::function<void(std::string const &, std::string const &)> _deviceNameHandler;
-    std::function<void(std::string const &, std::string const &)> _devicePlayerChanged;
+struct BTDevice {
+    std::string device_id;
+    std::string device_name;
+    std::string player_metadata;
+    bool is_connected;
+    bool has_player;
 };
 
-class DBusBTObjectMonitor {
-public:
-    DBusBTObjectMonitor(sdbus::IConnection &conn,
-                        std::function<void(std::string const &, bool)> deviceChanged)
-            : _proxy{std::move(sdbus::createProxy(conn, SERVICE_NAME, "/"))},
-              _deviceChange(std::move(deviceChanged)),
-              _known() {
+int dbus_signal_interface_added(sd_bus_message *, void *, sd_bus_error *);
 
-        //0. check for existing devices and players
-        std::map<sdbus::ObjectPath, std::map<std::string, std::map<std::string, sdbus::Variant>>> objects;
-        _proxy->callMethod("GetManagedObjects").onInterface(INTERFACE_NAME).storeResultsTo(objects);
-        for (auto &entry : objects) {
-            this->on_interfaces_added(entry.first);
-        }
+int dbus_signal_interface_removed(sd_bus_message *, void *, sd_bus_error *);
 
-        //1. register for change events
-        _proxy->uponSignal("InterfacesAdded")
-                .onInterface(INTERFACE_NAME)
-                .call([this](const sdbus::ObjectPath &objectPath,
-                             const std::map<std::string, std::map<std::string, sdbus::Variant>> &interfacesAndProperties) {
-                    this->on_interfaces_added(objectPath);
-                });
+int dbus_signal_properties_changed(sd_bus_message *, void *, sd_bus_error *);
 
-        _proxy->uponSignal("InterfacesRemoved")
-                .onInterface(INTERFACE_NAME)
-                .call([this](const sdbus::ObjectPath &objectPath, const std::vector<std::string> &interfaces) {
-                    this->on_interfaces_removed(objectPath);
-                });
+struct BTController::Impl {
+    Impl(std::unique_ptr<FdRegistry> &fdreg, std::shared_ptr<FilePlayback> &playback)
+            : _cb_meta_status_update{[](std::string const &, std::string const &) {}}, _bus{nullptr}, _bus_fd{-1},
+              _error{0}, _connected_device{nullptr},
+              _known_devices{}, _playback{playback}, _fdreg{fdreg},
+              _sdbus_update{std::make_unique<Timer>(fdreg, "BtController Dbus Update", 100, false, [this]() {
+                  this->on_dbus_timer_update();
+              })} {}
 
-        _proxy->finishRegistration();
+    ~Impl() {
+        if (_bus)
+            stop_signal_watchdog();
     }
 
-    ~DBusBTObjectMonitor() = default;
+    void change_adapter_state(const std::string &interface_member, bool turn_on) {
+        sd_bus *bus = nullptr;
+        _error = sd_bus_open_system(&bus);
+        check_error("Failed to connect to system dbus!");
 
-private:
-    static constexpr const char INTERFACE_NAME[] = "org.freedesktop.DBus.ObjectManager";
+        _error = sd_bus_set_property(bus, "org.bluez", "/org/bluez/hci0", "org.bluez.Adapter1",
+                                     interface_member.c_str(),
+                                     nullptr, "b", turn_on);
+        check_error("Failed to change BT adapter power state!");
 
-    void on_interfaces_added(const sdbus::ObjectPath &objectPath) {
-        //check if its a device
-        int pos;
-        if ((pos = objectPath.find("/dev_")) != std::string::npos) {
-            //is it a known device?
-            SPDLOG_INFO("Added -> {0}", objectPath);
-            int len = objectPath.find_first_of("/", pos + 1);
-            if (len != std::string::npos) {
-                len -= pos;
-                --len;
+        SPDLOG_INFO("BT adapter property changed -> {} = {}", interface_member, turn_on);
+
+        sd_bus_unref(bus);
+    }
+
+    void adapter_power_change(bool turn_on) {
+        change_adapter_state("Powered", turn_on);
+        change_adapter_state("Discoverable", turn_on);
+
+        if (turn_on)
+            start_signal_watchdog();
+        else
+            stop_signal_watchdog();
+
+        _playback->playback(turn_on ? "bt-activate.mp3" : "bt-deactivate.mp3");
+    }
+
+    void start_signal_watchdog() {
+        _error = sd_bus_open_system(&_bus);
+        check_error("Failed to open system dbus!");
+
+        //initially call the GetManagedObjects method once to identify all already known devices
+        sd_bus_message *replies;
+        _error = sd_bus_call_method(_bus, BLUEZ_SERVICE_NAME, "/", DBUS_OBJECT_MANAGER_INTERFACE, "GetManagedObjects",
+                                    nullptr, &replies, nullptr);
+        check_error("Failed to call DBus Object Manager!");
+
+        _error = sd_bus_message_enter_container(replies, SD_BUS_TYPE_ARRAY, "{oa{sa{sv}}}");
+        check_error("outermost array");
+
+        while (!sd_bus_message_at_end(replies, false)) {
+            _error = sd_bus_message_enter_container(replies, SD_BUS_TYPE_DICT_ENTRY, "oa{sa{sv}}");
+            check_error("outermost dict enter");
+
+            on_dbus_interface_added(replies);
+
+            _error = sd_bus_message_exit_container(replies);
+            check_error("failed to exit first dict");
+        }
+
+
+        _error = sd_bus_message_exit_container(replies);
+        check_error("failed to exit ourtemost array");
+
+
+        _error = sd_bus_match_signal(_bus, nullptr, BLUEZ_SERVICE_NAME, "/", DBUS_OBJECT_MANAGER_INTERFACE,
+                                     "InterfacesAdded",
+                                     dbus_signal_interface_added, this);
+        check_error("failed to register for interfaces added signal");
+
+        _error = sd_bus_match_signal(_bus, nullptr, BLUEZ_SERVICE_NAME, "/", DBUS_OBJECT_MANAGER_INTERFACE,
+                                     "InterfacesRemoved",
+                                     dbus_signal_interface_removed, this);
+        check_error("failed to register for the interfaces removed signal");
+
+        _bus_fd = sd_bus_get_fd(_bus);
+
+        update_sd_bus_event_epoll();
+
+        uint64_t microseconds;
+        _error = sd_bus_get_timeout(_bus, &microseconds);
+        if (_error < 0) {
+            SPDLOG_WARN("Failed to obtain dbus timeout!, Defaulting to ten seconds!");
+            microseconds = 10000000L;
+        }
+
+        _sdbus_update->reset_timer(std::max(1ull, microseconds / 1000L));
+    };
+
+    void stop_signal_watchdog() {
+        _sdbus_update->stop();
+        _fdreg->removeFd(_bus_fd);
+
+        sd_bus_unref(_bus);
+        _bus = nullptr;
+        _connected_device = nullptr;
+        _known_devices.clear();
+    }
+
+    void on_dbus_event_update(uint32_t _unused_) {
+        update_dbus();
+        update_sd_bus_event_epoll();
+    }
+
+    void on_dbus_timer_update() {
+        update_dbus();
+        update_sd_bus_event_epoll();
+    }
+
+    void update_dbus() {
+        _error = 0;
+        if (_bus) {
+            for (;;) {
+                //we're only interested in signals which in turn have callback handlers
+                auto r = sd_bus_process(_bus, nullptr);
+                if (r > 0)
+                    continue;
+                if (r == 0)
+                    break;
+
+                throw std::runtime_error{"Received error during sd_bus_process!"};
             }
-            auto deviceId = objectPath.substr(pos + 1, len);
-            SPDLOG_INFO("Found device id -> {0}", deviceId);
+        }
+    }
 
-            //is the device id already known?
-            auto known = std::find(begin(_known), end(_known), deviceId);
-            if (known == std::end(_known)) {
-                SPDLOG_INFO("Is formerly unknown device.");
-                _known.push_back(deviceId);
-                _deviceChange(deviceId, true);
+    void update_sd_bus_event_epoll() {
+        _fdreg->removeFd(_bus_fd);
+
+        _bus_fd = sd_bus_get_fd(_bus);
+        auto events = sd_bus_get_events(_bus);
+        if (events < 0)
+            throw std::runtime_error{"Failed to receive new dbus poll events!"};
+
+        auto epoll_evts = ((events & POLL_IN) ? EPOLLIN : 0) | ((events & POLL_OUT) ? EPOLLOUT : 0);
+
+        _fdreg->addFd(_bus_fd, [this](int fd, uint32_t revents) {
+            this->on_dbus_event_update(revents);
+        }, epoll_evts);
+    }
+
+    void on_dbus_interface_added(sd_bus_message *dbus_msg) {
+        //expecting oa{sa{sv}}
+        const char *path;
+        _error = sd_bus_message_read(dbus_msg, "o", &path);
+        check_error("dict path");
+
+
+        //is path relevant for watching device states?
+        if (std::string{path}.find("/dev_") == std::string::npos) {
+            _error = sd_bus_message_skip(dbus_msg, "a{sa{sv}}");
+            check_error("Failed to skip interface add on irrelevant path!");
+
+            SPDLOG_INFO("Skipping interface added message for path -> {}", path);
+
+            return;
+        }
+
+        // message is potentially relevant; check if the device is already known; if not make it known
+        auto it = get_or_create_known_device(get_device_id_from_dbus_path(std::string{path}));
+
+        _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_ARRAY, "{sa{sv}}");
+        check_error("Failed to enter array of added interfaces");
+
+        while (!sd_bus_message_at_end(dbus_msg, false)) {
+            _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_DICT_ENTRY, "sa{sv}");
+            check_error("Failed to enter dict entry of a added interface");
+
+            const char *intf_name;
+            _error = sd_bus_message_read(dbus_msg, "s", &intf_name);
+            check_error("failed to read added interface name");
+
+
+            //check whether it is a relevant interface
+            std::string interface{intf_name};
+            if (interface == BLUEZ_DEVICE_INTERFACE) {
+                // a new device was registered; watch the device properties to change
+                setup_new_device(it->second, std::string{path});
+            } else if (interface == BLUEZ_MEDIA_INTERFACE) {
+                // a new media player interface was added; this is normally only the case
+                // when a connection to a phone is established
+                // we want to register for changed properties here as well
+                setup_new_player_on_device(it->second, std::string{path});
             }
+
+            _error = sd_bus_message_skip(dbus_msg, "a{sv}");
+            check_error("failed to skip");
+
+            _error = sd_bus_message_exit_container(dbus_msg);
+            check_error("failed to exit second dict");
         }
+
+        _error = sd_bus_message_exit_container(dbus_msg);
+        check_error("failed to exit second array");
+
     }
 
-    void on_interfaces_removed(const sdbus::ObjectPath &objectPath) {
-        int devPos;
-        if ((devPos = objectPath.find("/dev")) != std::string::npos) {
-            int len = objectPath.find_first_of("/", devPos + 1);
-            if (len != std::string::npos) {
-                SPDLOG_INFO("Not the device itself removed.");
-                return; //its not the device beeing removed ...
+    void on_dbus_interface_removed(sd_bus_message *dbus_msg) {
+        // expecting oas
+
+        const char *path;
+        _error = sd_bus_message_read(dbus_msg, "o", &path);
+        check_error("Failed to read object path from interface removed message!");
+
+        //check if path is relevant for us
+        auto it = _known_devices.find(get_device_id_from_dbus_path(std::string{path}));
+        if (it != std::end(_known_devices)) {
+            //relevant path
+
+            _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_ARRAY, "s");
+            check_error("failed to enter container of strings");
+
+            while (!sd_bus_message_at_end(dbus_msg, false)) {
+                const char *intf_name;
+                _error = sd_bus_message_read(dbus_msg, "s", &intf_name);
+                check_error("failed to read removed interface name");
+
+                std::string interface{intf_name};
+                if (interface == BLUEZ_DEVICE_INTERFACE) {
+                    //expect that the registered property listener is dead as well automatically
+                    remove_device_from_known_devices(it);
+                } else if (interface == BLUEZ_MEDIA_INTERFACE) {
+                    remove_player_on_device(it->second, std::string{path});
+                }
             }
 
-            auto deviceId = objectPath.substr(devPos + 1, len);
-            SPDLOG_INFO("Found device id -> {0}", deviceId);
+            _error = sd_bus_message_exit_container(dbus_msg);
+            check_error("Failed to exit array on interface rmoval");
 
-            auto known = std::find(begin(_known), end(_known), deviceId);
-            if (known == std::end(_known))
-                return; //removing unknown device ...
 
-            SPDLOG_INFO("Removing device -> {0}", deviceId);
-            _known.erase(known);
+        } else {
+            _error = sd_bus_message_skip(dbus_msg, "as");
+            check_error("failed to skip array of strings");
         }
     }
 
+    void on_dbus_property_changed(sd_bus_message *dbus_msg) {
+        //expecting message of kind "sa{sv}as
 
-    std::vector<std::string> _known;
-    std::function<void(std::string const &, bool)> _deviceChange;
-    std::unique_ptr<sdbus::IProxy> _proxy;
-};
+        // first string is of message is interface name
+        // followed by an array of { property name -> variant with new state }
 
-class DBusBTMediaPlayerMonitor {
-public:
-    DBusBTMediaPlayerMonitor(sdbus::IConnection &conn, std::string const &deviceId, sdbus::ObjectPath const &playerId,
-                             std::function<void(std::string)> newMetadata, bool enabled = false)
-            : _proxy{std::move(sdbus::createProxy(conn, SERVICE_NAME, playerId))},
-              _newMetadata(std::move(newMetadata)), _metadata(), _enabled(enabled), _player(playerId) {
+        // want to listen here for
+        // 1. connected change on BLUEZ_DEVICE_INTERFACE
+        // 2. alias change on same interface
+        // 3. Track change on BLUEZ_MEDIA_INTERFACE
 
-        //0. check existing metadata; Track property is optional and my not yet be present
-        try {
-            std::map<std::string, sdbus::Variant> props;
-            auto _p = _proxy->getProperty("Track").onInterface(MEDIAPLAYER_INTF);
-            auto metadata = _p.get<std::map<std::string, sdbus::Variant>>();
+        auto p = sd_bus_message_get_path(dbus_msg);
+        std::string path{p};
 
-            //potentially has Title, Artist, Album
-            build_metadata_string(metadata);
-            SPDLOG_INFO("New metadata string -> {0}", _metadata);
-        } catch (sdbus::Error &error) {
-            SPDLOG_ERROR(error.getMessage());
-        }
+        if (path.find("/dev_") != std::string::npos) {
+            auto it = _known_devices.find(get_device_id_from_dbus_path(path));
+            if (it != std::end(_known_devices)) {
+                const char *i;
+                _error = sd_bus_message_read(dbus_msg, "s", &i);
+                check_error("Failed to read interface name from property change message.");
+                std::string interface{i};
 
-        if (_enabled)
-            _newMetadata(_metadata);
+                _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_ARRAY, "{sv}");
+                check_error("Failed to open array on property change message.");
 
-        //1. register for change event
-        _proxy->uponSignal("PropertiesChanged").onInterface(INTERFACE_NAME)
-                .call([this](const std::string &interfaceName,
-                             const std::map<std::string, sdbus::Variant> &changedProperties,
-                             const std::vector<std::string> &invalidatedProperties) {
-                    this->on_properties_changed(interfaceName, changedProperties);
-                });
+                if (interface == BLUEZ_DEVICE_INTERFACE) {
+                    parse_device_property_change(it->second, dbus_msg);
+                } else if (interface == BLUEZ_MEDIA_INTERFACE) {
+                    parse_player_property_change(it->second, dbus_msg);
+                } else {
+                    SPDLOG_INFO("Skipping message on irrelevant interface for path -> {}; {}", path, interface);
+                    while(!sd_bus_message_at_end(dbus_msg, false)) {
+                        _error = sd_bus_message_skip(dbus_msg, "{sv}");
+                        check_error("Failed to skip on irrelevant property changed interface");
+                    }
+                }
 
-        _proxy->finishRegistration();
-    }
+                _error = sd_bus_message_exit_container(dbus_msg);
+                check_error("Failed to exit array on property change message");
 
-    void set_enabled(bool enabled) {
-        SPDLOG_INFO("Set player to enabled -> {0}; {1}", _player, enabled);
-        _enabled = enabled;
-    }
-
-private:
-    static constexpr char INTERFACE_NAME[] = "org.freedesktop.DBus.Properties";
-    static constexpr char MEDIAPLAYER_INTF[] = "org.bluez.MediaPlayer1";
-
-    void on_properties_changed(std::string const &intf, std::map<std::string, sdbus::Variant> const &props) {
-        SPDLOG_INFO("Property changed on interface -> {0}", intf);
-        if (intf == MEDIAPLAYER_INTF) {
-            //try to find the track property
-            auto it = std::find_if(begin(props), end(props), [](const auto &p) {
-                return p.first == "Track";
-            });
-            if (it != end(props))
-                build_metadata_string(it->second.get<std::map<std::string, sdbus::Variant>>());
-            if (_enabled)
-                _newMetadata(_metadata);
+                _error = sd_bus_message_skip(dbus_msg, "as");
+                check_error("Failed to skip remaining array on property change message");
+            } else {
+                SPDLOG_INFO("Skipping message for unknown device on path -> {}", path);
+            }
+        } else {
+            SPDLOG_INFO("Skipping message for irrelevant path -> {}", path);
         }
     }
 
-    void build_metadata_string(std::map<std::string, sdbus::Variant> const &meta) {
+    void setup_new_device(BTDevice &device, std::string const &path) {
+        //1. read the connected, and alias properties for initial values
+        //2. register for property changes
+        _error = sd_bus_get_property_trivial(_bus, BLUEZ_SERVICE_NAME, path.c_str(), BLUEZ_DEVICE_INTERFACE,
+                                             "Connected",
+                                             nullptr, 'b', &device.is_connected);
+        check_error("Failed to obtain connected property.");
+        SPDLOG_DEBUG("Obtained connected state for device -> {}; {}", device.device_id, device.is_connected);
+
+        char *device_name;
+        _error = sd_bus_get_property_string(_bus, BLUEZ_SERVICE_NAME, path.c_str(), BLUEZ_DEVICE_INTERFACE, "Alias",
+                                            nullptr, &device_name);
+        check_error("Failed to obtain device name property.");
+        device.device_name = std::string{device_name};
+        SPDLOG_DEBUG("Obtained alias for device -> {}; {}", device.device_id, device.device_name);
+
+        if (device.is_connected) {
+            on_new_device_connected(device);
+        }
+
+        _error = sd_bus_match_signal(_bus, nullptr, BLUEZ_SERVICE_NAME, path.c_str(), DBUS_PROPERTIES_INTERFACE,
+                                     "PropertiesChanged", dbus_signal_properties_changed, this);
+        check_error("Failed to register for propertiy changes on the new device.");
+    }
+
+    void remove_device_from_known_devices(std::unordered_map<std::string, BTDevice>::iterator &it) {
+        on_device_disconnected(it->second);
+        _known_devices.erase(it);
+    }
+
+    void setup_new_player_on_device(BTDevice &device, std::string const &path) {
+        // 1. read the current values for artist, track and album
+        // 2. register for property changes
+        sd_bus_message *dbus_msg;
+        _error = sd_bus_get_property(_bus, BLUEZ_SERVICE_NAME, path.c_str(), BLUEZ_MEDIA_INTERFACE, "Track", nullptr,
+                                     &dbus_msg, "a{sv}");
+        if (_error < 0) {
+            SPDLOG_WARN(
+                    "Unable to fetch current Track from new Media Player. Probably has no Track property right now.");
+        } else {
+            //parse new track info
+            parse_track_property_message(device, dbus_msg);
+        }
+
+        _error = sd_bus_match_signal(_bus, nullptr, BLUEZ_SERVICE_NAME, path.c_str(), DBUS_PROPERTIES_INTERFACE,
+                                     "PropertiesChanged", dbus_signal_properties_changed, this);
+        check_error("Failed to register on player property changes");
+
+        device.has_player = true;
+
+    }
+
+    void remove_player_on_device(BTDevice &device, std::string const &path) const {
+        device.has_player = false;
+        device.player_metadata.clear();
+        //as the player object is already removed expect that the signal handler is also already removed
+        if (_connected_device == &device) {
+            _cb_meta_status_update(device.device_name, device.player_metadata);
+        }
+    }
+
+    static std::string get_device_id_from_dbus_path(std::string const &dbus_path) {
+        //expecting a path like /org/bluez/hci0/dev_XX_XX_XX_XX_XX_XX [/...]
+        SPDLOG_DEBUG("Trying to extract device id from path -> {}", dbus_path);
+        std::smatch match;
+        if (std::regex_search(dbus_path, match, std::regex{
+                R"(dev_[ABCDEF0-9]{2}_[ABCDEF0-9]{2}_[ABCDEF0-9]{2}_[ABCDEF0-9]{2}_[ABCDEF0-9]{2}_[ABCDEF0-9]{2})"})) {
+            return match[0];
+        } else
+            throw std::runtime_error{"Tried to extract device id from path without device id!"};
+    }
+
+    std::unordered_map<std::string, BTDevice>::iterator get_or_create_known_device(std::string const &device_id) {
+        auto it = _known_devices.find(device_id);
+        if (it == std::end(_known_devices)) {
+            auto pair = _known_devices.emplace(device_id, BTDevice{device_id, "", "", false, false});
+            if (!pair.second)
+                throw std::runtime_error{"Failed to insert new devcie into known devcies map!"};
+            it = pair.first;
+        }
+        return it;
+    }
+
+    void check_error(std::string const &msg) {
+        if (_error < 0)
+            throw std::runtime_error{msg};
+        _error = 0;
+    }
+
+    void parse_track_property_message(BTDevice &device, sd_bus_message *dbus_msg) {
+        std::string title;
+        std::string album;
+        std::string artist;
+
+        //parsing Track info. expecting "a{sv}"
+        _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_ARRAY, "{sv}");
+        check_error("Failed to enter Track array");
+
+        while (!sd_bus_message_at_end(dbus_msg, false)) {
+            _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_DICT_ENTRY, "sv");
+            check_error("Failed to enter Track dict");
+
+            const char *prop_name;
+            _error = sd_bus_message_read(dbus_msg, "s", &prop_name);
+            check_error("Failed to read next property name from track dict");
+
+            std::string property{prop_name};
+            const char *t;
+            if (property == "Title") {
+                _error = sd_bus_message_read(dbus_msg, "v", "s", &t);
+                check_error("Failed to read title variant.");
+                title = std::string{t};
+            } else if (property == "Artist") {
+                _error = sd_bus_message_read(dbus_msg, "v", "s", &t);
+                check_error("Faile to read artist variant.");
+                artist = std::string{t};
+            } else if (property == "Album") {
+                _error = sd_bus_message_read(dbus_msg, "v", "s", &t);
+                check_error("Failed to read alibum variant.");
+                album = std::string{t};
+            } else {
+                _error = sd_bus_message_skip(dbus_msg, "v");
+            }
+
+            _error = sd_bus_message_exit_container(dbus_msg);
+            check_error("Failed to exit Track dict");
+        }
+
+        _error = sd_bus_message_exit_container(dbus_msg);
+        check_error("Failed to exit track array.");
+
+        build_metadata_string(device, title, artist, album);
+    }
+
+    void build_metadata_string(BTDevice &device, std::string const &title, std::string const &artist,
+                               std::string const &album) const {
         std::ostringstream s{};
-        auto it = meta.find("Title");
-        bool hasContent = false;
-        if (it != std::end(meta)) {
-            auto t = it->second.get<std::string>();
-            if (!t.empty())
-                hasContent = true;
-            s << t;
+
+        bool has_content = false;
+        if (!title.empty()) {
+            s << title;
+            has_content = true;
         }
 
-        it = meta.find("Artist");
-        if (it != std::end(meta)) {
-            if (hasContent)
+        if (!artist.empty()) {
+            if (has_content)
                 s << " - ";
-            auto t = it->second.get<std::string>();
-            if (!t.empty())
-                hasContent = true;
-            s << t;
+            s << artist;
+            has_content = true;
         }
 
-        it = meta.find("Album");
-        if (it != std::end(meta)) {
-            auto t = it->second.get<std::string>();
-            if (hasContent && !t.empty())
+        if (!album.empty()) {
+            if (has_content)
                 s << " (";
-            s << t;
-            if (hasContent && !t.empty())
+            s << album;
+            if (has_content)
                 s << ")";
         }
 
-        _metadata = s.str();
-        SPDLOG_INFO("New metadata string -> {0}", _metadata);
+        device.player_metadata = s.str();
+        if (_connected_device == &device) {
+            _cb_meta_status_update(device.device_name, device.player_metadata);
+        }
     }
 
-    bool _enabled;
-    std::string _metadata;
+    void parse_device_property_change(BTDevice &device, sd_bus_message *dbus_msg) {
+        //expecting {sv} in an open array
+        while (!sd_bus_message_at_end(dbus_msg, false)) {
+            _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_DICT_ENTRY, "sv");
+            check_error("Failed to open dict entry on device property changed.");
 
-    std::string _player;
-    std::unique_ptr<sdbus::IProxy> _proxy;
-    std::function<void(std::string)> _newMetadata;
-};
+            const char *n;
+            _error = sd_bus_message_read(dbus_msg, "s", &n);
+            check_error("Failed to read property name on device proterty changed.");
+            std::string name{n};
 
-class DBusBTController {
-public:
+            //check for connected
+            //check for changed alias
+            if (name == "Connected") {
+                bool c;
+                _error = sd_bus_message_read(dbus_msg, "v", "b", &c);
+                check_error("Failed to read boolean variant for connected device property");
 
-    DBusBTController(std::shared_ptr<FilePlayback>& playback,
-            std::function<void(const std::string &, const std::string &)> handler)
-            : _handler(std::move(handler)),
-              _dbusConnection(sdbus::createSystemBusConnection()),
-              _playback{playback},
-              _objectMonitor{}, _deviceMonitors{}, _playerMonitors{}, _connected(true),
-              _connectedDevice{}, _status{}, _metadata{} {
+                if (c != device.is_connected) {
+                    device.is_connected = c;
+                    if (device.is_connected) {
+                        on_new_device_connected(device);
+                    }else{
+                        on_device_disconnected(device);
+                    }
+                }
+            } else if (name == "Alias") {
+                const char *a;
+                _error = sd_bus_message_read(dbus_msg, "v", "s", &a);
+                check_error("Failed to read string variant for aliad device property.");
+                std::string alias{a};
 
-        SPDLOG_INFO("Created dbus connection; creating DBusBTObjectMonitor;");
-        _objectMonitor = std::make_unique<DBusBTObjectMonitor>(*_dbusConnection,
-                                                               [this](const std::string &device, bool added) {
-                                                                   if (added) {
-                                                                       add_device_monitor(device);
-                                                                   } else {
-                                                                       remove_device_monitor(device);
-                                                                   }
-                                                               });
+                device.device_name = alias;
+                if (_connected_device == &device)
+                    _cb_meta_status_update(device.device_name, device.player_metadata);
+            } else {
+                SPDLOG_INFO("Skipping irrelevant device property -> {}", name);
+                _error = sd_bus_message_skip(dbus_msg, "v");
+                check_error("Failed to skip variant on irrelevant device property changed");
+            }
+
+            _error = sd_bus_message_exit_container(dbus_msg);
+            check_error("Failed to exit dict on device property changed.");
+        }
     }
 
-    ~DBusBTController() = default;
+    void parse_player_property_change(BTDevice &device, sd_bus_message *dbus_msg) {
+        //expecting {av} in an open array
+        while (!sd_bus_message_at_end(dbus_msg, false)) {
+            _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_DICT_ENTRY, "sv");
+            check_error("Failed to open dict entry on device property changed.");
 
-    std::unique_ptr<sdbus::IConnection> _dbusConnection;
+            const char *n;
+            _error = sd_bus_message_read(dbus_msg, "s", &n);
+            check_error("Failed to read property name on device proterty changed.");
+            std::string name{n};
 
-private:
-    void add_device_monitor(std::string const &deviceId) {
-        _deviceMonitors.emplace(_deviceMonitors.begin(),
-                                std::make_unique<DBusBTDeviceMonitor>(*_dbusConnection, std::string{deviceId},
-                                                                      [this](std::string const &deviceId,
-                                                                             bool connected) {
-                                                                          if (connected)
-                                                                              device_connected(deviceId);
-                                                                          else
-                                                                              device_disconnected(deviceId);
-                                                                      },
-                                                                      [this](std::string const &deviceId,
-                                                                             std::string const &name) {
-                                                                          device_name_changed(deviceId, name);
-                                                                      },
-                                                                      [this](std::string const &deviceId,
-                                                                             sdbus::ObjectPath const &playerPath) {
-                                                                          player_changed(deviceId, playerPath);
-                                                                      }));
+            if (name == "Track") {
+                _error = sd_bus_message_enter_container(dbus_msg, SD_BUS_TYPE_VARIANT, "a{sv}");
+                check_error("Failed to enter variant for track player property change");
+
+                parse_track_property_message(device, dbus_msg);
+
+                _error = sd_bus_message_exit_container(dbus_msg);
+                check_error("Failed to exit variant for track player property change");
+            } else {
+                SPDLOG_INFO("Skipping irrelevant player property change for device -> {}; {}", device.device_name,
+                            name);
+                _error = sd_bus_message_skip(dbus_msg, "v");
+                check_error("Failed to skip irrlevant variant for player property change");
+            }
+
+            _error = sd_bus_message_exit_container(dbus_msg);
+            check_error("Failed to exit dict on device property changed.");
+        }
     }
 
-    void remove_device_monitor(std::string const &deviceId) {
-        auto it = std::find_if(begin(_deviceMonitors), end(_deviceMonitors), [&deviceId](auto const &p) {
-            return p->getDeviceId() == deviceId;
-        });
-        if (it != std::end(_deviceMonitors))
-            _deviceMonitors.erase(it);
-
-        auto it2 = std::find_if(begin(_playerMonitors), end(_playerMonitors),
-                                [&deviceId](const auto &it) -> bool {
-                                    return it.first == deviceId;
-                                });
-        if (it2 != end(_playerMonitors))
-            _playerMonitors.erase(it2);
+    void on_new_device_connected(BTDevice& device) {
+        if(_connected_device != &device){
+            _connected_device = &device;
+            _cb_meta_status_update(device.device_name, device.player_metadata);
+            change_adapter_state("Discoverable", false);
+            _playback->playback("bt-connect.mp3");
+        }
     }
 
-    void device_connected(std::string const &deviceId) {
-        if (_connected)
-            throw std::runtime_error("Still connected to a device; Can't be connected to more than one device!");
-        _connected = true;
-        _connectedDevice = std::string{deviceId};
-        _status = "Connected to " + (_deviceName.empty() ? deviceId : _deviceName);
-        _metadata = "";
-
-        deactivate_discoverable();
-        _playback->playback("bt-connect.mp3");
-
-        _handler(_status, _metadata);
-
-        auto it = std::find_if(begin(_playerMonitors), end(_playerMonitors), [&deviceId](const auto &it) {
-            return it.first == deviceId;
-        });
-        if (it != std::end(_playerMonitors))
-            it->second->set_enabled(true);
+    void on_device_disconnected(BTDevice& device) {
+        if(_connected_device == &device) {
+            _connected_device = nullptr;
+            _cb_meta_status_update("Not Connected", "");
+            change_adapter_state("Discoverable", true);
+            _playback->playback("bt-disconnect.mp3");
+        }
     }
 
-    void device_name_changed(std::string const &deviceId, std::string const &name) {
-        _deviceName = std::string{name};
-        _status = "Connected to " + _deviceName;
-        _handler(_status, _metadata);
-    }
+    std::function<void(const std::string &, const std::string &)> _cb_meta_status_update;
 
-    void device_disconnected(std::string const &deviceId) {
-        //Not sure about the part below; In theory multiple new devices could be discovered simultaneously while
-        //none of them is connected; While one is connected device discovery is shut off. Therefore, during initialization
-        //multiple calls to this are possible.
-        //if (!_connected)
-        //    throw std::runtime_error("Wasn't connected to a device; Can't disconnect");
+    sd_bus *_bus;
+    int _bus_fd;
+    int _error;
 
-        auto it = std::find_if(begin(_playerMonitors), end(_playerMonitors), [&deviceId](const auto &it) {
-            return it.first == deviceId;
-        });
-        if (it != std::end(_playerMonitors))
-            it->second->set_enabled(false);
+    BTDevice *_connected_device;
 
-        _connected = false;
-        _connectedDevice = "";
-        _status = "Not Connected.";
-        _metadata = "";
+    std::unordered_map<std::string, BTDevice> _known_devices;
 
-        activate_discoverable();
-        _playback->playback("bt-disconnect.mp3");
-
-        _handler(_status, _metadata);
-    }
-
-    void player_changed(std::string const &deviceId, sdbus::ObjectPath const &playerPath) {
-        auto it = std::find_if(begin(_playerMonitors), end(_playerMonitors),
-                               [&deviceId](const auto &it) {
-                                   return it.first == deviceId;
-                               });
-        if (it != std::end(_playerMonitors))
-            _playerMonitors.erase(it);
-
-        _playerMonitors.emplace(std::string{deviceId},
-                                std::make_unique<DBusBTMediaPlayerMonitor>(*_dbusConnection, deviceId, playerPath,
-                                                                           [this](std::string const &meta) {
-                                                                               new_metadata(meta);
-                                                                           }, deviceId == _connectedDevice));
-    }
-
-    void new_metadata(std::string const &metadata) {
-        _metadata = std::string{metadata};
-        _handler(_status, _metadata);
-    }
-
-    bool _connected;
-    std::string _connectedDevice;
-    std::string _deviceName;
-    std::string _status;
-    std::string _metadata;
-
-    std::function<void(const std::string &, const std::string &)> _handler;
     std::shared_ptr<FilePlayback> _playback;
-
-    std::map<std::string, std::unique_ptr<DBusBTMediaPlayerMonitor>> _playerMonitors;
-    std::vector<std::unique_ptr<DBusBTDeviceMonitor>> _deviceMonitors;
-    std::unique_ptr<DBusBTObjectMonitor> _objectMonitor;
+    std::unique_ptr<Timer> _sdbus_update;
+    std::unique_ptr<FdRegistry> &_fdreg;
 };
 
-static int run_dbusbtconnector(void *inst_ptr) {
-    auto instance = reinterpret_cast<DBusBTController *>(inst_ptr);
-    instance->_dbusConnection->enterEventLoop();
+//Dbus signal callbacks just pointing back to the handlers within implementation
+int dbus_signal_interface_added(sd_bus_message *message, void *payload, sd_bus_error *_unused_) {
+    auto impl = reinterpret_cast<BTController::Impl *>(payload);
+    impl->on_dbus_interface_added(message);
     return 0;
 }
 
-BTController::BTController(std::shared_ptr<FilePlayback>& playback)
-        : _cb_meta_status_update{[](std::string const&, std::string const&){}},
-          _dbus{std::make_unique<DBusBTController>(playback, [this](auto status, auto meta) {
-              this->handle_update(status, meta);
-          })}, _thread{nullptr}, _playback{playback} {}
+int dbus_signal_interface_removed(sd_bus_message *message, void *payload, sd_bus_error *_unused_) {
+    auto impl = reinterpret_cast<BTController::Impl *>(payload);
+    impl->on_dbus_interface_removed(message);
+    return 0;
+}
+
+int dbus_signal_properties_changed(sd_bus_message *message, void *payload, sd_bus_error *_unused_) {
+    auto impl = reinterpret_cast<BTController::Impl *>(payload);
+    impl->on_dbus_property_changed(message);
+    return 0;
+}
+
+
+BTController::BTController(std::unique_ptr<FdRegistry> &fdreg, std::shared_ptr<FilePlayback> &playback)
+        : _impl{std::make_unique<Impl>(fdreg, playback)} {}
 
 BTController::~BTController() = default;
 
 void BTController::set_metadata_status_callback(std::function<void(const std::string &, const std::string &)> new_cb) {
-    _cb_meta_status_update = std::move(new_cb);
-}
-
-void BTController::handle_update(const std::string &status, const std::string &meta) {
-    _cb_meta_status_update(status, meta);
+    _impl->_cb_meta_status_update = std::move(new_cb);
 }
 
 void BTController::activate_bt() {
-    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
-    proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(true);
-    SPDLOG_INFO("BT adapter powered on.");
-
-    activate_discoverable();
-
-    _thread = SDL_CreateThread(::run_dbusbtconnector, "DbusBTController", reinterpret_cast<void *>(_dbus.get()));
-    _playback->playback("bt-activate.mp3");
+    _impl->adapter_power_change(true);
 }
 
 void BTController::deactivate_bt() {
-    _dbus->_dbusConnection->leaveEventLoop();
-    int status;
-    SDL_WaitThread(_thread, &status);
-    _thread = nullptr;
-
-    auto proxy = sdbus::createProxy("org.bluez", "/org/bluez/hci0");
-    proxy->setProperty("Powered").onInterface("org.bluez.Adapter1").toValue(false);
-    SPDLOG_INFO("BT adapter powered off.");
-
-    _playback->playback("bt-deactivate.mp3");
+    _impl->adapter_power_change(false);
 }

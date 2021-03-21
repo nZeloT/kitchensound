@@ -5,32 +5,33 @@
 
 #include "kitchensound/pages/base_page.h"
 
-class StateController;
+struct ApplicationBackbone;
 class Renderer;
 class TimeBasedStandby;
 class GpioUtil;
 class Timer;
-class TimerManager;
 
 class InactivePage : public BasePage {
 public:
-    InactivePage(StateController& ctrl, TimerManager& tm, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio);
+    InactivePage(ApplicationBackbone&, std::shared_ptr<TimeBasedStandby>&, std::shared_ptr<GpioUtil>&);
     ~InactivePage() override;
-    void enter_page(PAGES origin, void* payload) override;
-    void* leave_page(PAGES destination) override;
-    void handle_wheel_input(int delta) override;
+    void enter_page(PAGES, void*) override;
+    void* leave_page(PAGES) override;
+    void handle_wheel_input(int) override;
     void handle_enter_key(InputEvent&) override;
     void handle_mode_key(InputEvent&) override;
     void handle_power_key(InputEvent&) override;
-    void render(Renderer& renderer) override;
+    void render() override;
 private:
+    friend class StateController;
+    void setup_inital_state();
     void update_state();
 
     std::shared_ptr<GpioUtil> _gpio;
     std::shared_ptr<TimeBasedStandby> _standby;
 
-    Timer& _amp_cooldown_timer;
-    Timer& _user_active_timer;
+    std::unique_ptr<Timer> _amp_cooldown_timer;
+    std::unique_ptr<Timer> _user_active_timer;
 
     struct InactivePageModel {
         PAGES last_seen;

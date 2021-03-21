@@ -18,11 +18,11 @@ public:
 
     void register_pages(std::unordered_map<PAGES, std::unique_ptr<BasePage>> pages);
 
-    void set_active_page(PAGES page);
+    void setup_inactive_page();
 
-    void update();
+    bool update();
 
-    void render(Renderer& renderer);
+    void render();
 
     void trigger_transition(PAGES origin, PAGES destination);
 
@@ -34,10 +34,8 @@ public:
 
     void react_power_change(InputEvent&);
 
-    void delay_next_frame();
-
 private:
-    void process_transition();
+    bool process_transition();
 
     void transition_select_next_page();
 

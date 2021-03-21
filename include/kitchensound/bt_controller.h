@@ -5,13 +5,14 @@
 #include <string>
 #include <memory>
 
-struct SDL_Thread;
-class DBusBTController;
+#include <systemd/sd-bus.h>
+
+class FdRegistry;
 class FilePlayback;
 
 class BTController {
 public:
-    explicit BTController(std::shared_ptr<FilePlayback>&);
+    BTController(std::unique_ptr<FdRegistry>&, std::shared_ptr<FilePlayback>&);
     ~BTController();
 
     void activate_bt();
@@ -20,14 +21,12 @@ public:
     void set_metadata_status_callback(std::function<void(const std::string&, const std::string&)>);
 
 private:
-    friend class DBusBTController;
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 
-    void handle_update(const std::string&, const std::string&);
-    std::function<void(const std::string&, const std::string&)> _cb_meta_status_update;
-
-    std::shared_ptr<FilePlayback> _playback;
-    std::unique_ptr<DBusBTController> _dbus;
-    SDL_Thread *_thread;
+    friend int dbus_signal_interface_added(sd_bus_message *, void* , sd_bus_error* );
+    friend int dbus_signal_interface_removed(sd_bus_message *, void* , sd_bus_error* );
+    friend int dbus_signal_properties_changed(sd_bus_message *, void *, sd_bus_error *);
 };
 
 #endif //KITCHENSOUND_BT_CONTROLLER_H

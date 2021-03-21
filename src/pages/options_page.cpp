@@ -6,16 +6,19 @@
 #include "kitchensound/input_event.h"
 #include "kitchensound/renderer.h"
 #include "kitchensound/os_util.h"
-#include "kitchensound/timer_manager.h"
+#include "kitchensound/timer.h"
+#include "kitchensound/application_backbone.h"
 
 #define PAGE_SIZE 7
 
-OptionsPage::OptionsPage(StateController &ctrl, TimerManager& tm, std::shared_ptr<OsUtil>& os)
-        : BasePage(OPTIONS, ctrl, tm), _os{os}, _model{0, 0, 0, {}} {
-    tm.request_timer(std::min(OS_UTIL_TIME_UPD, OS_UTIL_IP_UPD), true, [this](){
-       this->update_model();
-    });
-
+OptionsPage::OptionsPage(ApplicationBackbone& bb, std::shared_ptr<OsUtil>& os)
+        : BasePage(OPTIONS, bb), _os{os}, _model{0, 0, 0, {}},
+        _value_update{std::make_unique<Timer>(bb.fdreg, "OptionsPage Value Refresh", OS_VALUES_REFRESH, true, [this](){
+            this->_os->refresh_values();
+            this->update_model();
+        })}
+{
+    _os->refresh_values();
     _model.data.emplace_back("IPv4:\t" + _os->get_local_ip_address());
     _model.data.emplace_back("Sys.up.:\t" + _os->get_system_uptime());
     _model.data.emplace_back("Prg.up.:\t" + _os->get_program_uptime());
@@ -28,11 +31,16 @@ OptionsPage::~OptionsPage() = default;
 
 void OptionsPage::enter_page(PAGES origin, void *payload) {
     _os->refresh_values();
+    update_model();
     _model.selection_idx = 0;
+    _value_update->reset_timer();
+    BasePage::enter_page(origin, payload);
     SPDLOG_INFO("Entered from -> {0}", origin);
 }
 
 void *OptionsPage::leave_page(PAGES destination) {
+    _value_update->stop();
+    BasePage::leave_page(destination);
     SPDLOG_INFO("Leaving to -> {0}", destination);
     return nullptr;
 }
@@ -60,13 +68,13 @@ void OptionsPage::handle_wheel_input(int delta) {
         _model.selection_idx = _model.selection_limit -1;
 }
 
-void OptionsPage::render(Renderer& renderer) {
-    this->render_time(renderer);
+void OptionsPage::render() {
+    this->render_time();
     for (int i = _model.selection_offset; i < _model.selection_limit && i < (_model.selection_offset + PAGE_SIZE); ++i) {
         if(i == _model.selection_idx){
-            renderer.render_rect(0, 32 + i*30, 320, 30, Renderer::HIGHLIGHT);
+            _bb.rend->render_rect(0, 32 + i*30, 320, 30, Renderer::HIGHLIGHT);
         }
 
-        renderer.render_text(10, 46 + i*30, _model.data[i], Renderer::LARGE, Renderer::LEFT);
+        _bb.rend->render_text(10, 46 + i*30, _model.data[i], Renderer::LARGE, Renderer::LEFT);
     }
 }

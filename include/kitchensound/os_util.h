@@ -1,15 +1,13 @@
 #ifndef KITCHENSOUND_OS_UTIL_H
 #define KITCHENSOUND_OS_UTIL_H
 
-#include <ctime>
 #include <string>
 #include <memory>
-
-class TimerManager;
+#include <chrono>
 
 class OsUtil {
 public:
-    OsUtil(TimerManager&, std::time_t);
+    explicit OsUtil(std::chrono::time_point<std::chrono::system_clock>);
     ~OsUtil();
 
     std::string get_local_ip_address();

@@ -9,12 +9,10 @@
 
 #define BLUETOOTH_IMAGE "img/bluetooth.png"
 
-BluetoothPlayingPage::BluetoothPlayingPage(StateController &ctrl,
-                                           TimerManager& tm,
-                                           ResourceManager &res,
+BluetoothPlayingPage::BluetoothPlayingPage(ApplicationBackbone& bb,
                                            std::shared_ptr<Volume>& vol,
                                            std::shared_ptr<BTController>& btc)
-        : PlayingPage(BT_PLAYING, ctrl, tm, res, vol),
+        : PlayingPage(BT_PLAYING, bb, vol),
           _btc{btc} {
     set_image("", BLUETOOTH_IMAGE);
     _btc->set_metadata_status_callback([&](auto status, auto meta) {
@@ -26,8 +24,7 @@ BluetoothPlayingPage::BluetoothPlayingPage(StateController &ctrl,
 BluetoothPlayingPage::~BluetoothPlayingPage() = default;
 
 void BluetoothPlayingPage::enter_page(PAGES origin, void* payload) {
-    BasePage::update_time();
-    VolumePage::enter_page(origin, payload);
+    PlayingPage::enter_page(origin, payload);
     set_source_text("Not Connected");
     set_metadata_text("");
     _btc->activate_bt();
@@ -36,6 +33,7 @@ void BluetoothPlayingPage::enter_page(PAGES origin, void* payload) {
 
 void* BluetoothPlayingPage::leave_page(PAGES destination) {
     _btc->deactivate_bt();
+    PlayingPage::leave_page(destination);
     SPDLOG_INFO("Left.");
     return nullptr;
 }

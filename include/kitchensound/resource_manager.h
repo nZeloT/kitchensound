@@ -9,9 +9,13 @@
 #include <functional>
 
 class CacheManager;
+class FdRegistry;
+
+//TODO use pimpl pattern here
+
 class ResourceManager {
 public:
-    ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root);
+    ResourceManager(std::unique_ptr<FdRegistry>&, std::filesystem::path, std::filesystem::path);
     ~ResourceManager();
     void* get_static(std::string const& name) { return get(_static, name)->data; };
     void get_cached(std::string const& identifier, std::function<void(std::string const&, void*)>);
@@ -61,6 +65,7 @@ private:
 
     std::function<void(std::string const&, void*)> _empty_cb;
 
+    std::unique_ptr<FdRegistry>& _fdreg;
     std::unique_ptr<CacheManager> _cache;
 };
 

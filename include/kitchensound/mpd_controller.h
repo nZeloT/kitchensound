@@ -7,11 +7,11 @@
 
 #include "kitchensound/config.h"
 
-class TimerManager;
+class FdRegistry;
 
 class MPDController {
 public:
-    MPDController(Configuration::MPDConfig, TimerManager&);
+    MPDController(Configuration::MPDConfig, std::unique_ptr<FdRegistry>&);
     ~MPDController();
 
     void playback_stream(const std::string& stream_url);
@@ -19,8 +19,6 @@ public:
     void stop_playback();
 
     void force_metadata_update();
-
-    void update(long ms_delta_time);
 
     void set_metadata_callback(std::function<void(const std::string&)>);
 

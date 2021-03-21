@@ -8,12 +8,8 @@
 #include <sstream>
 #include <fstream>
 
+#include <systemd/sd-bus.h>
 #include <spdlog/spdlog.h>
-#include <sdbus-c++/sdbus-c++.h>
-
-#include "kitchensound/timeouts.h"
-#include "kitchensound/timer.h"
-#include "kitchensound/timer_manager.h"
 
 #define DAY_DIVISOR (24 * 60 * 60)
 #define HOUR_DIVISOR (60 * 60)
@@ -24,22 +20,16 @@
 #define DBUS_LOGIN_INTERFACE   "org.freedesktop.login1.Manager"
 
 struct OsUtil::Impl {
-    Impl(TimerManager& tm,  std::time_t program_start_time)
-    : _current_ip{}, _current_system_time{}, _current_program_uptime{}, _program_start_time{program_start_time},
-      _time_update{tm.request_timer(OS_UTIL_TIME_UPD, true, [this](){
-          this->update_program_uptime();
-          this->update_system_uptime();
-      })},
-      _ip_update{tm.request_timer(OS_UTIL_IP_UPD, true, [this](){
-          this->update_ip_address();
-      })}
-      {}
+    explicit Impl(std::chrono::time_point<std::chrono::system_clock> program_start_time)
+            : _current_ip{}, _current_system_time{}, _current_program_uptime{},
+              _program_start_time{program_start_time} {}
 
     ~Impl() = default;
 
     void refresh_values() {
-        _time_update.trigger_and_reset();
-        _ip_update.trigger_and_reset();
+        update_ip_address();
+        update_system_uptime();
+        update_program_uptime();
     }
 
     void update_ip_address() {
@@ -99,17 +89,14 @@ struct OsUtil::Impl {
     }
 
     void update_program_uptime() {
-        _current_program_uptime = to_time_string(seconds_since(_program_start_time));
+        auto diff = std::chrono::system_clock::now() - _program_start_time;
+        long sec_since_start = std::chrono::duration_cast<std::chrono::seconds>(diff).count();
+
+        _current_program_uptime = to_time_string(sec_since_start);
         SPDLOG_INFO("Updating program uptime -> {0}", _current_program_uptime);
     }
 
-
-    static int seconds_since(std::time_t base) {
-        return static_cast<int>(std::difftime(std::time(nullptr), base));
-    }
-
-
-    static std::string to_time_string(int secs) {
+    static std::string to_time_string(long secs) {
         int days = secs / DAY_DIVISOR;
         secs %= DAY_DIVISOR;
 
@@ -126,19 +113,14 @@ struct OsUtil::Impl {
         return o.str();
     }
 
-    std::time_t _program_start_time;
+    std::chrono::time_point<std::chrono::system_clock> _program_start_time;
     std::string _current_ip;
     std::string _current_system_time;
     std::string _current_program_uptime;
-
-
-    Timer& _time_update;
-    Timer& _ip_update;
 };
 
-OsUtil::OsUtil(TimerManager& tm, std::time_t program_start_time)
- : _impl{std::make_unique<Impl>(tm, program_start_time)}
-{}
+OsUtil::OsUtil(std::chrono::time_point<std::chrono::system_clock> program_start_time)
+        : _impl{std::make_unique<Impl>(program_start_time)} {}
 
 OsUtil::~OsUtil() = default;
 
@@ -158,26 +140,35 @@ std::string OsUtil::get_system_uptime() {
     return _impl->_current_system_time;
 }
 
+static void check_error(int r, std::string msg) {
+    if (r < 0)
+        throw std::runtime_error{msg};
+}
+
 void OsUtil::trigger_shutdown() {
     SPDLOG_INFO("Triggering system shutdown.");
-    try {
-        auto proxy = sdbus::createProxy(DBUS_LOGIN_DESTINATION, DBUS_LOGIN_OBJPATH);
-        auto method = proxy->createMethodCall(DBUS_LOGIN_INTERFACE, "PowerOff");
-        method << false;
-        auto reply = proxy->callMethod(method);
-    } catch (const sdbus::Error &e) {
-        SPDLOG_ERROR("Shutdown trigger failed with error -> {0}", e.getMessage());
-    }
+
+    sd_bus *bus;
+    auto r = sd_bus_open_system(&bus);
+    check_error(r, "Failed to open system dbus!");
+
+    r = sd_bus_call_method(bus, DBUS_LOGIN_DESTINATION, DBUS_LOGIN_OBJPATH, DBUS_LOGIN_INTERFACE, "PowerOff", nullptr,
+                           nullptr, "b", false);
+    check_error(r, "Failed to trigger shutdown!");
+
+    sd_bus_close(bus);
 }
 
 void OsUtil::trigger_reboot() {
     SPDLOG_INFO("Triggering system reboot.");
-    try {
-        auto proxy = sdbus::createProxy(DBUS_LOGIN_DESTINATION, DBUS_LOGIN_OBJPATH);
-        auto method = proxy->createMethodCall(DBUS_LOGIN_INTERFACE, "Reboot");
-        method << false;
-        auto reply = proxy->callMethod(method);
-    } catch (const sdbus::Error &e) {
-        SPDLOG_ERROR("Reboot trigger failed with error -> {0}", e.getMessage());
-    }
+
+    sd_bus *bus;
+    auto r = sd_bus_open_system(&bus);
+    check_error(r, "Failed to open system dbus!");
+
+    r = sd_bus_call_method(bus, DBUS_LOGIN_DESTINATION, DBUS_LOGIN_OBJPATH, DBUS_LOGIN_INTERFACE, "Reboot", nullptr,
+                           nullptr, "b", false);
+    check_error(r, "Failed to trigger reboot!");
+
+    sd_bus_close(bus);
 }

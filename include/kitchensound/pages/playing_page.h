@@ -3,19 +3,19 @@
 
 #include "kitchensound/pages/volume_page.h"
 
+struct ApplicationBackbone;
 class RenderText;
-class ResourceManager;
 struct InputEvent;
-class TimerManager;
 
 class PlayingPage : public VolumePage {
 public:
-    PlayingPage(PAGES page, StateController&, TimerManager&, ResourceManager&, std::shared_ptr<Volume>&);
+    PlayingPage(PAGES page, ApplicationBackbone&, std::shared_ptr<Volume>&);
     ~PlayingPage() override;
 
     void handle_enter_key(InputEvent&) override;
-
-    void render(Renderer&) override;
+    void enter_page(PAGES origin, void* payload) override;
+    void* leave_page(PAGES destination) override;
+    void render() override;
 
 protected:
     void set_source_text(std::string const&);
@@ -37,7 +37,6 @@ private:
         void* artwork_img_ptr;
     } _model;
 
-    ResourceManager& _res;
     std::unique_ptr<RenderText> _text_source;
     std::unique_ptr<RenderText> _text_metadata;
 };

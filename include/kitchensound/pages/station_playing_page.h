@@ -5,23 +5,24 @@
 #include "kitchensound/pages/playing_page.h"
 
 class MPDController;
+struct ApplicationBackbone;
 
 class StationPlayingPage : public PlayingPage {
 public:
-    StationPlayingPage(StateController &, TimerManager&, ResourceManager &, std::shared_ptr<Volume> &,
+    StationPlayingPage(ApplicationBackbone&, std::shared_ptr<Volume> &,
                        std::shared_ptr<MPDController> &, RadioStationStream *);
 
     ~StationPlayingPage() override;
 
-    void enter_page(PAGES origin, void *payload) override;
+    void enter_page(PAGES, void *) override;
 
-    void *leave_page(PAGES destination) override;
+    void *leave_page(PAGES) override;
 
     void handle_enter_key(InputEvent&) override;
 
 private:
 
-    void set_station_playing(RadioStationStream *stream);
+    void set_station_playing(RadioStationStream *);
 
     struct StationPlayingPageModel {
         StationPlayingPageModel() : station{} {};

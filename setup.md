@@ -22,12 +22,12 @@
 - libasound (from repo, stable, currently 1.1.8)
 - libao (from repo, stable, currently 1.2.2)
 - libmpg123 (from repo, stable, currently 1.25)
-- libcurlpp (from repo, stable, currently 0.8.1)
+- libcurl (from repo, stable, currently 7.64)
 - libspdlog (from repo, stable, currently 1.3.1)
 - libgpiod (from repo, stable, currently 1.2)
 
-1. to install recomended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev 
-   libao-dev libmpg123-dev libcurlpp-dev libspdlog-dev libgpiod-dev``
+1. to install recommended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev 
+   libao-dev libmpg123-dev libcurl4-gnutls-dev libspdlog-dev libgpiod-dev``
 2. install the development base packages to compile MPD, SDL2, it's plugins and sdbus-c++
 
 

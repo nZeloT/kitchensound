@@ -1,33 +1,30 @@
 #ifndef KITCHENSOUND_TIMER_H
 #define KITCHENSOUND_TIMER_H
 
+#include <memory>
 #include <functional>
+
+class FdRegistry;
 
 class Timer {
 
 public:
+    Timer(std::unique_ptr<FdRegistry>&, std::string, long, bool, std::function<void()>);
+
     ~Timer();
-    double progress_percentage();
 
-    void reset();
+    void reset_timer(long = 0);
 
-    void trigger_and_reset();
+    void notify_and_reset();
 
     void stop();
 
+    void notify();
+
 private:
 
-    friend class TimerManager;
-
-    Timer(long ms_time, bool auto_repeat, std::function<void()> trigger);
-    void update(int ms_delta_time);
-
-    long _ms_time;
-    bool _auto_repeat;
-    std::function<void()> _trigger;
-
-    bool _is_stopped;
-    int long _ms_remaining;
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif //KITCHENSOUND_TIMER_H

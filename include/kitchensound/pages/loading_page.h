@@ -6,19 +6,16 @@
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/pages/base_page.h"
 
-class StateController;
-class Renderer;
-class TimerManager;
+struct ApplicationBackbone;
 
 class LoadingPage : public BasePage {
 public:
-    LoadingPage(StateController& ctrl, TimerManager&);
+    explicit LoadingPage(ApplicationBackbone&);
     ~LoadingPage() override;
     void enter_page(PAGES origin, void* payload) override;
-    void* leave_page(PAGES destination) override { return nullptr; };
     void handle_wheel_input(int delta) override {};
     void handle_enter_key(InputEvent&) override {};
-    void render(Renderer& renderer) override;
+    void render() override;
 
     void set_text(std::string const &text);
 

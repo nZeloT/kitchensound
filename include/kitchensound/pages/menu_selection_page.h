@@ -4,13 +4,15 @@
 #include "kitchensound/pages/selection_page.h"
 #include "kitchensound/menu_model.h"
 
+struct ApplicationBackbone;
+
 class MenuSelectionPage : public SelectionPage<MenuModel> {
 public:
-    MenuSelectionPage(StateController& ctrl, TimerManager& tm, ResourceManager& res);
+    explicit MenuSelectionPage(ApplicationBackbone&);
     ~MenuSelectionPage() override;
     void handle_enter_key(InputEvent&) override;
-    void enter_page(PAGES orig, void* payload) override;
-    void* leave_page(PAGES dest) override;
+    void enter_page(PAGES, void*) override;
+    void* leave_page(PAGES) override;
 
 private:
     std::string get_text(const MenuModel&) override;

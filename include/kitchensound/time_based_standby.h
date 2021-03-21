@@ -1,16 +1,18 @@
 #ifndef KITCHENSOUND_TIME_BASED_STANDBY_H
 #define KITCHENSOUND_TIME_BASED_STANDBY_H
 
-#include <ctime>
 #include <functional>
+#include <chrono>
 
 #include "kitchensound/config.h"
 
-class TimerManager;
+class FdRegistry;
+class Timer;
 
 class TimeBasedStandby {
 public:
-    explicit TimeBasedStandby(Configuration::DisplayStandbyConfig, TimerManager&);
+    explicit TimeBasedStandby(Configuration::DisplayStandbyConfig, std::unique_ptr<FdRegistry>&);
+    ~TimeBasedStandby();
 
     void arm() { _armed = true; };
 
@@ -23,7 +25,7 @@ public:
     void set_change_callback(std::function<void(bool)>);
 
 private:
-    std::tm *_current_time;
+    std::tm* _current_time;
     bool _enabled;
     bool _armed;
 
@@ -48,6 +50,8 @@ private:
 
     bool _currently_active;
     std::function<void(bool)> _change_callback;
+
+    std::unique_ptr<Timer> _update_timer;
 };
 
 #endif //KITCHENSOUND_TIME_BASED_STANDBY_H

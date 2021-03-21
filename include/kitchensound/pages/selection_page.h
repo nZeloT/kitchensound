@@ -5,31 +5,24 @@
 
 #include "kitchensound/pages/base_page.h"
 
-class StateController;
-class TimerManager;
-class ResourceManager;
-class Renderer;
+struct ApplicationBackbone;
 
 template<class T>
 class SelectionPage : public BasePage {
 public:
-    void handle_wheel_input(int delta) override;
+    void handle_wheel_input(int) override;
 
-    void render(Renderer& renderer) override;
+    void render() override;
 
 protected:
-    SelectionPage(PAGES page, StateController& ctrl,
-                  TimerManager& tm,
-                  ResourceManager& res,
-                  std::vector<T> data);
+    SelectionPage(PAGES, ApplicationBackbone&,
+                  std::vector<T>);
     ~SelectionPage() override;
 
     void load_images();
 
     virtual std::string get_text(const T&) = 0;
     virtual void get_image(const T&, void**) = 0;
-
-    ResourceManager& _res;
 
     struct SelectionPageModel {
         int offset{};

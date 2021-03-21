@@ -2,7 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
-Configuration::Configuration(const std::string &file) {
+Configuration::Configuration(const std::filesystem::path& file) {
     conf.readFile(file.c_str());
 }
 

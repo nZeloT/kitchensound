@@ -2,9 +2,8 @@
 #define KITCHENSOUND_CONFIG_H
 
 #include <memory>
-#include <string>
-#include <vector>
 #include <filesystem>
+#include <vector>
 
 #include <libconfig.h++>
 
@@ -43,7 +42,7 @@ public:
         MIXER_CARD
     };
 
-    explicit Configuration(const std::string& file);
+    explicit Configuration(const std::filesystem::path& file);
     ~Configuration();
 
     std::string get_input_device(INPUT_SOURCES source);

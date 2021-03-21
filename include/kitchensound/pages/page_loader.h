@@ -6,15 +6,9 @@
 
 #include "kitchensound/pages/pages.h"
 
+struct ApplicationBackbone;
 class BasePage;
-class Configuration;
-class StateController;
-class ResourceManager;
-class TimerManager;
 
-std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(Configuration& conf,
-                                                                StateController& ctrl,
-                                                                TimerManager& tm,
-                                                                ResourceManager& res);
+std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackbone&);
 
 #endif //KITCHENSOUND_PAGE_LOADER_H

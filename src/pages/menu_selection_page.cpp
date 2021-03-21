@@ -5,6 +5,7 @@
 #include "kitchensound/input_event.h"
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/state_controller.h"
+#include "kitchensound/application_backbone.h"
 
 const std::vector<MenuModel> MENUS = {
         {"Radio", STREAM_PLAYING, "img/radio.png"},
@@ -12,8 +13,8 @@ const std::vector<MenuModel> MENUS = {
         {"Optionen", OPTIONS, "img/gears.png"}
 };
 
-MenuSelectionPage::MenuSelectionPage(StateController& ctrl, TimerManager& tm, ResourceManager& res)
-        : SelectionPage<MenuModel>(MENU_SELECTION, ctrl, tm, res, MENUS) {
+MenuSelectionPage::MenuSelectionPage(ApplicationBackbone& bb)
+        : SelectionPage<MenuModel>(MENU_SELECTION, bb, MENUS) {
     load_images();
 }
 
@@ -24,23 +25,24 @@ std::string MenuSelectionPage::get_text(const MenuModel &m) {
 }
 
 void MenuSelectionPage::get_image(const MenuModel &m, void ** image_data_ptr) {
-    *image_data_ptr = _res.get_static(m.static_image);
+    *image_data_ptr = _bb.res->get_static(m.static_image);
 }
 
 void MenuSelectionPage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
         auto dest = _sp_model.data[_sp_model.selected].ref_page;
-        _state.trigger_transition(_page, dest);
+        _bb.ctrl->trigger_transition(_page, dest);
         SPDLOG_INFO("Transitioning from menu -> {0}", dest);
     }
 }
 
 void MenuSelectionPage::enter_page(PAGES orig, void* payload) {
-    BasePage::enter_page(orig, payload);
+    SelectionPage<MenuModel>::enter_page(orig, payload);
     SPDLOG_INFO("Enter from -> {0}", orig);
 }
 
 void* MenuSelectionPage::leave_page(PAGES dest) {
+    SelectionPage<MenuModel>::leave_page(dest);
     SPDLOG_INFO("Leaving to -> {0}", dest);
     return nullptr;
 }

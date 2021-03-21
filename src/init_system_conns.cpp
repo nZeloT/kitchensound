@@ -1,6 +1,6 @@
 #include "kitchensound/init_system_conns.h"
 
-#include <ctime>
+#include <chrono>
 
 #include "kitchensound/config.h"
 #include "kitchensound/bt_controller.h"
@@ -11,34 +11,34 @@
 #include "kitchensound/time_based_standby.h"
 #include "kitchensound/volume.h"
 
-std::shared_ptr<Volume> init_volume(Configuration &conf) {
-    return std::make_shared<Volume>(conf.get_default_volume(),
-                                    conf.get_alsa_device_name(Configuration::MIXER_CONTROL),
-                                    conf.get_alsa_device_name(Configuration::MIXER_CARD));
+std::shared_ptr<Volume> init_volume(std::unique_ptr<Configuration>& conf) {
+    return std::make_shared<Volume>(conf->get_default_volume(),
+                                    conf->get_alsa_device_name(Configuration::MIXER_CONTROL),
+                                    conf->get_alsa_device_name(Configuration::MIXER_CARD));
 }
 
-std::shared_ptr<GpioUtil> init_gpio(Configuration &conf) {
-    return std::make_shared<GpioUtil>(conf.get_gpio_pin(Configuration::DISPLAY_BACKLIGHT),
-                                      conf.get_gpio_pin(Configuration::AMPLIFIER_POWER));
+std::shared_ptr<GpioUtil> init_gpio(std::unique_ptr<Configuration>& conf) {
+    return std::make_shared<GpioUtil>(conf->get_gpio_pin(Configuration::DISPLAY_BACKLIGHT),
+                                      conf->get_gpio_pin(Configuration::AMPLIFIER_POWER));
 }
 
-std::shared_ptr<FilePlayback> init_playback(Configuration &conf) {
-    return std::make_shared<FilePlayback>(conf.get_alsa_device_name(Configuration::PCM_DEVICE),
-                                          conf.get_res_folder());
+std::shared_ptr<FilePlayback> init_playback(std::unique_ptr<Configuration>& conf) {
+    return std::make_shared<FilePlayback>(conf->get_alsa_device_name(Configuration::PCM_DEVICE),
+                                          conf->get_res_folder());
 }
 
-std::shared_ptr<TimeBasedStandby> init_standby(Configuration &conf, TimerManager& tm) {
-    return std::make_shared<TimeBasedStandby>(conf.get_display_standby(), tm);
+std::shared_ptr<TimeBasedStandby> init_standby(std::unique_ptr<Configuration>& conf, std::unique_ptr<FdRegistry>& fdr) {
+    return std::make_shared<TimeBasedStandby>(conf->get_display_standby(), fdr);
 }
 
-std::shared_ptr<BTController> init_bt_controller(std::shared_ptr<FilePlayback>& playback){
-    return std::make_shared<BTController>(playback);
+std::shared_ptr<BTController> init_bt_controller(std::shared_ptr<FilePlayback>& playback, std::unique_ptr<FdRegistry>& fdreg){
+    return std::make_shared<BTController>(fdreg, playback);
 }
 
-std::shared_ptr<MPDController> init_mpd_controller(Configuration &conf, TimerManager& tm) {
-    return std::make_shared<MPDController>(conf.get_mpd_config(), tm);
+std::shared_ptr<MPDController> init_mpd_controller(std::unique_ptr<Configuration>& conf, std::unique_ptr<FdRegistry>& fdr) {
+    return std::make_shared<MPDController>(conf->get_mpd_config(), fdr);
 }
 
-std::shared_ptr<OsUtil> init_os_util(TimerManager& tm) {
-    return std::make_shared<OsUtil>(tm, std::time(nullptr));
+std::shared_ptr<OsUtil> init_os_util() {
+    return std::make_shared<OsUtil>(std::chrono::system_clock::now());
 }

@@ -7,7 +7,7 @@
 
 #include "kitchensound/timeouts.h"
 #include "kitchensound/timer.h"
-#include "kitchensound/timer_manager.h"
+#include "kitchensound/fd_registry.h"
 
 static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
     uint i = 0;
@@ -19,21 +19,19 @@ static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
 }
 
 struct MPDController::Impl {
-    explicit Impl(Configuration::MPDConfig conf, TimerManager& tm)
+    explicit Impl(Configuration::MPDConfig conf, std::unique_ptr<FdRegistry>& fdr)
     : _mpd_config{std::move(conf)}, _cb_metadata{[](const std::string&){}},
-      _connection{nullptr}, _is_polling{false}, _current_meta{},
-      _polling_timer{tm.request_timer(MPD_POLLING_DELAY, false, [this](){
+      _connection{nullptr}, _current_meta{},
+      _polling_timer{std::make_unique<Timer>(fdr, "MpdController MPD update", MPD_POLLING_DELAY, true, [this](){
           this->poll_metadata();
-      })} {
-        reset_connection();
-        mpd_connection_set_keepalive(_connection, true);
-    };
+      })} {};
 
     ~Impl() {
-        close_connection();
+        stop_playback();
     };
 
     void playback_stream(const std::string& stream_url){
+        create_mpd_connection();
         SPDLOG_INFO("Starting stream -> {0}", stream_url);
 
         mpd_run_add(_connection, stream_url.c_str());
@@ -47,13 +45,13 @@ struct MPDController::Impl {
         if(err)
             throw std::runtime_error("Error occurred while trying to play stream!");
 
-        _polling_timer.reset();
-        _is_polling = true;
+        _polling_timer->reset_timer();
+        close_connection();
     }
 
     void stop_playback(){
         SPDLOG_INFO("Stopping MPD playback");
-
+        create_mpd_connection();
         mpd_run_stop(_connection);
         auto err = check_for_error();
         if (!err) {
@@ -63,15 +61,12 @@ struct MPDController::Impl {
         if (err)
             throw std::runtime_error("Error occurred while trying to clear queue!");
 
-        _is_polling = false;
-    }
-
-    void update(long ms_delta_time){
-        if(_is_polling)
-            _polling_timer.update(ms_delta_time);
+        _polling_timer->stop();
+       close_connection();
     }
 
     void poll_metadata() {
+        create_mpd_connection();
         auto status = mpd_run_status(_connection);
         check_for_error();
 
@@ -89,8 +84,7 @@ struct MPDController::Impl {
             }
         }
 
-        if(_is_polling)
-            _polling_timer.reset();
+        close_connection();
     }
 
     bool check_for_error(bool after_reset = false) {
@@ -109,7 +103,7 @@ struct MPDController::Impl {
         || err_code == MPD_ERROR_SYSTEM || err_code == MPD_ERROR_RESOLVER
         || err_code == MPD_ERROR_CLOSED){
             if(!after_reset)
-                reset_connection();
+                create_mpd_connection();
             else
                 throw std::runtime_error{"Can't establish MPD connection!"};
         }
@@ -117,22 +111,20 @@ struct MPDController::Impl {
         return encountered_error;
     }
 
-    void reset_connection() {
+    void create_mpd_connection() {
         if(_connection != nullptr)
-            close_connection();
+            mpd_connection_free(_connection);
 
         _connection = mpd_connection_new(_mpd_config.address.c_str(), _mpd_config.port, 30000);
         check_for_error(true);
 
-        SPDLOG_INFO("Connected to MPD.");
+        SPDLOG_DEBUG("MPD connection created.");
     }
 
     void close_connection() {
-        mpd_run_stop(_connection);
-        mpd_run_clear(_connection);
         mpd_connection_free(_connection);
-        SPDLOG_INFO("Disconnected from MPD.");
         _connection = nullptr;
+        SPDLOG_DEBUG("MPD connection closed.");
     }
 
     void set_metadata_callback(std::function<void(const std::string&)> cb){
@@ -141,21 +133,16 @@ struct MPDController::Impl {
 
 
     mpd_connection* _connection;
-    bool _is_polling;
     const Configuration::MPDConfig _mpd_config;
-    Timer _polling_timer;
+    std::unique_ptr<Timer> _polling_timer;
     std::string _current_meta;
     std::function<void(const std::string&)> _cb_metadata;
 };
 
-MPDController::MPDController(Configuration::MPDConfig config)
-        : _impl{std::make_unique<MPDController::Impl>(std::move(config))} {}
+MPDController::MPDController(Configuration::MPDConfig config, std::unique_ptr<FdRegistry>& tm)
+        : _impl{std::make_unique<MPDController::Impl>(std::move(config), tm)} {}
 
 MPDController::~MPDController() = default;
-
-void MPDController::update(long ms_delta_time) {
-    _impl->update(ms_delta_time);
-}
 
 void MPDController::playback_stream(const std::string &stream_url) {
     _impl->playback_stream(stream_url);

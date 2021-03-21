@@ -6,25 +6,24 @@
 #include "kitchensound/radio_station_stream.h"
 #include "kitchensound/pages/selection_page.h"
 
+struct ApplicationBackbone;
 class MPDController;
 class Timer;
 
 class StationSelectionPage : public SelectionPage<RadioStationStream> {
 public:
-    StationSelectionPage(StateController &ctrl, TimerManager& tm, ResourceManager &res, std::shared_ptr<MPDController> &,
-                         std::vector<RadioStationStream> streams);
+    StationSelectionPage(ApplicationBackbone&, std::shared_ptr<MPDController> &,
+                         std::vector<RadioStationStream>);
 
     ~StationSelectionPage() override;
 
-    void enter_page(PAGES origin, void *payload) override;
+    void enter_page(PAGES, void *) override;
 
-    void *leave_page(PAGES destination) override;
+    void *leave_page(PAGES) override;
 
-    void handle_wheel_input(int delta) override;
+    void handle_wheel_input(int) override;
 
     void handle_enter_key(InputEvent&) override;
-
-    void update(long ms_delta_update) override;
 
     RadioStationStream *get_selected_stream();
 

@@ -2,19 +2,18 @@
 
 #include <memory>
 #include <string>
-#include <ctime>
-#include <utility>
 
 #include <spdlog/spdlog.h>
 
-#include <SDL.h>
-#include <SDL_ttf.h>
-#include <SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 
 #include "kitchensound/cache_manager.h"
 
-ResourceManager::ResourceManager(std::filesystem::path  res_root, std::filesystem::path  cache_root)
- : _cache(), _res_root{std::move(res_root)}, _cache_root{std::move(cache_root)}, _empty_cb{[](auto s, auto p){}} {
+ResourceManager::ResourceManager(std::unique_ptr<FdRegistry>& fdr, std::filesystem::path  res_root, std::filesystem::path  cache_root)
+ : _cache(), _res_root{std::move(res_root)}, _cache_root{std::move(cache_root)}, _empty_cb{[](auto s, auto p){}},
+   _fdreg{fdr} {
     load_all_static();
 }
 
@@ -133,10 +132,10 @@ void ResourceManager::get_cached(const std::string &identifier, std::function<vo
 
 void ResourceManager::try_load_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
     if(!_cache)
-        _cache = std::make_unique<CacheManager>(*this, _cache_root);
+        _cache = std::make_unique<CacheManager>(_fdreg, *this, _cache_root);
     SPDLOG_INFO("Try loading -> {0}", identifier);
     _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr, .cb = std::move(image_cb)});
-    _cache->schedule_for_fetch(std::string{identifier});
+    _cache->load_from_cache(std::string{identifier});
 }
 
 void ResourceManager::retry_load_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
@@ -148,7 +147,7 @@ void ResourceManager::retry_load_cached(const std::string &identifier, std::func
     r->second.state = SHEDULED;
     r->second.last_state_upd = std::time(nullptr);
     r->second.cb = std::move(image_cb);
-    _cache->schedule_for_fetch(id);
+    _cache->load_from_cache(id);
 }
 
 void ResourceManager::cache_load_failed(const std::string &identifier) {

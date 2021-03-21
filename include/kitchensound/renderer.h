@@ -15,7 +15,7 @@ class ResourceManager;
 
 class Renderer {
 public:
-    explicit Renderer(ResourceManager& res);
+    explicit Renderer(std::unique_ptr<ResourceManager>& res);
     ~Renderer();
 
     void start_pass();
@@ -47,7 +47,7 @@ public:
 private:
     friend class RenderText;
 
-    void load_resources(ResourceManager& res);
+    void load_resources(std::unique_ptr<ResourceManager>& res);
 
     SDL_Texture* create_texture_from_text(std::string const& text, TEXT_SIZE size = LARGE);
 

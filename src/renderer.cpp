@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include <string>
 
-#include <SDL.h>
-#include <SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 #include <spdlog/spdlog.h>
 
@@ -14,7 +14,7 @@
 #define COLOR_HIGHLIGHT  104, 211,  82
 #define COLOR_FOREGROUND 255, 255, 255
 
-Renderer::Renderer(ResourceManager& res)
+Renderer::Renderer(std::unique_ptr<ResourceManager>& res)
 {
     _window = SDL_CreateWindow
             (
@@ -49,10 +49,10 @@ Renderer::~Renderer() {
     SDL_DestroyWindow(_window);
 }
 
-void Renderer::load_resources(ResourceManager& res) {
-    _font_small = reinterpret_cast<TTF_Font*>(res.get_static("SMALL"));
-    _font_large = reinterpret_cast<TTF_Font*>(res.get_static("LARGE"));
-    _font_hughe = reinterpret_cast<TTF_Font*>(res.get_static("HUGHE"));
+void Renderer::load_resources(std::unique_ptr<ResourceManager>& res) {
+    _font_small = reinterpret_cast<TTF_Font*>(res->get_static("SMALL"));
+    _font_large = reinterpret_cast<TTF_Font*>(res->get_static("LARGE"));
+    _font_hughe = reinterpret_cast<TTF_Font*>(res->get_static("HUGHE"));
     SPDLOG_INFO("Obtained font resources");
 }
 

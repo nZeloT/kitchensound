@@ -1,8 +1,8 @@
 #include "kitchensound/state_controller.h"
 
 #include <spdlog/spdlog.h>
+#include <kitchensound/pages/inactive_page.h>
 
-#include "kitchensound/sdl_util.h"
 #include "kitchensound/input_event.h"
 
 StateController::StateController()
@@ -17,8 +17,10 @@ void StateController::register_pages(std::unordered_map<PAGES, std::unique_ptr<B
     _pages = std::move(pages);
 }
 
-void StateController::set_active_page(PAGES page) {
-    _active_page = _pages[page].get();
+void StateController::setup_inactive_page() {
+    _active_page = _pages[INACTIVE].get();
+    auto inactive = reinterpret_cast<InactivePage*>(_active_page);
+    inactive->setup_inital_state();
 }
 
 void StateController::trigger_transition(PAGES origin, PAGES destination) {
@@ -35,20 +37,17 @@ void StateController::trigger_transition(PAGES origin, PAGES destination) {
 
 }
 
-void StateController::update() {
+bool StateController::update() {
     if(_transitions != NONE)
-        process_transition();
+        return process_transition();
+    return false;
 }
 
-void StateController::render(Renderer& renderer) {
-    _active_page->render(renderer);
+void StateController::render() {
+    _active_page->render();
 }
 
-void StateController::delay_next_frame() {
-    delay(_active_page->get_update_delay_time());
-}
-
-void StateController::process_transition() {
+bool StateController::process_transition() {
     SPDLOG_INFO("Switching state.");
     switch (_transitions) {
         case LEAVING_LOADING:
@@ -85,6 +84,10 @@ void StateController::process_transition() {
 
         case NONE: break;
     }
+
+    if(_transitions != NONE)
+        return true;
+    return false;
 }
 
 void StateController::transition_select_next_page() {
@@ -94,17 +97,21 @@ void StateController::transition_select_next_page() {
 }
 
 void StateController::react_wheel_input(InputEvent& inev) {
+    SPDLOG_DEBUG("React Wheel Input");
     _active_page->handle_wheel_input(inev.value);
 }
 
 void StateController::react_confirm(InputEvent& inev) {
+    SPDLOG_DEBUG("React Confirm");
     _active_page->handle_enter_key(inev);
 }
 
 void StateController::react_power_change(InputEvent& inev) {
+    SPDLOG_DEBUG("Rect Power Change");
     _active_page->handle_power_key(inev);
 }
 
 void StateController::react_menu_change(InputEvent& inev) {
+    SPDLOG_DEBUG("React Menu Change");
     _active_page->handle_mode_key(inev);
 }
