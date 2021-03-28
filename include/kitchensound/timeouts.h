@@ -8,7 +8,6 @@
 #define AMPLIFIER_DELAY   150000 // ms
 #define AUTO_LEAVE_BROWSING 8000 // ms
 #define LONG_PRESS_DELAY     400 // ms
-#define BT_DBUS_POLL_DELAY  5000 // ms
-#define OS_VALUES_REFRESH   5000 // ms
+#define OS_VALUES_REFRESH  10000 // ms
 
 #endif //KITCHENSOUND_TIMEOUTS_H

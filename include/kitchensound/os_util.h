@@ -16,6 +16,8 @@ public:
 
     std::string get_program_uptime();
 
+    std::string get_cpu_temperature();
+
     static void trigger_shutdown();
 
     static void trigger_reboot();

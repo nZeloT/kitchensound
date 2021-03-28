@@ -30,6 +30,7 @@ struct OsUtil::Impl {
         update_ip_address();
         update_system_uptime();
         update_program_uptime();
+        update_cpu_temperature();
     }
 
     void update_ip_address() {
@@ -96,6 +97,17 @@ struct OsUtil::Impl {
         SPDLOG_INFO("Updating program uptime -> {0}", _current_program_uptime);
     }
 
+    void update_cpu_temperature() {
+        std::string temp = "< ERROR >";
+        int t;
+        if(std::ifstream{"/sys/class/thermal/thermal_zone0/temp", std::ios::in} >> t) {
+            float tc = static_cast<float>(t) / 1000;
+            temp = std::to_string(tc) + " °C";
+        }
+        _current_cpu_temp = temp;
+        SPDLOG_INFO("Updating cpu temperature -> {}", _current_cpu_temp);
+    }
+
     static std::string to_time_string(long secs) {
         int days = secs / DAY_DIVISOR;
         secs %= DAY_DIVISOR;
@@ -117,6 +129,7 @@ struct OsUtil::Impl {
     std::string _current_ip;
     std::string _current_system_time;
     std::string _current_program_uptime;
+    std::string _current_cpu_temp;
 };
 
 OsUtil::OsUtil(std::chrono::time_point<std::chrono::system_clock> program_start_time)
@@ -140,7 +153,11 @@ std::string OsUtil::get_system_uptime() {
     return _impl->_current_system_time;
 }
 
-static void check_error(int r, std::string msg) {
+std::string OsUtil::get_cpu_temperature() {
+    return _impl->_current_cpu_temp;
+}
+
+static void check_error(int r, std::string const& msg) {
     if (r < 0)
         throw std::runtime_error{msg};
 }

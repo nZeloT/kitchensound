@@ -20,6 +20,7 @@ OptionsPage::OptionsPage(ApplicationBackbone& bb, std::shared_ptr<OsUtil>& os)
 {
     _os->refresh_values();
     _model.data.emplace_back("IPv4:\t" + _os->get_local_ip_address());
+    _model.data.emplace_back("CPU Temp.:\t" + _os->get_cpu_temperature());
     _model.data.emplace_back("Sys.up.:\t" + _os->get_system_uptime());
     _model.data.emplace_back("Prg.up.:\t" + _os->get_program_uptime());
     _model.data.emplace_back("Shutdown");
@@ -47,15 +48,16 @@ void *OptionsPage::leave_page(PAGES destination) {
 
 void OptionsPage::update_model() {
     _model.data[0] = "Ipv4:\t" + _os->get_local_ip_address();
-    _model.data[1] = "Sys.up.:\t" + _os->get_system_uptime();
-    _model.data[2] = "Prg.up.:\t" + _os->get_program_uptime();
+    _model.data[1] = "CPU Temp.:\t" + _os->get_cpu_temperature();
+    _model.data[2] = "Sys.up.:\t" + _os->get_system_uptime();
+    _model.data[3] = "Prg.up.:\t" + _os->get_program_uptime();
 }
 
 void OptionsPage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT){
-        if(_model.selection_idx == 3)
+        if(_model.selection_idx == 4)
             _os->trigger_shutdown();
-        else if(_model.selection_idx == 4)
+        else if(_model.selection_idx == 5)
             _os->trigger_reboot();
     }
 }
