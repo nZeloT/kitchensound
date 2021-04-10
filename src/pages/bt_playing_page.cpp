@@ -15,9 +15,9 @@ BluetoothPlayingPage::BluetoothPlayingPage(ApplicationBackbone& bb,
         : PlayingPage(BT_PLAYING, bb, vol),
           _btc{btc} {
     set_image("", BLUETOOTH_IMAGE);
-    _btc->set_metadata_status_callback([&](auto status, auto meta) {
-        set_source_text(status);
-        set_metadata_text(meta);
+    _btc->set_metadata_status_callback([this](auto status, auto meta) {
+        this->set_source_text(status);
+        this->set_metadata_text(meta);
     });
 };
 

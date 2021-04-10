@@ -10,6 +10,7 @@
 const std::vector<MenuModel> MENUS = {
         {"Radio", STREAM_PLAYING, "img/radio.png"},
         {"Bluetooth", BT_PLAYING, "img/bluetooth.png"},
+        {"Multiroom", SNAPCAST_PLAYING, "img/speaker_group.png"},
         {"Optionen", OPTIONS, "img/gears.png"}
 };
 

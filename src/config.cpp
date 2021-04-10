@@ -97,6 +97,39 @@ Configuration::MPDConfig Configuration::get_mpd_config() {
     return s;
 }
 
+Configuration::SnapcastConfig Configuration::get_snapcast_config() {
+    auto& c = conf.lookup("snapcast");
+    SnapcastConfig s{};
+    if(!c.exists("bin") || !c.exists("host") || !c.exists("port"))
+        throw std::runtime_error{"Missing Snapcast Configuration value. One or multiple of: bin, host, port"};
+
+    s.bin  = c.lookup("bin").c_str();
+    s.host = c.lookup("host").c_str();
+    s.port = c.lookup("port");
+
+    //mirror the alsa pcm device name to the snapcast config
+    s.alsa_pcm = get_alsa_device_name(PCM_DEVICE);
+
+    SPDLOG_INFO("Read snapcast configuration -> {}; {}:{}", s.bin, s.host, s.port);
+
+    return s;
+}
+
+Configuration::AnalyticsConfig Configuration::get_analytics_config() {
+    auto& c = conf.lookup("analytics");
+    AnalyticsConfig s{};
+    if(!c.exists("enabled") || c.lookup("enabled") && !c.exists("destination_host")){
+        throw std::runtime_error{"Missing analytics configuration: either enabled = false or with destination_host"};
+    }
+
+    s.enabled = c.lookup("enabled");
+    s.dest_host = c.lookup("destination_host").c_str();
+
+    SPDLOG_INFO("Read analytics configuration -> {}; {}", s.enabled, s.dest_host);
+
+    return s;
+}
+
 int Configuration::get_gpio_pin(GPIO_PIN request_pin) {
     std::string path;
     int def;

@@ -3,7 +3,7 @@
 ## 1. OS Setup
 ### 1.1. Before first system boot
 1. Download and flash Raspberry Pi OS Lite to microSD Card
-2. Activate SSH by placing a empty file named ``ssh`` in ``/boot``
+2. Activate SSH by placing a empty file named ``ssh`` in ``/boot`` [see also the Documentation](https://www.raspberrypi.org/documentation/remote-access/ssh/README.md)
 3. Add a ``wpa_supplicant.conf`` file in ``/boot`` with the [basic Wifi configuration](https://www.raspberrypi.org/documentation/configuration/wireless/headless.md) for a headless setup
 
 ### 1.2. After the first system boot
@@ -13,6 +13,7 @@
 4. Update the repositories using ``sudo apt update``
 5. Upgrade upgradeable packages to the new version using ``sudo apt upgrade``
 6. Deactivate the swap file using ``sudo swapoff -a``
+7. Install ``log2ram`` by following their [instructions](https://github.com/azlux/log2ram)
 
 ## 2. Dependencies
 ### 2.1. List of Required Dependencies
@@ -29,10 +30,12 @@
 - libcurl (from repo, stable, currently 7.64)
 - libspdlog (from repo, stable, currently 1.3.1)
 - libgpiod (from repo, stable, currently 1.2)
+- snapclient (from repo, stable, currently 0.15)
+- libflatbuffers1 (from repo, backports, currently 1.12)
 
 ### 2.2. Installing required dependencies from the repos
 1. to install recommended things from the repo use ``sudo apt install libconfig-dev libmpdclient-dev libasound-dev 
-   libao-dev libmpg123-dev libcurl4-gnutls-dev libspdlog-dev libgpiod-dev libsystemd-dev``
+   libao-dev libmpg123-dev libcurl4-gnutls-dev libspdlog-dev libgpiod-dev libsystemd-dev libflatbuffers-dev``
 
 ### 2.3. Compiling further required dependencies
 #### 2.3.1. MPD
@@ -175,5 +178,9 @@ ResultAny=yes
 
 ### 5.7. GPIO
 - to enable gpio access to the software without launching it as root add the user to the ``gpio`` group by calling ``sudo usermod -a -G gpio <myuser>``
+
+### 5.8 Snapclient
+- use snapclient configuration similar to ```-s <alsa_sound_device> -h <server ip> -p <server port> --player alsa```
+
 
 ## 6. Kompiling Kitchensound

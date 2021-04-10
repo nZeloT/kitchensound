@@ -43,10 +43,11 @@ void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
         _model.station.image_url = std::string{stream->image_url};
 
         set_source_text(_model.station.name);
+        set_metadata_text("");
         set_image(_model.station.image_url, RADIO_IMAGE);
 
         _mpd->stop_playback();
-        _mpd->playback_stream(_model.station.url);
+        _mpd->playback_stream(_model.station.name, _model.station.url);
     }else{
         //already playing the stream; possibly some time went by not updating the metadata, so force an update now
         _mpd->force_metadata_update();
@@ -57,8 +58,9 @@ void StationPlayingPage::enter_page(PAGES origin, void *payload) {
     PlayingPage::enter_page(origin, payload);
     if (origin != STREAM_SELECTION) {
         _mpd->stop_playback();
-        _mpd->playback_stream(_model.station.url);
+        _mpd->playback_stream(_model.station.name, _model.station.url);
         set_source_text(_model.station.name);
+        set_metadata_text("");
         set_image(_model.station.image_url, RADIO_IMAGE);
     } else {
         if (payload == nullptr)

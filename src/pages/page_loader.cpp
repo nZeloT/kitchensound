@@ -24,9 +24,9 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackb
 
     auto playback = init_playback(bb.conf);
 
-    auto bt_controller = init_bt_controller(playback, bb.fdreg);
+    auto bt_controller = init_bt_controller(bb.fdreg, bb.analytics, playback);
 
-    auto mpd_controller = init_mpd_controller(bb.conf, bb.fdreg);
+    auto mpd_controller = init_mpd_controller(bb.fdreg, bb.analytics, bb.conf);
 
     auto os_util = init_os_util();
 

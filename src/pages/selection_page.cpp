@@ -1,16 +1,15 @@
 #include "kitchensound/pages/selection_page.h"
 
+#include "kitchensound/renderer.h"
+#include "kitchensound/resource_manager.h"
+#include "kitchensound/application_backbone.h"
+#include "kitchensound/radio_station_stream.h"
+#include "kitchensound/menu_model.h"
+
 #define ARROW_RIGHT "img/arrow_right.png"
 #define ARROW_LEFT  "img/arrow_left.png"
 
 #define SELECTABLE_COUNT 4
-
-#include "kitchensound/renderer.h"
-#include "kitchensound/resource_manager.h"
-#include "kitchensound/application_backbone.h"
-
-#include "kitchensound/radio_station_stream.h"
-#include "kitchensound/menu_model.h"
 
 
 template<class T>

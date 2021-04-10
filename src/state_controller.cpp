@@ -1,14 +1,31 @@
 #include "kitchensound/state_controller.h"
 
 #include <spdlog/spdlog.h>
-#include <kitchensound/pages/inactive_page.h>
 
 #include "kitchensound/input_event.h"
+#include "kitchensound/analytics_logger.h"
+#include "kitchensound/pages/inactive_page.h"
 
-StateController::StateController()
+#define MYCASE(x) case x: return #x;
+
+static std::string to_string(PAGES page) {
+    switch(page){
+        MYCASE(PAGES::INACTIVE)
+        MYCASE(PAGES::LOADING)
+        MYCASE(PAGES::MENU_SELECTION)
+        MYCASE(PAGES::STREAM_PLAYING)
+        MYCASE(PAGES::STREAM_SELECTION)
+        MYCASE(PAGES::BT_PLAYING)
+        MYCASE(PAGES::SNAPCAST_PLAYING)
+        MYCASE(PAGES::OPTIONS)
+        default: return "Unknown Pages. Extend to_string() in StateController.";
+    }
+}
+
+StateController::StateController(std::unique_ptr<AnalyticsLogger>& analytics)
     : _transitions{NONE}, _transition_origin{INACTIVE}, _transition_destination{INACTIVE},
       _active_page{nullptr}, _previous_page{nullptr}, _next_page{nullptr}, _transition_payload{nullptr},
-      _pages{}
+      _pages{}, _analytics{analytics}
 {}
 
 StateController::~StateController() = default;
@@ -33,7 +50,8 @@ void StateController::trigger_transition(PAGES origin, PAGES destination) {
     _transition_origin = origin;
     _transition_destination = destination;
     _transitions = ENTER_LOADING;
-    SPDLOG_INFO("Triggered transition {0} -> {1}", origin, destination);
+    _analytics->log_page_change(_transition_origin, _transition_destination);
+    SPDLOG_INFO("Triggered transition {0} -> {1}", to_string(origin), to_string(destination));
 
 }
 

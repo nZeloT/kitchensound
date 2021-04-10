@@ -7,6 +7,7 @@
 
 class OsUtil {
 public:
+
     explicit OsUtil(std::chrono::time_point<std::chrono::system_clock>);
     ~OsUtil();
 

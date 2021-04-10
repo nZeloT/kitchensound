@@ -1,9 +1,11 @@
 # TODO
 0. Kitchensound
-   - add option to display Error messages / last log output
-   - refactor threading away by handling everything non-blocking sequentially
-    - bt_controller
-    - cache manager
+   - add option to display recoverable Error messages
+   - use file descriptors to track for mpd changes
+   - provide a place for used libs and licenses
+   - finalize snapcast integration
+   - add statistics collector about cpu temp, avg. load and active periods
+   - add option to fav songs
    
 1. Alsa
     - Add equalizer to alsa configuration

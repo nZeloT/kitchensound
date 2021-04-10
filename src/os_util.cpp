@@ -91,7 +91,7 @@ struct OsUtil::Impl {
 
     void update_program_uptime() {
         auto diff = std::chrono::system_clock::now() - _program_start_time;
-        long sec_since_start = std::chrono::duration_cast<std::chrono::seconds>(diff).count();
+        long long sec_since_start = std::chrono::duration_cast<std::chrono::seconds>(diff).count();
 
         _current_program_uptime = to_time_string(sec_since_start);
         SPDLOG_INFO("Updating program uptime -> {0}", _current_program_uptime);
@@ -108,7 +108,7 @@ struct OsUtil::Impl {
         SPDLOG_INFO("Updating cpu temperature -> {}", _current_cpu_temp);
     }
 
-    static std::string to_time_string(long secs) {
+    static std::string to_time_string(long long secs) {
         int days = secs / DAY_DIVISOR;
         secs %= DAY_DIVISOR;
 

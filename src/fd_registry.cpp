@@ -52,7 +52,7 @@ struct FdRegistry::Impl {
         auto evt_cnt = epoll_wait(_epoll_fd, _events, MAX_EVENTS, 10000);
         if(evt_cnt == -1){
             if(errno == EINTR){
-                SPDLOG_INFO("epoll wait was interrupted!");
+                SPDLOG_WARN("epoll wait was interrupted!");
                 return;
             }else{
                 throw std::runtime_error{"Received unrecoverable epoll error!"};
@@ -62,8 +62,13 @@ struct FdRegistry::Impl {
         for(_cnt = 0; _cnt < evt_cnt; ++_cnt) {
             auto& e = _events[_cnt];
             SPDLOG_DEBUG("Received event for fd -> {}", e.data.fd);
-            //we don't read here and leave this to the respective fd owners
-            _triggers[e.data.fd](e.data.fd, e.events);
+
+            //it can happen that the fd we received an event for was removed from here while processing an event for another fd, skipping it in this case
+            auto cb = _triggers.find(e.data.fd);
+            if(cb != std::end(_triggers)) {
+                //we don't read here and leave this to the respective fd owners
+                _triggers[e.data.fd](e.data.fd, e.events);
+            }
         }
     }
 

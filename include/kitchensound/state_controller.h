@@ -9,10 +9,11 @@
 
 class Renderer;
 struct InputEvent;
+class AnalyticsLogger;
 
 class StateController {
 public:
-    StateController();
+    explicit StateController(std::unique_ptr<AnalyticsLogger>&);
 
     ~StateController();
 
@@ -55,6 +56,8 @@ private:
     void* _transition_payload;
     PAGES _transition_destination;
     std::unordered_map<PAGES, std::unique_ptr<BasePage>> _pages;
+
+    std::unique_ptr<AnalyticsLogger>& _analytics;
 };
 
 #endif //KITCHENSOUND_STATE_CONTROLLER_H

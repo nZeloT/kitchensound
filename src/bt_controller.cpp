@@ -12,6 +12,7 @@
 #include "kitchensound/file_playback.h"
 #include "kitchensound/fd_registry.h"
 #include "kitchensound/timer.h"
+#include "kitchensound/analytics_logger.h"
 
 #define BLUEZ_SERVICE_NAME "org.bluez"
 #define DBUS_OBJECT_MANAGER_INTERFACE "org.freedesktop.DBus.ObjectManager"
@@ -36,10 +37,10 @@ int dbus_signal_interface_removed(sd_bus_message *, void *, sd_bus_error *);
 int dbus_signal_properties_changed(sd_bus_message *, void *, sd_bus_error *);
 
 struct BTController::Impl {
-    Impl(std::unique_ptr<FdRegistry> &fdreg, std::shared_ptr<FilePlayback> &playback)
+    Impl(std::unique_ptr<FdRegistry> &fdreg, std::unique_ptr<AnalyticsLogger>& analytics, std::shared_ptr<FilePlayback> &playback)
             : _cb_meta_status_update{[](std::string const &, std::string const &) {}}, _bus{nullptr}, _bus_fd{-1},
               _error{0}, _connected_device{nullptr},
-              _known_devices{}, _playback{playback}, _fdreg{fdreg},
+              _known_devices{}, _playback{playback}, _fdreg{fdreg}, _analytics{analytics},
               _sdbus_update{std::make_unique<Timer>(fdreg, "BtController Dbus Update", 100, false, [this]() {
                   this->on_dbus_timer_update();
               })} {}
@@ -485,6 +486,7 @@ struct BTController::Impl {
 
         device.player_metadata = s.str();
         if (_connected_device == &device) {
+            _analytics->log_playback_song_change(device.player_metadata, title, artist, album);
             _cb_meta_status_update(device.device_name, device.player_metadata);
         }
     }
@@ -569,6 +571,7 @@ struct BTController::Impl {
     void on_new_device_connected(BTDevice& device) {
         if(_connected_device != &device){
             _connected_device = &device;
+            _analytics->log_playback_change(PLAYBACK_SOURCE::BLUETOOTH, device.device_name, true);
             _cb_meta_status_update(device.device_name, device.player_metadata);
             change_adapter_state("Discoverable", false);
             _playback->playback("bt-connect.mp3");
@@ -579,6 +582,7 @@ struct BTController::Impl {
         if(_connected_device == &device) {
             _connected_device = nullptr;
             _cb_meta_status_update("Not Connected", "");
+            _analytics->log_playback_change(PLAYBACK_SOURCE::BLUETOOTH, device.device_name, false);
             change_adapter_state("Discoverable", true);
             _playback->playback("bt-disconnect.mp3");
         }
@@ -597,6 +601,7 @@ struct BTController::Impl {
     std::shared_ptr<FilePlayback> _playback;
     std::unique_ptr<Timer> _sdbus_update;
     std::unique_ptr<FdRegistry> &_fdreg;
+    std::unique_ptr<AnalyticsLogger>& _analytics;
 };
 
 //Dbus signal callbacks just pointing back to the handlers within implementation
@@ -619,8 +624,8 @@ int dbus_signal_properties_changed(sd_bus_message *message, void *payload, sd_bu
 }
 
 
-BTController::BTController(std::unique_ptr<FdRegistry> &fdreg, std::shared_ptr<FilePlayback> &playback)
-        : _impl{std::make_unique<Impl>(fdreg, playback)} {}
+BTController::BTController(std::unique_ptr<FdRegistry> &fdreg, std::unique_ptr<AnalyticsLogger>& analytics, std::shared_ptr<FilePlayback> &playback)
+        : _impl{std::make_unique<Impl>(fdreg, analytics, playback)} {}
 
 BTController::~BTController() = default;
 

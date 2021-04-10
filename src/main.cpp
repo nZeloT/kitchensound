@@ -23,16 +23,16 @@ int main(int argc, char **argv) {
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%s - %! : %#] %v");
     log_version_text();
 
-    //0. set the shutdown handler for SIGINT and SIGTERM
+    // set the shutdown handler for SIGINT and SIGTERM
     signal(SIGINT, ::shutdownHandler);
     signal(SIGTERM, ::shutdownHandler);
 
-    //0.3 init sdl
+    // init sdl
     init_sdl();
 
     ApplicationBackbone b{std::filesystem::path{"../config.conf"}};
 
-    //3.1 initialize the render pages
+    // initialize the render pages
     b.ctrl->register_pages(load_pages(b));
     b.ctrl->setup_inactive_page();
 

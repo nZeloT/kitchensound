@@ -8,11 +8,12 @@
 #include <systemd/sd-bus.h>
 
 class FdRegistry;
+class AnalyticsLogger;
 class FilePlayback;
 
 class BTController {
 public:
-    BTController(std::unique_ptr<FdRegistry>&, std::shared_ptr<FilePlayback>&);
+    BTController(std::unique_ptr<FdRegistry>&, std::unique_ptr<AnalyticsLogger>&, std::shared_ptr<FilePlayback>&);
     ~BTController();
 
     void activate_bt();

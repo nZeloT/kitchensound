@@ -6,23 +6,52 @@ set(CMAKE_CXX_STANDARD 17)
 find_path(LOCAL_INCLUDES NAMES libconfig.h++ HINTS /usr/local/include REQUIRED)
 message(STATUS "LOCAL_INCLUDES => ${LOCAL_INCLUDES}")
 
-find_path(CURL_INCLUDE NAMES curl/curl.h HINTS /usr/include/arm-linux-gnueabihf REQUIRED)
-message(STATUS "CURL_INCLUDE => ${CURL_INCLUDE}")
+find_path(SYSTEM_INCLUDE NAMES curl/curl.h HINTS /usr/include/arm-linux-gnueabihf REQUIRED)
+message(STATUS "CURL_INCLUDE => ${SYSTEM_INCLUDE}")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frecord-gcc-switches")
+find_path(FLATBUFFERS_INCLUDE NAMES flatbuffers/flatbuffers.h HINTS /usr/include REQUIRED)
+message(STATUS "FLATBUFFERS_INCLUDE => ${FLATBUFFERS_INCLUDE}")
+
+set(FLATBUFFERS_GENERATED "")
+file(GLOB_RECURSE FLATBUFFER_SRC_FILES fb-schemas/*.fbs)
+set(GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+
+foreach(FB_FILE ${FLATBUFFER_SRC_FILES})
+    get_filename_component(BASENAME ${FB_FILE} NAME_WE)
+    set(COMM_PROTOCOL_INC ${GENERATED_DIR}/${BASENAME}_generated.h)
+
+    add_custom_command(
+        OUTPUT ${COMM_PROTOCOL_INC}
+        COMMAND flatc --cpp --scoped-enums -o ${GENERATED_DIR} ${FB_FILE}
+        DEPENDS ${FB_FILE}
+        COMMENT "FLATC-Command: flatc --cpp --scoped-enums -o ${GENERATED_DIR} ${FB_FILE}"
+    )
+    LIST(APPEND FLATBUFFERS_GENERATED ${COMM_PROTOCOL_INC})
+endforeach(FB_FILE)
+add_custom_target(flatbuffers-gen DEPENDS ${FLATBUFFERS_GENERATED})
 
 add_executable(kitchensound src/main.cpp
+        src/version.cpp
+        src/fd_registry.cpp
         src/renderer.cpp
+        src/render_text.cpp
         src/input.cpp
         src/config.cpp
-        src/time_based_standby.cpp
-        src/mpd_controller.cpp
-        src/state_controller.cpp
-        src/bt_controller.cpp
-        src/volume.cpp
+        src/timer.cpp
         src/cache_manager.cpp
-        src/render_text.cpp
         src/resource_manager.cpp
+        src/state_controller.cpp
+        src/application_backbone.cpp
+        src/time_based_standby.cpp
+        src/volume.cpp
+        src/mpd_controller.cpp
+        src/bt_controller.cpp
+        src/snapcast_controller.cpp
+        src/file_playback.cpp
+        src/sdl_util.cpp
+        src/gpio_util.cpp
+        src/os_util.cpp
+        src/init_system_conns.cpp
         src/pages/bt_playing_page.cpp
         src/pages/station_playing_page.cpp
         src/pages/station_selection_page.cpp
@@ -35,20 +64,16 @@ add_executable(kitchensound src/main.cpp
         src/pages/inactive_page.cpp
         src/pages/page_loader.cpp
         src/pages/playing_page.cpp
-        src/version.cpp
-        src/file_playback.cpp
-        src/sdl_util.cpp
-        src/gpio_util.cpp
-        src/init_system_conns.cpp
-        src/os_util.cpp
-        src/timer.cpp
-        src/fd_registry.cpp
-        src/application_backbone.cpp
-)
+        src/pages/snapcast_playing_page.cpp
+        src/analytics_logger.cpp src/network_manager.cpp)
+
+add_dependencies(kitchensound flatbuffers-gen)
 
 target_include_directories(kitchensound PUBLIC include)
 target_include_directories(kitchensound PUBLIC ${LOCAL_INCLUDES})
-target_include_directories(kitchensound PUBLIC ${CURL_INCLUDE})
+target_include_directories(kitchensound PUBLIC ${SYSTEM_INCLUDE})
+target_include_directories(kitchensound PUBLIC ${CMAKE_BINARY_DIR})
+target_link_directories(kitchensound PUBLIC /usr/local/lib)
 target_link_libraries(kitchensound stdc++fs)
 target_link_libraries(kitchensound SDL2)
 target_link_libraries(kitchensound SDL2_ttf)
@@ -61,3 +86,4 @@ target_link_libraries(kitchensound systemd)
 target_link_libraries(kitchensound asound)
 target_link_libraries(kitchensound curl)
 target_link_libraries(kitchensound gpiod)
+target_link_libraries(kitchensound flatbuffers)

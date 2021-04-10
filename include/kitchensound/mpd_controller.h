@@ -8,13 +8,14 @@
 #include "kitchensound/config.h"
 
 class FdRegistry;
+class AnalyticsLogger;
 
 class MPDController {
 public:
-    MPDController(Configuration::MPDConfig, std::unique_ptr<FdRegistry>&);
+    MPDController(std::unique_ptr<FdRegistry>&, std::unique_ptr<AnalyticsLogger>&, Configuration::MPDConfig);
     ~MPDController();
 
-    void playback_stream(const std::string& stream_url);
+    void playback_stream(const std::string &, const std::string&);
 
     void stop_playback();
 

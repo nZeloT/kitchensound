@@ -31,6 +31,18 @@ public:
         int port;
     };
 
+    struct SnapcastConfig {
+        std::string bin;
+        std::string host;
+        int port;
+        std::string alsa_pcm;
+    };
+
+    struct AnalyticsConfig {
+        bool enabled;
+        std::string dest_host;
+    };
+
     enum GPIO_PIN {
         DISPLAY_BACKLIGHT,
         AMPLIFIER_POWER
@@ -52,6 +64,8 @@ public:
     std::string get_alsa_device_name(ALSA_DEVICES requested_device);
     DisplayStandbyConfig get_display_standby();
     MPDConfig get_mpd_config();
+    SnapcastConfig get_snapcast_config();
+    AnalyticsConfig get_analytics_config();
     std::filesystem::path get_res_folder();
     std::filesystem::path get_cache_folder();
 

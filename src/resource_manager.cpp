@@ -11,9 +11,9 @@
 
 #include "kitchensound/cache_manager.h"
 
-ResourceManager::ResourceManager(std::unique_ptr<FdRegistry>& fdr, std::filesystem::path  res_root, std::filesystem::path  cache_root)
+ResourceManager::ResourceManager(std::unique_ptr<NetworkController>& net, std::filesystem::path  res_root, std::filesystem::path  cache_root)
  : _cache(), _res_root{std::move(res_root)}, _cache_root{std::move(cache_root)}, _empty_cb{[](auto s, auto p){}},
-   _fdreg{fdr} {
+   _net{net} {
     load_all_static();
 }
 
@@ -36,6 +36,7 @@ void ResourceManager::load_all_static() {
     load_image("img/bluetooth.png",  _res_root.string() +"img/bluetooth.png");
     load_image("img/gears.png", _res_root.string() + "img/gears.png");
     load_image("img/favorite.png", _res_root.string() + "img/favorite.png");
+    load_image("img/speaker_group.png", _res_root.string() + "img/speaker_group.png");
 
     load_font("SMALL", _res_root.string() + "font/DroidSans.ttf", 18);
     load_font("LARGE", _res_root.string() + "font/DroidSans.ttf", 24);
@@ -132,7 +133,7 @@ void ResourceManager::get_cached(const std::string &identifier, std::function<vo
 
 void ResourceManager::try_load_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
     if(!_cache)
-        _cache = std::make_unique<CacheManager>(_fdreg, *this, _cache_root);
+        _cache = std::make_unique<CacheManager>(_net, *this, _cache_root);
     SPDLOG_INFO("Try loading -> {0}", identifier);
     _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr, .cb = std::move(image_cb)});
     _cache->load_from_cache(std::string{identifier});

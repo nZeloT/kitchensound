@@ -8,6 +8,7 @@
 #include "kitchensound/timeouts.h"
 #include "kitchensound/timer.h"
 #include "kitchensound/fd_registry.h"
+#include "kitchensound/analytics_logger.h"
 
 static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
     uint i = 0;
@@ -19,9 +20,9 @@ static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
 }
 
 struct MPDController::Impl {
-    explicit Impl(Configuration::MPDConfig conf, std::unique_ptr<FdRegistry>& fdr)
-    : _mpd_config{std::move(conf)}, _cb_metadata{[](const std::string&){}},
-      _connection{nullptr}, _current_meta{},
+    explicit Impl(std::unique_ptr<FdRegistry>& fdr, std::unique_ptr<AnalyticsLogger>& analytics, Configuration::MPDConfig conf)
+    : _mpd_config{std::move(conf)}, _analytics{analytics}, _cb_metadata{[](const std::string&){}},
+      _connection{nullptr}, _current_meta{}, _current_stream_name{},
       _polling_timer{std::make_unique<Timer>(fdr, "MpdController MPD update", MPD_POLLING_DELAY, true, [this](){
           this->poll_metadata();
       })} {};
@@ -30,9 +31,9 @@ struct MPDController::Impl {
         stop_playback();
     };
 
-    void playback_stream(const std::string& stream_url){
+    void playback_stream(const std::string& stream_name, const std::string& stream_url){
         create_mpd_connection();
-        SPDLOG_INFO("Starting stream -> {0}", stream_url);
+        SPDLOG_INFO("Starting stream -> {}: {}", stream_name, stream_url);
 
         mpd_run_add(_connection, stream_url.c_str());
         auto err = check_for_error();
@@ -45,6 +46,8 @@ struct MPDController::Impl {
         if(err)
             throw std::runtime_error("Error occurred while trying to play stream!");
 
+        _analytics->log_playback_change(PLAYBACK_SOURCE::RADIO_STREAM, stream_name, true);
+        _current_stream_name = stream_name;
         _polling_timer->reset_timer();
         close_connection();
     }
@@ -61,6 +64,9 @@ struct MPDController::Impl {
         if (err)
             throw std::runtime_error("Error occurred while trying to clear queue!");
 
+        if(!_current_stream_name.empty())
+            _analytics->log_playback_change(PLAYBACK_SOURCE::RADIO_STREAM, _current_stream_name, false);
+        _current_stream_name = "";
         _polling_timer->stop();
        close_connection();
     }
@@ -78,6 +84,7 @@ struct MPDController::Impl {
                     SPDLOG_INFO("Metadata changed -> {0}", song_title);
                     _cb_metadata(song_title);
                     _current_meta = song_title;
+                    _analytics->log_playback_song_change(_current_meta);
                 }
 
                 mpd_song_free(song);
@@ -136,16 +143,19 @@ struct MPDController::Impl {
     const Configuration::MPDConfig _mpd_config;
     std::unique_ptr<Timer> _polling_timer;
     std::string _current_meta;
+    std::string _current_stream_name;
     std::function<void(const std::string&)> _cb_metadata;
+
+    std::unique_ptr<AnalyticsLogger>& _analytics;
 };
 
-MPDController::MPDController(Configuration::MPDConfig config, std::unique_ptr<FdRegistry>& tm)
-        : _impl{std::make_unique<MPDController::Impl>(std::move(config), tm)} {}
+MPDController::MPDController(std::unique_ptr<FdRegistry>& fdreg, std::unique_ptr<AnalyticsLogger>& analytics, Configuration::MPDConfig config)
+        : _impl{std::make_unique<MPDController::Impl>(fdreg, analytics, std::move(config))} {}
 
 MPDController::~MPDController() = default;
 
-void MPDController::playback_stream(const std::string &stream_url) {
-    _impl->playback_stream(stream_url);
+void MPDController::playback_stream(const std::string& stream_name, const std::string &stream_url) {
+    _impl->playback_stream(stream_name, stream_url);
 }
 
 void MPDController::stop_playback() {
