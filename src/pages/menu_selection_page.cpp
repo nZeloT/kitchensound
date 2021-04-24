@@ -1,6 +1,7 @@
 #include "kitchensound/pages/menu_selection_page.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/input_event.h"
 #include "kitchensound/resource_manager.h"
@@ -8,14 +9,14 @@
 #include "kitchensound/application_backbone.h"
 
 const std::vector<MenuModel> MENUS = {
-        {"Radio", STREAM_PLAYING, "img/radio.png"},
-        {"Bluetooth", BT_PLAYING, "img/bluetooth.png"},
-        {"Multiroom", SNAPCAST_PLAYING, "img/speaker_group.png"},
-        {"Optionen", OPTIONS, "img/gears.png"}
+        {"Radio", PAGES::STREAM_PLAYING, "img/radio.png"},
+        {"Bluetooth", PAGES::BT_PLAYING, "img/bluetooth.png"},
+        {"Multiroom", PAGES::SNAPCAST_PLAYING, "img/speaker_group.png"},
+        {"Optionen", PAGES::OPTIONS, "img/gears.png"}
 };
 
 MenuSelectionPage::MenuSelectionPage(ApplicationBackbone& bb)
-        : SelectionPage<MenuModel>(MENU_SELECTION, bb, MENUS) {
+        : SelectionPage<MenuModel>(PAGES::MENU_SELECTION, bb, MENUS) {
     load_images();
 }
 

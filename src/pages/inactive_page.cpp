@@ -4,6 +4,7 @@
 #include <iomanip>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/timeouts.h"
 #include "kitchensound/input_event.h"
@@ -15,7 +16,7 @@
 #include "kitchensound/application_backbone.h"
 
 InactivePage::InactivePage(ApplicationBackbone& bb, std::shared_ptr<TimeBasedStandby>& standby, std::shared_ptr<GpioUtil>& gpio)
-    : BasePage(INACTIVE, bb), _model{MENU_SELECTION, false, false, false, false},
+    : BasePage(PAGES::INACTIVE, bb), _model{PAGES::MENU_SELECTION, false, false, false, false},
     _standby{standby}, _gpio{gpio},
     _amp_cooldown_timer{std::make_unique<Timer>(bb.fdreg, "Inactive Page Amplifier Cooldown", AMPLIFIER_DELAY, false, [this](){
         this->_model.amp_cooldown_active = false;
@@ -37,7 +38,7 @@ InactivePage::~InactivePage() = default;
 void InactivePage::setup_inital_state() {
     _standby->arm();
     update_state();
-    BasePage::enter_page(MENU_SELECTION, nullptr);
+    BasePage::enter_page(PAGES::MENU_SELECTION, nullptr);
 }
 
 void InactivePage::enter_page(PAGES origin, void* payload) {
@@ -113,7 +114,7 @@ void InactivePage::render() {
 
     if (_model.amp_cooldown_active) {
         //display cooldown
-        renderer->render_text(160, 225, "Letting amp caps discharge.", Renderer::SMALL);
+        renderer->render_text(160, 225, "Letting amp caps discharge.", Renderer::TEXT_SIZE::SMALL);
     }
 
     //just display a large digital clock
@@ -121,5 +122,5 @@ void InactivePage::render() {
     time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
          << std::to_string(_bp_model.minute);
 
-    renderer->render_text(160, 120, time.str(), Renderer::HUGHE);
+    renderer->render_text(160, 120, time.str(), Renderer::TEXT_SIZE::HUGHE);
 }

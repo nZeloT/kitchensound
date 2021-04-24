@@ -4,6 +4,7 @@
 #include <string>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -36,7 +37,9 @@ void ResourceManager::load_all_static() {
     load_image("img/bluetooth.png",  _res_root.string() +"img/bluetooth.png");
     load_image("img/gears.png", _res_root.string() + "img/gears.png");
     load_image("img/favorite.png", _res_root.string() + "img/favorite.png");
+    load_image("img/favorite_bordered.png", _res_root.string() + "img/favorite_bordered.png");
     load_image("img/speaker_group.png", _res_root.string() + "img/speaker_group.png");
+    load_image("img/syncing.png", _res_root.string() + "img/syncing.png");
 
     load_font("SMALL", _res_root.string() + "font/DroidSans.ttf", 18);
     load_font("LARGE", _res_root.string() + "font/DroidSans.ttf", 24);
@@ -47,7 +50,7 @@ void ResourceManager::unload_all() {
     auto unload = [](std::map<std::string, Resource> &m) {
         for (auto &e : m) {
             auto &res = e.second;
-            if (res.type == FONT)
+            if (res.type == ResourceType::FONT)
                 SDL_free(res.data);
             else
                 SDL_FreeSurface(reinterpret_cast<SDL_Surface *>(res.data));
@@ -88,10 +91,10 @@ void ResourceManager::load_image(const std::string &identifier, const std::strin
 
     if (is_static)
         _static.emplace(std::string{identifier},
-                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image), _empty_cb});
+                        Resource{ResourceType::IMAGE, ResourceState::LOADED, std::time(nullptr), reinterpret_cast<void *>(image), _empty_cb});
     else
         _cached.emplace(std::string{identifier},
-                        Resource{IMAGE, LOADED, std::time(nullptr), reinterpret_cast<void *>(image), _empty_cb});
+                        Resource{ResourceType::IMAGE, ResourceState::LOADED, std::time(nullptr), reinterpret_cast<void *>(image), _empty_cb});
 }
 
 void ResourceManager::load_font(const std::string &identifier, const std::string &path, int size, bool is_static) {
@@ -102,10 +105,10 @@ void ResourceManager::load_font(const std::string &identifier, const std::string
 
     if (is_static)
         _static.emplace(std::string{identifier},
-                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font), _empty_cb});
+                        Resource{ResourceType::FONT, ResourceState::LOADED, std::time(nullptr), reinterpret_cast<void *>(font), _empty_cb});
     else
         _cached.emplace(std::string{identifier},
-                        Resource{FONT, LOADED, std::time(nullptr), reinterpret_cast<void *>(font), _empty_cb});
+                        Resource{ResourceType::FONT, ResourceState::LOADED, std::time(nullptr), reinterpret_cast<void *>(font), _empty_cb});
 }
 
 void ResourceManager::get_cached(const std::string &identifier, std::function<void(std::string const&, void*)> image_cb) {
@@ -122,7 +125,7 @@ void ResourceManager::get_cached(const std::string &identifier, std::function<vo
         return;
     }
 
-    if(loaded->state == FAILED && std::time(nullptr) - loaded->last_state_upd > 80000) { // TODO use timer?
+    if(loaded->state == ResourceState::FAILED && std::time(nullptr) - loaded->last_state_upd > 80000) { // TODO use timer?
         //retry fetching the resource
         retry_load_cached(_id, std::move(image_cb));
         return;
@@ -135,7 +138,7 @@ void ResourceManager::try_load_cached(const std::string &identifier, std::functi
     if(!_cache)
         _cache = std::make_unique<CacheManager>(_net, *this, _cache_root);
     SPDLOG_INFO("Try loading -> {0}", identifier);
-    _cached.emplace(std::string{identifier}, Resource{.type = IMAGE, .state = SHEDULED, .data = nullptr, .cb = std::move(image_cb)});
+    _cached.emplace(std::string{identifier}, Resource{.type = ResourceType::IMAGE, .state = ResourceState::SHEDULED, .data = nullptr, .cb = std::move(image_cb)});
     _cache->load_from_cache(std::string{identifier});
 }
 
@@ -145,7 +148,7 @@ void ResourceManager::retry_load_cached(const std::string &identifier, std::func
         return;
     auto id = std::string{identifier};
     SPDLOG_INFO("Retry loading -> {0}", id);
-    r->second.state = SHEDULED;
+    r->second.state = ResourceState::SHEDULED;
     r->second.last_state_upd = std::time(nullptr);
     r->second.cb = std::move(image_cb);
     _cache->load_from_cache(id);
@@ -156,7 +159,7 @@ void ResourceManager::cache_load_failed(const std::string &identifier) {
     if (r == std::end(_cached))
         return;
 
-    r->second.state = FAILED;
+    r->second.state = ResourceState::FAILED;
     r->second.last_state_upd = std::time(nullptr);
     r->second.cb(identifier, nullptr);
     r->second.cb = _empty_cb;
@@ -167,9 +170,12 @@ void ResourceManager::cache_load_success(const std::string &identifier, void *da
     if (r == std::end(_cached))
         return;
 
-    r->second.state = LOADED;
+    r->second.state = ResourceState::LOADED;
     r->second.last_state_upd = std::time(nullptr);
     r->second.data = data;
     r->second.cb(identifier, data);
     r->second.cb = _empty_cb;
 }
+
+MAKE_ENUM_STRINGIFY(ENUM_RESOURCE_TYPE,ResourceManager::ResourceType)
+MAKE_ENUM_STRINGIFY(ENUM_RESOURCE_STATE, ResourceManager::ResourceState)

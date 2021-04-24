@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/resource_manager.h"
 #include "kitchensound/network_controller.h"

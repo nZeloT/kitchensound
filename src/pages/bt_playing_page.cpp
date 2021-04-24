@@ -1,6 +1,7 @@
 #include "kitchensound/pages/bt_playing_page.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/renderer.h"
 #include "kitchensound/render_text.h"
@@ -11,8 +12,9 @@
 
 BluetoothPlayingPage::BluetoothPlayingPage(ApplicationBackbone& bb,
                                            std::shared_ptr<Volume>& vol,
+                                           std::shared_ptr<SongFaver>& faver,
                                            std::shared_ptr<BTController>& btc)
-        : PlayingPage(BT_PLAYING, bb, vol),
+        : PlayingPage(PAGES::BT_PLAYING, bb, vol, faver),
           _btc{btc} {
     set_image("", BLUETOOTH_IMAGE);
     _btc->set_metadata_status_callback([this](auto status, auto meta) {

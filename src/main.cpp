@@ -2,6 +2,7 @@
 #include <csignal>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/running.h"
 #include "kitchensound/version.h"
@@ -38,16 +39,16 @@ int main(int argc, char **argv) {
 
     //4. initialize the input devices
     auto& ctrl = b.ctrl;
-    InputSource wheelAxis{b.fdreg, b.conf->get_input_device(Configuration::WHEEL_AXIS), [&ctrl](auto &ev) {
+    InputSource wheelAxis{b.fdreg, b.conf->get_input_device(Configuration::INPUT_SOURCES::WHEEL_AXIS), [&ctrl](auto &ev) {
         ctrl->react_wheel_input(ev);
     }};
-    InputSource enterKey{b.fdreg, b.conf->get_input_device(Configuration::ENTER_KEY), [&ctrl](auto &ev) {
+    InputSource enterKey{b.fdreg, b.conf->get_input_device(Configuration::INPUT_SOURCES::ENTER_KEY), [&ctrl](auto &ev) {
         ctrl->react_confirm(ev);
     }};
-    InputSource menuKey{b.fdreg, b.conf->get_input_device(Configuration::MENU_KEY), [&ctrl](auto &ev) {
+    InputSource menuKey{b.fdreg, b.conf->get_input_device(Configuration::INPUT_SOURCES::MENU_KEY), [&ctrl](auto &ev) {
         ctrl->react_menu_change(ev);
     }};
-    InputSource powerKey{b.fdreg, b.conf->get_input_device(Configuration::POWER_KEY), [&ctrl](auto &ev) {
+    InputSource powerKey{b.fdreg, b.conf->get_input_device(Configuration::INPUT_SOURCES::POWER_KEY), [&ctrl](auto &ev) {
         ctrl->react_power_change(ev);
     }};
 

@@ -8,7 +8,7 @@
 
 class NetworkController;
 
-enum PLAYBACK_SOURCE {RADIO_STREAM, BLUETOOTH, SNAPCAST};
+enum class PLAYBACK_SOURCE {RADIO_STREAM, BLUETOOTH, SNAPCAST};
 
 class AnalyticsLogger {
 

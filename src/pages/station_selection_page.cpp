@@ -1,6 +1,7 @@
 #include "kitchensound/pages/station_selection_page.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 
 #include "kitchensound/timeouts.h"
@@ -16,9 +17,9 @@
 StationSelectionPage::StationSelectionPage(ApplicationBackbone& bb,
                                            std::shared_ptr<MPDController>& mpd,
                                            std::vector<RadioStationStream> streams) :
-        SelectionPage<RadioStationStream>(STREAM_SELECTION, bb, std::move(streams)),
+        SelectionPage<RadioStationStream>(PAGES::STREAM_SELECTION, bb, std::move(streams)),
                 _mpd{mpd}, _model{}, _auto_leave_timer{std::make_unique<Timer>(bb.fdreg, "Station Selection Page Auto Leave", AUTO_LEAVE_BROWSING, false, [this](){
-                    this->_bb.ctrl->trigger_transition(this->_page, STREAM_PLAYING);
+                    this->_bb.ctrl->trigger_transition(this->_page, PAGES::STREAM_PLAYING);
                 })} {
     load_images();
 };
@@ -28,20 +29,20 @@ StationSelectionPage::~StationSelectionPage() = default;
 void StationSelectionPage::enter_page(PAGES origin, void* payload)  {
     SelectionPage<RadioStationStream>::enter_page(origin, payload);
     _model.times_out = false;
-    if(origin == STREAM_PLAYING)
+    if(origin == PAGES::STREAM_PLAYING)
         activate_timeout();
     load_images();
 }
 
 void* StationSelectionPage::leave_page(PAGES destination)  {
     _auto_leave_timer->stop();
-    if(destination != STREAM_PLAYING && _model.times_out) {
+    if(destination != PAGES::STREAM_PLAYING && _model.times_out) {
         //model only times out if browsing page was called from stream playing
         //but the new destination isn't playing; this requires halting the mpd playback
         _mpd->stop_playback();
     }
     SelectionPage<RadioStationStream>::leave_page(destination);
-    if(destination == STREAM_PLAYING)
+    if(destination == PAGES::STREAM_PLAYING)
         return get_selected_stream();
     else
         return nullptr;
@@ -73,7 +74,7 @@ void StationSelectionPage::activate_timeout() {
 
 void StationSelectionPage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
-        _bb.ctrl->trigger_transition(_page, STREAM_PLAYING);
+        _bb.ctrl->trigger_transition(_page, PAGES::STREAM_PLAYING);
         _model.confirmed_selection = _sp_model.selected;
         SPDLOG_INFO("Transitioning with new stream -> {0}", _model.confirmed_selection);
     }

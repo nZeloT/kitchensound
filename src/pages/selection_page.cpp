@@ -56,7 +56,7 @@ void SelectionPage<T>::render() {
 
         //1. render a possible selection background
         if (_sp_model.selected == i) {
-            renderer->render_rect(offsetX-80, offsetY-32, 160, 90, Renderer::HIGHLIGHT);
+            renderer->render_rect(offsetX-80, offsetY-32, 160, 90, Renderer::COLOR::HIGHLIGHT);
         }
 
         //2. render the artwork
@@ -66,7 +66,7 @@ void SelectionPage<T>::render() {
 
         //3. render the element name
         auto text = get_text(element);
-        renderer->render_text(offsetX, offsetY+35, text, Renderer::SMALL);
+        renderer->render_text(offsetX, offsetY+35, text, Renderer::TEXT_SIZE::SMALL);
     }
 
     // render the page indicators
@@ -87,7 +87,7 @@ void SelectionPage<T>::render() {
     //render the page number
     if (has_paging) {
         int page_num = _sp_model.offset / _sp_model.limit;
-        renderer->render_text(160, 225, std::to_string(page_num), Renderer::SMALL);
+        renderer->render_text(160, 225, std::to_string(page_num), Renderer::TEXT_SIZE::SMALL);
     }
 }
 

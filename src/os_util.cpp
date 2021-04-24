@@ -10,6 +10,7 @@
 
 #include <systemd/sd-bus.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #define DAY_DIVISOR (24 * 60 * 60)
 #define HOUR_DIVISOR (60 * 60)

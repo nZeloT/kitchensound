@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #define MAX_EVENTS 20
 

@@ -3,13 +3,13 @@
 #include "kitchensound/renderer.h"
 #include "kitchensound/application_backbone.h"
 
-LoadingPage::LoadingPage(ApplicationBackbone& bb) : BasePage(LOADING, bb), _model{} {}
+LoadingPage::LoadingPage(ApplicationBackbone& bb) : BasePage(PAGES::LOADING, bb), _model{} {}
 
 LoadingPage::~LoadingPage() = default;
 
 void LoadingPage::render() {
     this->render_time();
-    _bb.rend->render_text(160, 120, _model.msg, Renderer::LARGE);
+    _bb.rend->render_text(160, 120, _model.msg, Renderer::TEXT_SIZE::LARGE);
 }
 
 void LoadingPage::enter_page(PAGES origin, void* payload) {

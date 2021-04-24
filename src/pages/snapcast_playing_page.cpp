@@ -3,8 +3,9 @@
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/snapcast_controller.h"
 
-SnapcastPlayingPage::SnapcastPlayingPage(ApplicationBackbone& bb, std::shared_ptr<Volume>& vol, std::unique_ptr<SnapcastController>& snap)
-    : PlayingPage(SNAPCAST_PLAYING, bb, vol), _snap{snap} {
+SnapcastPlayingPage::SnapcastPlayingPage(ApplicationBackbone &bb, std::shared_ptr<Volume> &vol,
+                                         std::shared_ptr<SongFaver> &faver, std::unique_ptr<SnapcastController> &snap)
+        : PlayingPage(PAGES::SNAPCAST_PLAYING, bb, vol, faver), _snap{snap} {
     set_image("", "img/speaker_group.png");
     set_source_text("Snapcast Multiroom");
 }
@@ -18,7 +19,7 @@ void SnapcastPlayingPage::enter_page(PAGES origin, void *payload) {
 }
 
 
-void * SnapcastPlayingPage::leave_page(PAGES dest) {
+void *SnapcastPlayingPage::leave_page(PAGES dest) {
     _snap->stop_snapclient_service();
     return PlayingPage::leave_page(dest);
 }

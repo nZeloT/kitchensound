@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include <mpg123.h>
 #include <ao/ao.h>

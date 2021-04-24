@@ -2,20 +2,34 @@
 #define KITCHENSOUND_CONFIG_H
 
 #include <memory>
-#include <filesystem>
 #include <vector>
+#include <iostream>
+#include <filesystem>
 
 #include <libconfig.h++>
 
+#include "kitchensound/enum_helper.h"
 #include "kitchensound/radio_station_stream.h"
+
+#define ENUM_INPUT_SOURCES(DO,ACCESSOR) \
+    DO(WHEEL_AXIS, ACCESSOR)            \
+    DO(ENTER_KEY, ACCESSOR)             \
+    DO(MENU_KEY, ACCESSOR)              \
+    DO(POWER_KEY, ACCESSOR)             \
+
+#define ENUM_GPIO_PIN(DO,ACCESSOR)      \
+    DO(DISPLAY_BACKLIGHT,ACCESSOR)      \
+    DO(AMPLIFIER_POWER,ACCESSOR)        \
+
+#define ENUM_ALSA_DEVICES(DO,ACCESSOR)  \
+    DO(PCM_DEVICE,ACCESSOR)             \
+    DO(MIXER_CONTROL,ACCESSOR)          \
+    DO(MIXER_CARD,ACCESSOR)             \
 
 class Configuration {
 public:
-    enum INPUT_SOURCES {
-        WHEEL_AXIS,
-        ENTER_KEY,
-        MENU_KEY,
-        POWER_KEY
+    enum class INPUT_SOURCES {
+        ENUM_INPUT_SOURCES(MAKE_ENUM,)
     };
 
     struct DisplayStandbyConfig {
@@ -43,15 +57,17 @@ public:
         std::string dest_host;
     };
 
-    enum GPIO_PIN {
-        DISPLAY_BACKLIGHT,
-        AMPLIFIER_POWER
+    struct SongFaverConfig {
+        bool enabled;
+        std::string dest_host;
     };
 
-    enum ALSA_DEVICES {
-        PCM_DEVICE,
-        MIXER_CONTROL,
-        MIXER_CARD
+    enum class GPIO_PIN {
+        ENUM_GPIO_PIN(MAKE_ENUM,)
+    };
+
+    enum class ALSA_DEVICES {
+        ENUM_ALSA_DEVICES(MAKE_ENUM,)
     };
 
     explicit Configuration(const std::filesystem::path& file);
@@ -66,6 +82,7 @@ public:
     MPDConfig get_mpd_config();
     SnapcastConfig get_snapcast_config();
     AnalyticsConfig get_analytics_config();
+    SongFaverConfig get_songfaver_config();
     std::filesystem::path get_res_folder();
     std::filesystem::path get_cache_folder();
 
@@ -74,5 +91,9 @@ private:
 
     libconfig::Config conf;
 };
+
+std::ostream& operator<<(std::ostream&,Configuration::INPUT_SOURCES);
+std::ostream& operator<<(std::ostream&,Configuration::GPIO_PIN);
+std::ostream& operator<<(std::ostream&,Configuration::ALSA_DEVICES);
 
 #endif //KITCHENSOUND_CONFIG_H

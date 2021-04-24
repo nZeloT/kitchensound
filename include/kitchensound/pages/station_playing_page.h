@@ -9,7 +9,7 @@ struct ApplicationBackbone;
 
 class StationPlayingPage : public PlayingPage {
 public:
-    StationPlayingPage(ApplicationBackbone&, std::shared_ptr<Volume> &,
+    StationPlayingPage(ApplicationBackbone&, std::shared_ptr<Volume> &, std::shared_ptr<SongFaver>&,
                        std::shared_ptr<MPDController> &, RadioStationStream *);
 
     ~StationPlayingPage() override;

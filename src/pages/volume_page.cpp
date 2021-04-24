@@ -42,14 +42,14 @@ void VolumePage::render_volume() {
     auto& renderer = _bb.rend;
 
     //render background
-    renderer->render_rect(290, 0, 30, 240, Renderer::HIGHLIGHT);
+    renderer->render_rect(290, 0, 30, 240, Renderer::COLOR::HIGHLIGHT);
 
     //render volume bar
-    renderer->render_rect(300, 10, 12, 200, Renderer::BACKGROUND);
+    renderer->render_rect(300, 10, 12, 200, Renderer::COLOR::BACKGROUND);
 
     //render the actual volume
-    renderer->render_rect(300, 10 + 200 - 2 * vol, 12, 2 * vol, Renderer::FOREGROUND);
+    renderer->render_rect(300, 10 + 200 - 2 * vol, 12, 2 * vol, Renderer::COLOR::FOREGROUND);
 
     //render the volume value
-    renderer->render_text(305, 225, volume.str(), Renderer::SMALL);
+    renderer->render_text(305, 225, volume.str(), Renderer::TEXT_SIZE::SMALL);
 }

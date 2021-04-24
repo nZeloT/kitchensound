@@ -7,6 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/resource_manager.h"
 
@@ -58,7 +59,7 @@ void Renderer::load_resources(std::unique_ptr<ResourceManager>& res) {
 
 void Renderer::start_pass() {
     //0. fill the background
-    set_active_color(BACKGROUND);
+    set_active_color(COLOR::BACKGROUND);
     SDL_RenderFillRect(_renderer, nullptr);
 }
 
@@ -77,7 +78,7 @@ void Renderer::render_text(int x, int y, const std::string &text, TEXT_SIZE size
     int texW = 0, texH = 0;
     SDL_QueryTexture(texture, nullptr, nullptr, &texW, &texH);
     SDL_Rect dstrect{x - texW / 2, y - texH / 2, texW, texH};
-    if(alignment == LEFT)
+    if(alignment == TEXT_ALIGN::LEFT)
         dstrect.x = x;
     SDL_RenderCopy(_renderer, texture, nullptr, &dstrect);
     SDL_DestroyTexture(texture);
@@ -109,11 +110,11 @@ SDL_Texture* Renderer::create_texture_from_text(const std::string &text, TEXT_SI
 
 TTF_Font* Renderer::get_font(TEXT_SIZE size) const {
     switch (size) {
-        case SMALL:
+        case TEXT_SIZE::SMALL:
             return _font_small;
-        case LARGE:
+        case TEXT_SIZE::LARGE:
             return _font_large;
-        case HUGHE:
+        case TEXT_SIZE::HUGHE:
             return _font_hughe;
         default:
             throw std::runtime_error{"Tried to access unknown font size!"};
@@ -122,13 +123,13 @@ TTF_Font* Renderer::get_font(TEXT_SIZE size) const {
 
 void Renderer::set_active_color(COLOR color) {
     switch (color) {
-        case BACKGROUND:
+        case COLOR::BACKGROUND:
             SDL_SetRenderDrawColor(_renderer, COLOR_BACKGROUND, SDL_ALPHA_OPAQUE);
             break;
-        case FOREGROUND:
+        case COLOR::FOREGROUND:
             SDL_SetRenderDrawColor(_renderer, COLOR_FOREGROUND, SDL_ALPHA_OPAQUE);
             break;
-        case HIGHLIGHT:
+        case COLOR::HIGHLIGHT:
             SDL_SetRenderDrawColor(_renderer, COLOR_HIGHLIGHT, SDL_ALPHA_OPAQUE);
             break;
         default:
@@ -136,3 +137,7 @@ void Renderer::set_active_color(COLOR color) {
             break;
     }
 }
+
+MAKE_ENUM_STRINGIFY(ENUM_TEXT_ALIGN, Renderer::TEXT_ALIGN)
+MAKE_ENUM_STRINGIFY(ENUM_TEXT_SIZE, Renderer::TEXT_SIZE)
+MAKE_ENUM_STRINGIFY(ENUM_COLOR, Renderer::COLOR)

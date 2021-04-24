@@ -1,6 +1,7 @@
 #include "kitchensound/pages/options_page.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/timeouts.h"
 #include "kitchensound/input_event.h"
@@ -12,7 +13,7 @@
 #define PAGE_SIZE 7
 
 OptionsPage::OptionsPage(ApplicationBackbone& bb, std::shared_ptr<OsUtil>& os)
-        : BasePage(OPTIONS, bb), _os{os}, _model{0, 0, 0, {}},
+        : BasePage(PAGES::OPTIONS, bb), _os{os}, _model{0, 0, 0, {}},
         _value_update{std::make_unique<Timer>(bb.fdreg, "OptionsPage Value Refresh", OS_VALUES_REFRESH, true, [this](){
             this->_os->refresh_values();
             this->update_model();
@@ -74,9 +75,9 @@ void OptionsPage::render() {
     this->render_time();
     for (int i = _model.selection_offset; i < _model.selection_limit && i < (_model.selection_offset + PAGE_SIZE); ++i) {
         if(i == _model.selection_idx){
-            _bb.rend->render_rect(0, 32 + i*30, 320, 30, Renderer::HIGHLIGHT);
+            _bb.rend->render_rect(0, 32 + i*30, 320, 30, Renderer::COLOR::HIGHLIGHT);
         }
 
-        _bb.rend->render_text(10, 46 + i*30, _model.data[i], Renderer::LARGE, Renderer::LEFT);
+        _bb.rend->render_text(10, 46 + i*30, _model.data[i], Renderer::TEXT_SIZE::LARGE, Renderer::TEXT_ALIGN::LEFT);
     }
 }

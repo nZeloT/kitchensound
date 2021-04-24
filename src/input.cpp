@@ -6,6 +6,7 @@
 #include <sys/epoll.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/input_event.h"
 #include "kitchensound/timeouts.h"

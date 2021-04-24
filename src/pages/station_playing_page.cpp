@@ -9,9 +9,10 @@
 
 #define RADIO_IMAGE "img/radio.png"
 
-StationPlayingPage::StationPlayingPage(ApplicationBackbone& bb, std::shared_ptr<Volume> &vol,
-                                       std::shared_ptr<MPDController> &mpd, RadioStationStream *initial_station) :
-        PlayingPage(STREAM_PLAYING, bb, vol),
+StationPlayingPage::StationPlayingPage(ApplicationBackbone &bb, std::shared_ptr<Volume> &vol,
+                                       std::shared_ptr<SongFaver> &faver, std::shared_ptr<MPDController> &mpd,
+                                       RadioStationStream *initial_station) :
+        PlayingPage(PAGES::STREAM_PLAYING, bb, vol, faver),
         _mpd{mpd}, _model{} {
 
     _mpd->set_metadata_callback([&](auto new_meta) {
@@ -30,10 +31,10 @@ StationPlayingPage::StationPlayingPage(ApplicationBackbone& bb, std::shared_ptr<
 
 StationPlayingPage::~StationPlayingPage() = default;
 
-void StationPlayingPage::handle_enter_key(InputEvent& inev) {
+void StationPlayingPage::handle_enter_key(InputEvent &inev) {
     PlayingPage::handle_enter_key(inev);
-    if(inev.value == INEV_KEY_SHORT)
-        _bb.ctrl->trigger_transition(_page, STREAM_SELECTION);
+    if (inev.value == INEV_KEY_SHORT)
+        _bb.ctrl->trigger_transition(_page, PAGES::STREAM_SELECTION);
 }
 
 void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
@@ -48,7 +49,7 @@ void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
 
         _mpd->stop_playback();
         _mpd->playback_stream(_model.station.name, _model.station.url);
-    }else{
+    } else {
         //already playing the stream; possibly some time went by not updating the metadata, so force an update now
         _mpd->force_metadata_update();
     }
@@ -56,7 +57,7 @@ void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
 
 void StationPlayingPage::enter_page(PAGES origin, void *payload) {
     PlayingPage::enter_page(origin, payload);
-    if (origin != STREAM_SELECTION) {
+    if (origin != PAGES::STREAM_SELECTION) {
         _mpd->stop_playback();
         _mpd->playback_stream(_model.station.name, _model.station.url);
         set_source_text(_model.station.name);
@@ -71,7 +72,7 @@ void StationPlayingPage::enter_page(PAGES origin, void *payload) {
 }
 
 void *StationPlayingPage::leave_page(PAGES destination) {
-    if (destination != STREAM_SELECTION) {
+    if (destination != PAGES::STREAM_SELECTION) {
         _mpd->stop_playback();
     }
     PlayingPage::leave_page(destination);

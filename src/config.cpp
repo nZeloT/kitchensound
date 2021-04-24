@@ -1,6 +1,7 @@
 #include "kitchensound/config.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 Configuration::Configuration(const std::filesystem::path& file) {
     conf.readFile(file.c_str());
@@ -11,16 +12,16 @@ Configuration::~Configuration() = default;
 std::string Configuration::get_input_device(INPUT_SOURCES source) {
     std::string device;
     switch (source) {
-        case WHEEL_AXIS:
+        case INPUT_SOURCES::WHEEL_AXIS:
             device =  conf.lookup("input.wheel_axis").c_str();
             break;
-        case ENTER_KEY:
+        case INPUT_SOURCES::ENTER_KEY:
             device = conf.lookup("input.enter_key").c_str();
             break;
-        case MENU_KEY:
+        case INPUT_SOURCES::MENU_KEY:
             device = conf.lookup("input.menu_key").c_str();
             break;
-        case POWER_KEY:
+        case INPUT_SOURCES::POWER_KEY:
             device = conf.lookup("input.power_key").c_str();
             break;
         default:
@@ -108,7 +109,7 @@ Configuration::SnapcastConfig Configuration::get_snapcast_config() {
     s.port = c.lookup("port");
 
     //mirror the alsa pcm device name to the snapcast config
-    s.alsa_pcm = get_alsa_device_name(PCM_DEVICE);
+    s.alsa_pcm = get_alsa_device_name(ALSA_DEVICES::PCM_DEVICE);
 
     SPDLOG_INFO("Read snapcast configuration -> {}; {}:{}", s.bin, s.host, s.port);
 
@@ -130,15 +131,30 @@ Configuration::AnalyticsConfig Configuration::get_analytics_config() {
     return s;
 }
 
+Configuration::SongFaverConfig Configuration::get_songfaver_config() {
+    auto& c = conf.lookup("song_faving");
+    SongFaverConfig s{};
+    if(!c.exists("enabled") || c.lookup("enabled") && !c.exists("destination_host")){
+        throw std::runtime_error{"Missing song_faving configuration: either enabled = false or with destination_host"};
+    }
+
+    s.enabled = c.lookup("enabled");
+    s.dest_host = c.lookup("destination_host").c_str();
+
+    SPDLOG_INFO("Read songfaver configuration -> {}; {}", s.enabled, s.dest_host);
+
+    return s;
+}
+
 int Configuration::get_gpio_pin(GPIO_PIN request_pin) {
     std::string path;
     int def;
     switch (request_pin) {
-        case DISPLAY_BACKLIGHT:
+        case GPIO_PIN::DISPLAY_BACKLIGHT:
             path = "gpio.display_backlight";
             def = 13;
             break;
-        case AMPLIFIER_POWER:
+        case GPIO_PIN::AMPLIFIER_POWER:
             path = "gpio.amplifier_power";
             def = 4;
             break;
@@ -160,17 +176,17 @@ std::string Configuration::get_alsa_device_name(ALSA_DEVICES requested_device) {
     std::string path;
     std::string def;
     switch(requested_device) {
-        case PCM_DEVICE:
+        case ALSA_DEVICES::PCM_DEVICE:
             path = "alsa.pcm_device";
             def = "volumedev";
             break;
 
-        case MIXER_CONTROL:
+        case ALSA_DEVICES::MIXER_CONTROL:
             path = "alsa.mixer_control";
             def = "Master";
             break;
 
-        case MIXER_CARD:
+        case ALSA_DEVICES::MIXER_CARD:
             path = "alsa.mixer_card";
             def = "default";
             break;
@@ -206,3 +222,7 @@ std::filesystem::path Configuration::get_res_folder() {
 std::filesystem::path Configuration::get_cache_folder() {
     return get_folder("cache_root", "../cache");
 }
+
+MAKE_ENUM_STRINGIFY(ENUM_INPUT_SOURCES, Configuration::INPUT_SOURCES)
+MAKE_ENUM_STRINGIFY(ENUM_GPIO_PIN, Configuration::GPIO_PIN)
+MAKE_ENUM_STRINGIFY(ENUM_ALSA_DEVICES, Configuration::ALSA_DEVICES)

@@ -30,15 +30,17 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackb
 
     auto os_util = init_os_util();
 
-    pages.emplace(INACTIVE, std::make_unique<InactivePage>(bb, standby, gpio));
-    pages.emplace(LOADING, std::make_unique<LoadingPage>(bb));
-    pages.emplace(MENU_SELECTION, std::make_unique<MenuSelectionPage>(bb));
+    auto song_faver = init_song_faver(bb.net, bb.conf);
+
+    pages.emplace(PAGES::INACTIVE, std::make_unique<InactivePage>(bb, standby, gpio));
+    pages.emplace(PAGES::LOADING, std::make_unique<LoadingPage>(bb));
+    pages.emplace(PAGES::MENU_SELECTION, std::make_unique<MenuSelectionPage>(bb));
     auto stream_sel = std::make_unique<StationSelectionPage>(bb, mpd_controller, bb.conf->get_radio_stations());
     auto station = stream_sel->get_selected_stream();
-    pages.emplace(STREAM_SELECTION, std::move(stream_sel));
-    pages.emplace(STREAM_PLAYING, std::make_unique<StationPlayingPage>(bb, volume, mpd_controller, station));
-    pages.emplace(BT_PLAYING, std::make_unique<BluetoothPlayingPage>(bb, volume, bt_controller));
-    pages.emplace(OPTIONS, std::make_unique<OptionsPage>(bb, os_util));
+    pages.emplace(PAGES::STREAM_SELECTION, std::move(stream_sel));
+    pages.emplace(PAGES::STREAM_PLAYING, std::make_unique<StationPlayingPage>(bb, volume, song_faver, mpd_controller, station));
+    pages.emplace(PAGES::BT_PLAYING, std::make_unique<BluetoothPlayingPage>(bb, volume, song_faver, bt_controller));
+    pages.emplace(PAGES::OPTIONS, std::make_unique<OptionsPage>(bb, os_util));
 
     return pages;
 }

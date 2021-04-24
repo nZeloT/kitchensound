@@ -6,7 +6,7 @@
 
 class FdRegistry;
 
-enum HTTP_METHOD {
+enum class HTTP_METHOD {
     GET,
     POST
 };

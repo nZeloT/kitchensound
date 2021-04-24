@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/network_controller.h"
 
@@ -59,11 +60,11 @@ struct AnalyticsLogger::Impl {
 
     static PlaybackSource map_playback_source(PLAYBACK_SOURCE p) {
         switch (p) {
-            case SNAPCAST:
+            case PLAYBACK_SOURCE::SNAPCAST:
                 return PlaybackSource::SNAPCAST;
-            case RADIO_STREAM:
+            case PLAYBACK_SOURCE::RADIO_STREAM:
                 return PlaybackSource::RADIO;
-            case BLUETOOTH:
+            case PLAYBACK_SOURCE::BLUETOOTH:
                 return PlaybackSource::BLUETOOTH;
             default:
                 throw std::runtime_error{"Failed to map to PlaybackSource in AnalyticsLogger!"};
@@ -72,21 +73,19 @@ struct AnalyticsLogger::Impl {
 
     static Page map_page(PAGES p) {
         switch (p) {
-            case INACTIVE:
+            case PAGES::INACTIVE:
                 return Page::INACTIVE;
-            case LOADING:
-                return Page::LOADING;
-            case STREAM_SELECTION:
+            case PAGES::STREAM_SELECTION:
                 return Page::RADIO_SELECTION;
-            case STREAM_PLAYING:
+            case PAGES::STREAM_PLAYING:
                 return Page::RADIO_PLAYING;
-            case BT_PLAYING:
+            case PAGES::BT_PLAYING:
                 return Page::BT_PLAYING;
-            case OPTIONS:
+            case PAGES::OPTIONS:
                 return Page::OPTIONS;
-            case MENU_SELECTION:
+            case PAGES::MENU_SELECTION:
                 return Page::MENU_SELECTION;
-            case SNAPCAST_PLAYING:
+            case PAGES::SNAPCAST_PLAYING:
                 return Page::SNAPCAST_PLAYING;
             default:
                 throw std::runtime_error{"Failed to map page in analytics logger!"};

@@ -5,8 +5,21 @@
 #include <memory>
 #include <map>
 #include <queue>
+#include <iostream>
 #include <filesystem>
 #include <functional>
+
+#include "kitchensound/enum_helper.h"
+
+#define ENUM_RESOURCE_TYPE(DO,ACCESSOR) \
+    DO(FONT,ACCESSOR)                   \
+    DO(IMAGE,ACCESSOR)                  \
+
+
+#define ENUM_RESOURCE_STATE(DO,ACCESSOR)    \
+    DO(SHEDULED,ACCESSOR)                   \
+    DO(LOADED,ACCESSOR)                     \
+    DO(FAILED,ACCESSOR)                     \
 
 class CacheManager;
 class NetworkController;
@@ -23,16 +36,15 @@ public:
 private:
     friend CacheManager;
 
-    enum ResourceType {
-        FONT,
-        IMAGE
+    enum class ResourceType {
+        ENUM_RESOURCE_TYPE(MAKE_ENUM,)
     };
+    friend std::ostream& operator<<(std::ostream&, ResourceManager::ResourceType);
 
-    enum ResourceState {
-        SHEDULED,
-        LOADED,
-        FAILED
+    enum class ResourceState {
+        ENUM_RESOURCE_STATE(MAKE_ENUM,)
     };
+    friend std::ostream& operator<<(std::ostream&, ResourceManager::ResourceState);
 
     struct Resource {
         ResourceType type;
@@ -68,5 +80,8 @@ private:
     std::unique_ptr<NetworkController>& _net;
     std::unique_ptr<CacheManager> _cache;
 };
+
+std::ostream& operator<<(std::ostream&, ResourceManager::ResourceType);
+std::ostream& operator<<(std::ostream&, ResourceManager::ResourceState);
 
 #endif //KITCHENSOUND_RESOURCE_MANAGER_H

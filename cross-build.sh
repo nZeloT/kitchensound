@@ -12,7 +12,7 @@ export PATH=/opt/cross-pi-gcc/bin:/opt/cross-pi-gcc/libexec/gcc/arm-linux-gnueab
 export RASPBERRY_VERSION=1
 
 cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=$DIR/Toolchain-rpi.cmake -DCMAKE_BUILD_TYPE=Release $DIR
-make -j 8
+make -j 12
 
 if [ -f $DIR/cmake-build-cross-release/kitchensound ]; then
 	echo "Transfering succesful build"

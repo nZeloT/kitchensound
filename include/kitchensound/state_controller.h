@@ -3,9 +3,19 @@
 
 #include <memory>
 #include <unordered_map>
+#include <iostream>
 
+#include "kitchensound/enum_helper.h"
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/pages/base_page.h"
+
+#define ENUM_TRANSITION_STATE(DO,ACCESSOR)  \
+    DO(NONE,ACCESSOR)                       \
+    DO(LEAVING_LOADING,ACCESSOR)            \
+    DO(ENTERING,ACCESSOR)                   \
+    DO(LEAVING,ACCESSOR)                    \
+    DO(ENTER_LOADING,ACCESSOR)              \
+
 
 class Renderer;
 struct InputEvent;
@@ -40,13 +50,10 @@ private:
 
     void transition_select_next_page();
 
-    enum TRANSITION_STATE {
-        NONE,
-        LEAVING_LOADING,
-        ENTERING,
-        LEAVING,
-        ENTER_LOADING
+    enum class TRANSITION_STATE {
+        ENUM_TRANSITION_STATE(MAKE_ENUM,)
     };
+    friend std::ostream& operator<<(std::ostream&, StateController::TRANSITION_STATE val);
 
     BasePage* _active_page;
     BasePage* _previous_page;
@@ -59,5 +66,7 @@ private:
 
     std::unique_ptr<AnalyticsLogger>& _analytics;
 };
+
+std::ostream& operator<<(std::ostream&, StateController::TRANSITION_STATE val);
 
 #endif //KITCHENSOUND_STATE_CONTROLLER_H

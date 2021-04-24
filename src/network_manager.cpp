@@ -6,6 +6,7 @@
 #include <curl/multi.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/fd_registry.h"
 #include "kitchensound/timer.h"
@@ -146,10 +147,12 @@ struct NetworkController::Impl {
         while((msg = curl_multi_info_read(_curl_multi, &msg_left))) {
             if(msg->msg == CURLMSG_DONE) {
                 res = msg->data.result;
+                long status_code = -1;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &fetch);
-                SPDLOG_INFO("Completed fetch -> {0}; {1}; {2};", fetch->url, res, fetch->error);
+                curl_easy_getinfo(msg->easy_handle, CURLINFO_HTTP_CODE, &status_code);
+                SPDLOG_INFO("Completed fetch -> {0}; {1}; {2};", fetch->url, status_code, fetch->error);
 
-                fetch->callback(fetch->url, res == CURLE_OK, fetch->response);
+                fetch->callback(fetch->url, res == CURLE_OK && status_code < 400, fetch->response);
 
                 curl_multi_remove_handle(_curl_multi, msg->easy_handle);
                 curl_easy_cleanup(fetch->easy_handle);

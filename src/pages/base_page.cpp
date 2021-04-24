@@ -34,12 +34,12 @@ void *BasePage::leave_page(PAGES destination) {
 
 void BasePage::handle_power_key(InputEvent &inev) {
     if (inev.value == INEV_KEY_SHORT)
-        _bb.ctrl->trigger_transition(_page, INACTIVE);
+        _bb.ctrl->trigger_transition(_page, PAGES::INACTIVE);
 }
 
 void BasePage::handle_mode_key(InputEvent &inev) {
     if (inev.value == INEV_KEY_SHORT)
-        _bb.ctrl->trigger_transition(_page, MENU_SELECTION);
+        _bb.ctrl->trigger_transition(_page, PAGES::MENU_SELECTION);
 }
 
 void BasePage::update_time() {
@@ -53,5 +53,5 @@ void BasePage::render_time() const {
     std::ostringstream time;
     time << std::setw(2) << std::to_string(_bp_model.hour) << " : " << (_bp_model.minute < 10 ? "0" : "")
          << std::to_string(_bp_model.minute);
-    _bb.rend->render_text(160, 15, time.str(), Renderer::SMALL);
+    _bb.rend->render_text(160, 15, time.str(), Renderer::TEXT_SIZE::SMALL);
 }

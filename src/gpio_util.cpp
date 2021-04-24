@@ -3,6 +3,7 @@
 #include <gpiod.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 GpioUtil::GpioUtil(int display_backlight_pin, int amplifier_power_pin)
  : _line_display{nullptr}, _line_amplifier{nullptr}, _chip{nullptr} {

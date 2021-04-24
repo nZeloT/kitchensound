@@ -5,6 +5,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 void init_sdl2();
 void init_sdl_image();

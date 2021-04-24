@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 #include <mpd/client.h>
 
 #include "kitchensound/timeouts.h"

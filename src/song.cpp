@@ -1,0 +1,4 @@
+#include "kitchensound/song.h"
+
+MAKE_ENUM_STRINGIFY(ENUM_SONG_SOURCE_KIND,SongSourceKind)
+MAKE_ENUM_STRINGIFY(ENUM_SONG_STATE, SongState)
