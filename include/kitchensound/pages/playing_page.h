@@ -25,29 +25,8 @@ protected:
     void set_image(std::string const&, std::string const&);
 
 private:
-    void update_active_fav_img();
-    void update_current_song_fav_state();
-    void change_fav_state_of_current_song();
-
-    struct {
-        std::string text_source;
-        std::string text_metadata;
-
-        void* fav_img_ptr;
-        void* unfaved_img_ptr;
-        void* syncing_img_ptr;
-        void* active_fav_img;
-        SongState current_song_state;
-        uint64_t current_msg_id;
-
-
-        std::string current_artwork_ident;
-        void* artwork_img_ptr;
-    } _model;
-
-    std::shared_ptr<SongFaver> _faver;
-    std::unique_ptr<RenderText> _text_source;
-    std::unique_ptr<RenderText> _text_metadata;
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif //KITCHENSOUND_PLAYING_PAGE_H
