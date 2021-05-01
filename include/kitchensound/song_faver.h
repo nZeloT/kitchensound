@@ -24,6 +24,10 @@ public:
 
     void unfav_song(uint64_t, SongSource const &, Song const &, std::function<void(uint64_t, SongState)>);
 
+    bool is_enabled();
+
+    void check_backend_availability(std::function<void(bool)>);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> _impl;

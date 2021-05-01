@@ -7,6 +7,7 @@
 #include <mpd/client.h>
 
 #include "kitchensound/timeouts.h"
+#include "kitchensound/song.h"
 #include "kitchensound/timer.h"
 #include "kitchensound/fd_registry.h"
 #include "kitchensound/analytics_logger.h"
@@ -22,7 +23,7 @@ static std::string read_tag(const mpd_song *song, const mpd_tag_type type) {
 
 struct MPDController::Impl {
     explicit Impl(std::unique_ptr<FdRegistry>& fdr, std::unique_ptr<AnalyticsLogger>& analytics, Configuration::MPDConfig conf)
-    : _mpd_config{std::move(conf)}, _analytics{analytics}, _cb_metadata{[](const std::string&){}},
+    : _mpd_config{std::move(conf)}, _analytics{analytics}, _cb_metadata{[](const Song&){}},
       _connection{nullptr}, _current_meta{}, _current_stream_name{},
       _polling_timer{std::make_unique<Timer>(fdr, "MpdController MPD update", MPD_POLLING_DELAY, true, [this](){
           this->poll_metadata();
@@ -83,9 +84,10 @@ struct MPDController::Impl {
                 auto song_title = read_tag(song, MPD_TAG_TITLE);
                 if(_current_meta != song_title) {
                     SPDLOG_INFO("Metadata changed -> {0}", song_title);
-                    _cb_metadata(song_title);
+                    auto s = Song(song_title); //TODO make nicer
+                    _cb_metadata(s);
                     _current_meta = song_title;
-                    _analytics->log_playback_song_change(_current_meta);
+                    _analytics->log_playback_song_change(s);
                 }
 
                 mpd_song_free(song);
@@ -95,7 +97,7 @@ struct MPDController::Impl {
         close_connection();
     }
 
-    bool check_for_error(bool after_reset = false) {
+    bool check_for_error() const {
         if(_connection == nullptr)
             throw std::runtime_error{"MPD Connection is null! This should not happen!"};
 
@@ -110,10 +112,7 @@ struct MPDController::Impl {
         if(err_code == MPD_ERROR_OOM || err_code == MPD_ERROR_TIMEOUT
         || err_code == MPD_ERROR_SYSTEM || err_code == MPD_ERROR_RESOLVER
         || err_code == MPD_ERROR_CLOSED){
-            if(!after_reset)
-                create_mpd_connection();
-            else
-                throw std::runtime_error{"Can't establish MPD connection!"};
+            throw std::runtime_error{"Can't establish MPD connection!"};
         }
 
         return encountered_error;
@@ -124,7 +123,7 @@ struct MPDController::Impl {
             mpd_connection_free(_connection);
 
         _connection = mpd_connection_new(_mpd_config.address.c_str(), _mpd_config.port, 30000);
-        check_for_error(true);
+        check_for_error();
 
         SPDLOG_DEBUG("MPD connection created.");
     }
@@ -135,7 +134,7 @@ struct MPDController::Impl {
         SPDLOG_DEBUG("MPD connection closed.");
     }
 
-    void set_metadata_callback(std::function<void(const std::string&)> cb){
+    void set_metadata_callback(std::function<void(const Song&)> cb){
         _cb_metadata = std::move(cb);
     }
 
@@ -145,7 +144,7 @@ struct MPDController::Impl {
     std::unique_ptr<Timer> _polling_timer;
     std::string _current_meta;
     std::string _current_stream_name;
-    std::function<void(const std::string&)> _cb_metadata;
+    std::function<void(const Song&)> _cb_metadata;
 
     std::unique_ptr<AnalyticsLogger>& _analytics;
 };
@@ -167,6 +166,6 @@ void MPDController::force_metadata_update() {
     _impl->poll_metadata();
 }
 
-void MPDController::set_metadata_callback(std::function<void(const std::string &)> update_handler) {
+void MPDController::set_metadata_callback(std::function<void(const Song &)> update_handler) {
     _impl->set_metadata_callback(std::move(update_handler));
 }

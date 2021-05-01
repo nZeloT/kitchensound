@@ -6,6 +6,7 @@
 #include <spdlog/fmt/ostr.h>
 
 #include "kitchensound/network_controller.h"
+#include "kitchensound/song.h"
 
 #include "generated/analytics_protocol_generated.h"
 
@@ -14,6 +15,14 @@ struct AnalyticsLogger::Impl {
             : _net{net}, _conf{std::move(conf)} {}
 
     ~Impl() = default;
+
+    void check_backend_availability(std::function<void(bool)> cb) {
+        SPDLOG_INFO("Checking Analytics Backend Availability.");
+        _net->add_request(_conf.dest_host + "/heartbeat", HTTP_METHOD::GET, [cb](auto _1, auto success, auto _2) {
+            SPDLOG_INFO("Received Analytics Backend Availability State => {}", success);
+            cb(success);
+        });
+    }
 
     void log_page_change(PAGES origin, PAGES destination) const {
         if (!_conf.enabled)
@@ -120,8 +129,14 @@ void AnalyticsLogger::log_playback_change(PLAYBACK_SOURCE source, const std::str
     _impl->log_playback_change(source, name, started);
 }
 
-void AnalyticsLogger::log_playback_song_change(std::string const &raw_meta, std::string const &title,
-                                               std::string const &artist,
-                                               std::string const &album) {
-    _impl->log_playback_song_change(raw_meta, title, artist, album);
+void AnalyticsLogger::log_playback_song_change(Song const& song) {
+    _impl->log_playback_song_change(song.raw_meta, song.title, song.artist, song.album);
+}
+
+bool AnalyticsLogger::is_enabled() {
+    return _impl->_conf.enabled;
+}
+
+void AnalyticsLogger::check_backend_availability(std::function<void(bool)> cb) {
+    _impl->check_backend_availability(std::move(cb));
 }

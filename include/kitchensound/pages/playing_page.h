@@ -20,8 +20,8 @@ public:
     void render() override;
 
 protected:
-    void set_source_text(std::string const&);
-    void set_metadata_text(std::string const&);
+    void set_source(std::string const &v);
+    void set_current_song(Song const &song);
     void set_image(std::string const&, std::string const&);
 
 private:

@@ -9,6 +9,7 @@
 
 class FdRegistry;
 class AnalyticsLogger;
+struct Song;
 
 class MPDController {
 public:
@@ -21,7 +22,7 @@ public:
 
     void force_metadata_update();
 
-    void set_metadata_callback(std::function<void(const std::string&)>);
+    void set_metadata_callback(std::function<void(const Song&)>);
 
 private:
     struct Impl;

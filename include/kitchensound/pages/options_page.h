@@ -8,12 +8,12 @@
 struct ApplicationBackbone;
 
 class OsUtil;
-class Timer;
+class SongFaver;
 
 class OptionsPage : public BasePage {
 public:
 
-    OptionsPage(ApplicationBackbone&, std::shared_ptr<OsUtil>&);
+    OptionsPage(ApplicationBackbone&, std::shared_ptr<OsUtil>&, std::shared_ptr<SongFaver>&);
     ~OptionsPage() override;
     void enter_page(PAGES, void*) override;
     void* leave_page(PAGES destination) override;
@@ -23,18 +23,8 @@ public:
     void render() override;
 
 private:
-    void update_model();
-
-    std::shared_ptr<OsUtil> _os;
-
-    std::unique_ptr<Timer> _value_update;
-
-    struct {
-        int selection_idx;
-        int selection_offset;
-        int selection_limit;
-        std::vector<std::string> data;
-    } _model;
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif //KITCHENSOUND_OPTIONS_PAGE_H

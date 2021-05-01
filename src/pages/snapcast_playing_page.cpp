@@ -7,7 +7,7 @@ SnapcastPlayingPage::SnapcastPlayingPage(ApplicationBackbone &bb, std::shared_pt
                                          std::shared_ptr<SongFaver> &faver, std::unique_ptr<SnapcastController> &snap)
         : PlayingPage(PAGES::SNAPCAST_PLAYING, bb, vol, faver), _snap{snap} {
     set_image("", "img/speaker_group.png");
-    set_source_text("Snapcast Multiroom");
+    set_source("Snapcast Multiroom");
 }
 
 SnapcastPlayingPage::~SnapcastPlayingPage() = default;

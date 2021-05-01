@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include "kitchensound/enum_helper.h"
 
@@ -39,11 +40,31 @@ struct Song {
     Song(const std::string &rawMeta, const std::string &title, const std::string &artist, const std::string &album)
             : raw_meta(rawMeta), title(title), artist(artist), album(album) {}
 
+    bool operator!=(Song const& b) const {
+        return this->raw_meta != b.raw_meta || this->title != b.title || this->artist != b.artist || this->album != b.album;
+    }
+
+    std::string to_string() const {
+        if(this->title.empty() || this->artist.empty()) {
+            return this->raw_meta;
+        }
+
+        std::ostringstream os;
+        os << this->title << " - " << this->artist;
+        if(!this->album.empty()){
+            os << " (" << this->album << ")";
+        }
+
+        return os.str();
+    }
+
     std::string raw_meta;
     std::string title;
     std::string artist;
     std::string album;
 };
+
+static Song EMPTY_SONG {""};
 
 enum class SongState {
     ENUM_SONG_STATE(MAKE_ENUM,)

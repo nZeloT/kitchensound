@@ -6,7 +6,6 @@
 #define MAKE_ENUM_CASES(VAL,ACCESSOR)                           \
     case ACCESSOR::VAL: os << #VAL; break;                      \
 
-
 #define MAKE_ENUM_STRINGIFY(CREATOR, ACCESSOR)                  \
     std::ostream& operator<<(std::ostream& os, ACCESSOR val) {  \
         switch(val) {                                           \

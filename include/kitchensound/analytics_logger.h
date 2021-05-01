@@ -2,11 +2,13 @@
 #define KITCHENSOUND_ANALYTICS_LOGGER_H
 
 #include <memory>
+#include <functional>
 
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/config.h"
 
 class NetworkController;
+struct Song;
 
 enum class PLAYBACK_SOURCE {RADIO_STREAM, BLUETOOTH, SNAPCAST};
 
@@ -21,8 +23,11 @@ public:
 
     void log_playback_change(PLAYBACK_SOURCE, std::string const &, bool);
 
-    void log_playback_song_change(std::string const &, std::string const & = "",
-                                  std::string const& = "", std::string const & = "");
+    void log_playback_song_change(Song const&);
+
+    bool is_enabled();
+
+    void check_backend_availability(std::function<void(bool)>);
 
 private:
     struct Impl;

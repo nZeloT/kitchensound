@@ -31,7 +31,7 @@ struct PlayingPage::Impl {
     Impl(PAGES p, ApplicationBackbone &bb, std::shared_ptr<SongFaver> &faver)
     : _bb{bb}, _page{p}, _text_source{std::make_unique<RenderText>(bb.fdreg, bb.rend)},
       _text_metadata{std::make_unique<RenderText>(bb.fdreg, bb.rend)}, _model{}, _faver{faver} {
-        _model.current_song_state = _faver->new_msg_id() == -1 ? SongState::DISABLED : SongState::LOADING;
+        _model.current_song_state = _faver->is_enabled() ? SongState::LOADING : SongState::DISABLED;
         _model.fav_img_ptr = _bb.res->get_static(FAV_IMAGE);
         _model.unfaved_img_ptr = _bb.res->get_static(UNFAV_IMAGE);
         _model.syncing_img_ptr = _bb.res->get_static(SYNCING_IMG);
@@ -57,12 +57,12 @@ struct PlayingPage::Impl {
             change_fav_state_of_current_song();
     }
 
-    void enter() {
+    void enter() const {
         _text_source->set_visible(true);
         _text_metadata->set_visible(true);
     }
 
-    void leave() {
+    void leave() const {
         _text_source->set_visible(false);
         _text_metadata->set_visible(false);
     }
@@ -85,21 +85,24 @@ struct PlayingPage::Impl {
         _text_metadata->render();
     }
 
-    void set_source_text(const std::string &v) {
+    void set_source(const std::string &v) {
         if (_model.text_source != v) {
             _model.text_source = std::string{v};
             _text_source->change_text(_model.text_source, 160, 180);
-            set_metadata_text("");
+            set_current_song(EMPTY_SONG);
         }
     }
 
-    void set_metadata_text(const std::string &v) {
-        if (_model.text_metadata != v) {
-            _model.text_metadata = std::string{v};
-            _text_metadata->change_text(_model.text_metadata, 160, 210);
+    void set_current_song(const Song &song) {
+        if (_model.current_song != song) {
+            SPDLOG_INFO("New Song != Model Song => {}, {}", _model.current_song.to_string(), song.to_string());
+            _model.current_song = Song(song);
+            _text_metadata->change_text(_model.current_song.to_string(), 160, 210);
             _model.current_song_state = SongState::LOADING;
             _model.current_msg_id = -1;
             update_current_song_fav_state();
+        }else{
+            SPDLOG_INFO("New Song == Model Song => {}, {}", _model.current_song.to_string(), song.to_string());
         }
     }
 
@@ -151,7 +154,7 @@ struct PlayingPage::Impl {
         _model.current_msg_id = _faver->new_msg_id();
 
         auto source = SongSource{map_page_to_song_source(_page), _model.text_source};
-        auto song = Song{_model.text_metadata}; //TODO adapt backend player to callback with song struct
+        auto& song = _model.current_song;
         _faver->get_state(_model.current_msg_id, source, song, [this](auto msg_id, auto song_state) {
             if(msg_id != this->_model.current_msg_id){
                 SPDLOG_INFO("Received song_like message for past msg id => old: {}; current: {}", msg_id, _model.current_msg_id);
@@ -173,7 +176,7 @@ struct PlayingPage::Impl {
         _model.current_msg_id = _faver->new_msg_id();
 
         auto source = SongSource{map_page_to_song_source(_page), _model.text_source};
-        auto song = Song{_model.text_metadata};
+        auto& song = _model.current_song;
         auto cb = [this](auto msg_id, auto song_state) {
             if(msg_id != this->_model.current_msg_id){
                 SPDLOG_INFO("Received song_like message for past msg id => old: {}; current: {}", msg_id, _model.current_msg_id);
@@ -203,9 +206,15 @@ struct PlayingPage::Impl {
         update_active_fav_img();
     }
 
-    struct {
+    struct Model{
+        Model()
+            : text_source{}, current_song(""), fav_img_ptr{nullptr}, unfaved_img_ptr{nullptr}, syncing_img_ptr{nullptr},
+              active_fav_img{nullptr}, current_song_state{}, current_msg_id{0}, fav_img_change_eventfd{-1},
+              current_artwork_ident{}, artwork_img_ptr{nullptr}
+        {}
+
         std::string text_source;
-        std::string text_metadata;
+        Song current_song;
 
         void* fav_img_ptr;
         void* unfaved_img_ptr;
@@ -254,12 +263,12 @@ void PlayingPage::render() {
     this->render_volume();
 }
 
-void PlayingPage::set_source_text(const std::string &v) {
-    _impl->set_source_text(v);
+void PlayingPage::set_source(const std::string &v) {
+    _impl->set_source(v);
 }
 
-void PlayingPage::set_metadata_text(const std::string &v) {
-    _impl->set_metadata_text(v);
+void PlayingPage::set_current_song(const Song &song) {
+    _impl->set_current_song(song);
 }
 
 void PlayingPage::set_image(std::string const &cache_ident, std::string const &static_fallback) {

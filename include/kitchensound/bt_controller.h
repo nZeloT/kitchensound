@@ -10,6 +10,7 @@
 class FdRegistry;
 class AnalyticsLogger;
 class FilePlayback;
+struct Song;
 
 class BTController {
 public:
@@ -19,7 +20,7 @@ public:
     void activate_bt();
     void deactivate_bt();
 
-    void set_metadata_status_callback(std::function<void(const std::string&, const std::string&)>);
+    void set_metadata_status_callback(std::function<void(const std::string&, const Song&)>);
 
 private:
     struct Impl;

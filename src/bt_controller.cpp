@@ -10,6 +10,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
+#include <kitchensound/song.h>
 #include "kitchensound/file_playback.h"
 #include "kitchensound/fd_registry.h"
 #include "kitchensound/timer.h"
@@ -26,7 +27,7 @@
 struct BTDevice {
     std::string device_id;
     std::string device_name;
-    std::string player_metadata;
+    Song player_metadata;
     bool is_connected;
     bool has_player;
 };
@@ -39,7 +40,7 @@ int dbus_signal_properties_changed(sd_bus_message *, void *, sd_bus_error *);
 
 struct BTController::Impl {
     Impl(std::unique_ptr<FdRegistry> &fdreg, std::unique_ptr<AnalyticsLogger>& analytics, std::shared_ptr<FilePlayback> &playback)
-            : _cb_meta_status_update{[](std::string const &, std::string const &) {}}, _bus{nullptr}, _bus_fd{-1},
+            : _cb_meta_status_update{[](std::string const &, Song const &) {}}, _bus{nullptr}, _bus_fd{-1},
               _error{0}, _connected_device{nullptr},
               _known_devices{}, _playback{playback}, _fdreg{fdreg}, _analytics{analytics},
               _sdbus_update{std::make_unique<Timer>(fdreg, "BtController Dbus Update", 100, false, [this]() {
@@ -380,7 +381,7 @@ struct BTController::Impl {
 
     void remove_player_on_device(BTDevice &device, std::string const &path) const {
         device.has_player = false;
-        device.player_metadata.clear();
+        device.player_metadata = Song{""};
         //as the player object is already removed expect that the signal handler is also already removed
         if (_connected_device == &device) {
             _cb_meta_status_update(device.device_name, device.player_metadata);
@@ -401,7 +402,7 @@ struct BTController::Impl {
     std::unordered_map<std::string, BTDevice>::iterator get_or_create_known_device(std::string const &device_id) {
         auto it = _known_devices.find(device_id);
         if (it == std::end(_known_devices)) {
-            auto pair = _known_devices.emplace(device_id, BTDevice{device_id, "", "", false, false});
+            auto pair = _known_devices.emplace(device_id, BTDevice{device_id, "", Song{""}, false, false});
             if (!pair.second)
                 throw std::runtime_error{"Failed to insert new devcie into known devcies map!"};
             it = pair.first;
@@ -467,27 +468,33 @@ struct BTController::Impl {
         bool has_content = false;
         if (!title.empty()) {
             s << title;
+            device.player_metadata.title = title;
             has_content = true;
-        }
+        }else
+            device.player_metadata.title = "";
 
         if (!artist.empty()) {
             if (has_content)
                 s << " - ";
             s << artist;
+            device.player_metadata.artist = artist;
             has_content = true;
-        }
+        }else
+            device.player_metadata.artist = "";
 
         if (!album.empty()) {
             if (has_content)
                 s << " (";
             s << album;
+            device.player_metadata.album = album;
             if (has_content)
                 s << ")";
-        }
+        }else
+            device.player_metadata.album = "";
 
-        device.player_metadata = s.str();
+        device.player_metadata.raw_meta = s.str();
         if (_connected_device == &device) {
-            _analytics->log_playback_song_change(device.player_metadata, title, artist, album);
+            _analytics->log_playback_song_change(device.player_metadata);
             _cb_meta_status_update(device.device_name, device.player_metadata);
         }
     }
@@ -582,14 +589,14 @@ struct BTController::Impl {
     void on_device_disconnected(BTDevice& device) {
         if(_connected_device == &device) {
             _connected_device = nullptr;
-            _cb_meta_status_update("Not Connected", "");
+            _cb_meta_status_update("Not Connected", EMPTY_SONG);
             _analytics->log_playback_change(PLAYBACK_SOURCE::BLUETOOTH, device.device_name, false);
             change_adapter_state("Discoverable", true);
             _playback->playback("bt-disconnect.mp3");
         }
     }
 
-    std::function<void(const std::string &, const std::string &)> _cb_meta_status_update;
+    std::function<void(const std::string &, const Song &)> _cb_meta_status_update;
 
     sd_bus *_bus;
     int _bus_fd;
@@ -630,7 +637,7 @@ BTController::BTController(std::unique_ptr<FdRegistry> &fdreg, std::unique_ptr<A
 
 BTController::~BTController() = default;
 
-void BTController::set_metadata_status_callback(std::function<void(const std::string &, const std::string &)> new_cb) {
+void BTController::set_metadata_status_callback(std::function<void(const std::string &, const Song &)> new_cb) {
     _impl->_cb_meta_status_update = std::move(new_cb);
 }
 

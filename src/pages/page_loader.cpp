@@ -40,7 +40,7 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackb
     pages.emplace(PAGES::STREAM_SELECTION, std::move(stream_sel));
     pages.emplace(PAGES::STREAM_PLAYING, std::make_unique<StationPlayingPage>(bb, volume, song_faver, mpd_controller, station));
     pages.emplace(PAGES::BT_PLAYING, std::make_unique<BluetoothPlayingPage>(bb, volume, song_faver, bt_controller));
-    pages.emplace(PAGES::OPTIONS, std::make_unique<OptionsPage>(bb, os_util));
+    pages.emplace(PAGES::OPTIONS, std::make_unique<OptionsPage>(bb, os_util, song_faver));
 
     return pages;
 }

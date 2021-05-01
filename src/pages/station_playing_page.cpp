@@ -15,8 +15,8 @@ StationPlayingPage::StationPlayingPage(ApplicationBackbone &bb, std::shared_ptr<
         PlayingPage(PAGES::STREAM_PLAYING, bb, vol, faver),
         _mpd{mpd}, _model{} {
 
-    _mpd->set_metadata_callback([&](auto new_meta) {
-        set_metadata_text(new_meta);
+    _mpd->set_metadata_callback([&](auto new_song) {
+        set_current_song(new_song);
     });
 
     if (initial_station == nullptr)
@@ -25,7 +25,7 @@ StationPlayingPage::StationPlayingPage(ApplicationBackbone &bb, std::shared_ptr<
     _model.station.image_url = initial_station->image_url;
     _model.station.url = initial_station->url;
 
-    set_source_text(_model.station.name);
+    set_source(_model.station.name);
     set_image(_model.station.image_url, RADIO_IMAGE);
 }
 
@@ -43,8 +43,8 @@ void StationPlayingPage::set_station_playing(RadioStationStream *stream) {
         _model.station.url = std::string{stream->url};
         _model.station.image_url = std::string{stream->image_url};
 
-        set_source_text(_model.station.name);
-        set_metadata_text("");
+        set_source(_model.station.name);
+        set_current_song(EMPTY_SONG);
         set_image(_model.station.image_url, RADIO_IMAGE);
 
         _mpd->stop_playback();
@@ -60,8 +60,8 @@ void StationPlayingPage::enter_page(PAGES origin, void *payload) {
     if (origin != PAGES::STREAM_SELECTION) {
         _mpd->stop_playback();
         _mpd->playback_stream(_model.station.name, _model.station.url);
-        set_source_text(_model.station.name);
-        set_metadata_text("");
+        set_source(_model.station.name);
+        set_current_song(EMPTY_SONG);
         set_image(_model.station.image_url, RADIO_IMAGE);
     } else {
         if (payload == nullptr)

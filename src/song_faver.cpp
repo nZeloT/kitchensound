@@ -15,6 +15,16 @@ struct SongFaver::Impl {
     Impl(std::unique_ptr<NetworkController> &net, Configuration::SongFaverConfig conf)
             : _net{net}, _conf{std::move(conf)}, _last_msg_id{0}, _callbacks{} {}
 
+    ~Impl() = default;
+
+    void check_backend_availability(std::function<void(bool)> cb) {
+        SPDLOG_INFO("Checking Song Like Backend Availability.");
+        _net->add_request(_conf.dest_host + "/heartbeat", HTTP_METHOD::GET, [cb](auto _1, auto success, auto _2) {
+            SPDLOG_INFO("Received Song Like Backend Availability State => {}", success);
+            cb(success);
+        });
+    }
+
     void send_request(uint64_t msg_id, RequestAction a, SongSource const &source, Song const &s, std::function<void(uint64_t, SongState)> cb) {
         if (!_conf.enabled)
             cb(msg_id, SongState::DISABLED);
@@ -89,8 +99,6 @@ struct SongFaver::Impl {
     }
 
     uint64_t new_msg_id() {
-        if(!_conf.enabled)
-            return -1;
         return _last_msg_id++;
     }
 
@@ -121,4 +129,12 @@ void SongFaver::fav_song(uint64_t msg_id, SongSource const &source, Song const &
 void SongFaver::unfav_song(uint64_t msg_id, SongSource const &source, Song const &s,
                            std::function<void(uint64_t, SongState)> cb) {
     _impl->send_request(msg_id, RequestAction::UNFAV, source, s, std::move(cb));
+}
+
+bool SongFaver::is_enabled() {
+    return _impl->_conf.enabled;
+}
+
+void SongFaver::check_backend_availability(std::function<void(bool)> cb) {
+    _impl->check_backend_availability(std::move(cb));
 }

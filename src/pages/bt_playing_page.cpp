@@ -17,9 +17,9 @@ BluetoothPlayingPage::BluetoothPlayingPage(ApplicationBackbone& bb,
         : PlayingPage(PAGES::BT_PLAYING, bb, vol, faver),
           _btc{btc} {
     set_image("", BLUETOOTH_IMAGE);
-    _btc->set_metadata_status_callback([this](auto status, auto meta) {
-        this->set_source_text(status);
-        this->set_metadata_text(meta);
+    _btc->set_metadata_status_callback([this](auto status, auto song) {
+        this->set_source(status);
+        this->set_current_song(song);
     });
 };
 
@@ -27,8 +27,8 @@ BluetoothPlayingPage::~BluetoothPlayingPage() = default;
 
 void BluetoothPlayingPage::enter_page(PAGES origin, void* payload) {
     PlayingPage::enter_page(origin, payload);
-    set_source_text("Not Connected");
-    set_metadata_text("");
+    set_source("Not Connected");
+    set_current_song(EMPTY_SONG);
     _btc->activate_bt();
     SPDLOG_INFO("Entered.");
 }
