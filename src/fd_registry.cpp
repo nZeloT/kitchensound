@@ -4,6 +4,7 @@
 #include <sys/epoll.h>
 
 #include <unordered_map>
+#include <set>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
@@ -12,7 +13,7 @@
 
 struct FdRegistry::Impl {
     Impl()
-        : _triggers{}, _epoll_fd{}, _cnt{}, _events{} {
+        : _triggers{}, _epoll_fd{}, _cnt{}, _events{}, _fds_to_remove{} {
 
         _epoll_fd = epoll_create1(0);
         if(_epoll_fd == -1)
@@ -37,6 +38,11 @@ struct FdRegistry::Impl {
 
         if(epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &evt))
             throw std::runtime_error{"Failed to add fd to epoll!"};
+    }
+
+    void flagFdFroRemoval(int fd) {
+        SPDLOG_INFO("FD {} flagged for removal from epoll.", fd);
+        _fds_to_remove.insert(fd);
     }
 
     void removeFd(int fd) {
@@ -71,10 +77,17 @@ struct FdRegistry::Impl {
                 _triggers[e.data.fd](e.data.fd, e.events);
             }
         }
+
+        //remove flagged fd's to prevent epoll issues when trying to remove fd's which have events beeing processed
+        for(auto it = std::begin(_fds_to_remove); it != std::end(_fds_to_remove); ++it) {
+            removeFd(*it);
+        }
+        _fds_to_remove.clear();
     }
 
     epoll_event _events[MAX_EVENTS];
     int _epoll_fd, _cnt;
+    std::set<int> _fds_to_remove;
     std::unordered_map<int, std::function<void(int, uint32_t)>> _triggers;
 };
 
@@ -91,7 +104,7 @@ void FdRegistry::addFd(int fd, std::function<void(int, uint32_t)> cb, uint32_t e
 }
 
 void FdRegistry::removeFd(int fd) {
-    _impl->removeFd(fd);
+    _impl->flagFdFroRemoval(fd);
 }
 
 void FdRegistry::wait() {
