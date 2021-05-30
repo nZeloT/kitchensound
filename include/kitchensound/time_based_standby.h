@@ -14,9 +14,9 @@ public:
     explicit TimeBasedStandby(Configuration::DisplayStandbyConfig, std::unique_ptr<FdRegistry>&);
     ~TimeBasedStandby();
 
-    void arm() { _armed = true; };
+    void arm();
 
-    void disarm() { _armed = false; };
+    void disarm();
 
     void update_time();
 
@@ -25,6 +25,8 @@ public:
     void set_change_callback(std::function<void(bool)>);
 
 private:
+    void update_state();
+
     std::tm* _current_time;
     bool _enabled;
     bool _armed;

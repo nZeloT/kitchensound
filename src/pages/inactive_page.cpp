@@ -23,6 +23,7 @@ InactivePage::InactivePage(ApplicationBackbone& bb, std::shared_ptr<TimeBasedSta
         this->update_state();
     })},
     _user_active_timer{std::make_unique<Timer>(bb.fdreg, "Inactive Page Standby Block", STANDBY_TIMEOUT, false, [this](){
+        SPDLOG_INFO("Called user active timer");
         this->_model.user_cooldown_active = false;
         this->update_state();
     })}
@@ -69,17 +70,21 @@ void InactivePage::update_state() {
         _model.display_on = false;
     }
 
-    if (!_model.standby_active
+    if ((_model.user_cooldown_active
+    ||  !_model.standby_active)
         && !_model.display_on) {
         _gpio->turn_on_display();
         _model.display_on = true;
     }
+
+    SPDLOG_INFO("_model.display_on == {}", _model.display_on);
 }
 
 void InactivePage::handle_power_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT) {
         _user_active_timer->reset_timer();
         _model.user_cooldown_active = true;
+        this->update_state();
         if (!_model.amp_cooldown_active)
             _bb.ctrl->trigger_transition(_page, _model.last_seen);
     }else{
@@ -90,12 +95,14 @@ void InactivePage::handle_power_key(InputEvent& inev) {
 void InactivePage::handle_wheel_input(int delta) {
     _user_active_timer->reset_timer();
     _model.user_cooldown_active = true;
+    this->update_state();
 }
 
 void InactivePage::handle_enter_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT){
         _user_active_timer->reset_timer();
         _model.user_cooldown_active = true;
+        this->update_state();
     }
 }
 
@@ -103,11 +110,12 @@ void InactivePage::handle_mode_key(InputEvent& inev) {
     if(inev.value == INEV_KEY_SHORT){
         _user_active_timer->reset_timer();
         _model.user_cooldown_active = true;
+        this->update_state();
     }
 }
 
 void InactivePage::render() {
-    if(_model.standby_active)
+    if(!_model.display_on)
         return;
 
     auto& renderer = _bb.rend;

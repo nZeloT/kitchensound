@@ -1,5 +1,7 @@
 #include "kitchensound/time_based_standby.h"
 
+#include <spdlog/spdlog.h>
+
 #include "kitchensound/timeouts.h"
 #include "kitchensound/timer.h"
 
@@ -7,11 +9,7 @@ TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c, std::u
         : _interval_a{}, _interval_b{}, _armed{}, _currently_active{false}, _current_time{nullptr},
         _change_callback{[](auto b){}},
         _update_timer{std::make_unique<Timer>(fdr, "Standby Clock Update", CLOCK_UPDATE_DELAY, true, [this]() {
-            this->update_time();
-            auto old_state = this->_currently_active;
-            this->_currently_active = this->is_standby_active();
-            if(old_state != this->_currently_active)
-                this->_change_callback(this->_currently_active);
+            this->update_state();
         })}{
     update_time();
 
@@ -65,4 +63,26 @@ bool TimeBasedStandby::is_standby_active() {
 
 void TimeBasedStandby::set_change_callback(std::function<void(bool)> cb) {
     _change_callback = std::move(cb);
+}
+
+void TimeBasedStandby::arm() {
+    _armed = true;
+    _update_timer->reset_timer();
+    this->update_state();
+}
+
+void TimeBasedStandby::disarm() {
+    _armed = false;
+    _update_timer->stop();
+    this->update_state();
+}
+
+void TimeBasedStandby::update_state() {
+    this->update_time();
+    auto old_state = this->_currently_active;
+    this->_currently_active = this->is_standby_active();
+    if(old_state != this->_currently_active) {
+        SPDLOG_INFO("Standby State Changed");
+        this->_change_callback(this->_currently_active);
+    }
 }
