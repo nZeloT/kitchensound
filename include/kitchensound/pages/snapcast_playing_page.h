@@ -14,7 +14,7 @@ class SnapcastController;
 class SnapcastPlayingPage : public PlayingPage {
 public:
     SnapcastPlayingPage(ApplicationBackbone &, std::shared_ptr<Volume> &, std::shared_ptr<SongFaver> &,
-                        std::unique_ptr<SnapcastController> &);
+                        std::shared_ptr<SnapcastController> &);
 
     ~SnapcastPlayingPage();
 
@@ -22,7 +22,10 @@ public:
 
     void *leave_page(PAGES) override;
 
-    std::unique_ptr<SnapcastController> &_snap;
+private:
+    void reset_metadata();
+
+    std::shared_ptr<SnapcastController> _snap;
 };
 
 

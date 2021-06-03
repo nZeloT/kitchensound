@@ -47,12 +47,29 @@ struct FdRegistry::Impl {
 
     void removeFd(int fd) {
         if(_triggers.erase(fd)) {
-            SPDLOG_DEBUG("Removing fd from epoll -> {}", fd);
-            if(epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, nullptr))
+            SPDLOG_INFO("Removing fd from epoll -> {}", fd);
+            if(epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, nullptr)) {
+                SPDLOG_ERROR("Received error while removing FD from epoll (errno) => {}", errno);
+                switch(errno){
+                    case EBADF: SPDLOG_ERROR("errno indicates EBADF => supplied fd is not valid"); break;
+                    case EEXIST: SPDLOG_ERROR("errno indicates EEXIST => fd already registered"); break;
+                    case ENOENT: SPDLOG_ERROR("errno indicates ENOENT => fd not registered (anymore?)"); break;
+                    case ENOMEM: SPDLOG_ERROR("errno indicates ENOMEM => no memory to execute"); break;
+                    case ENOSPC: SPDLOG_ERROR("errno indicated ENOSPC => breached max user watches"); break;
+                    case EPERM: SPDLOG_ERROR("errno indicates EPERM => fd does not suport epoll"); break;
+                    default: SPDLOG_ERROR("errno indicates another error"); break;
+                }
                 throw std::runtime_error{"Failed to remove fd from epoll!"};
+            }
         }else {
             SPDLOG_WARN("Didn't remove unknown fd -> {}", fd);
         }
+    }
+
+    void softRemoveFd(int fd) {
+        //fd was already removed from epoll; only housekeeping
+        SPDLOG_INFO("Soft removing FD; make sure it's already removed from epoll (e.g. via close) => {}", fd);
+        _triggers.erase(fd);
     }
 
     void wait() {
@@ -105,6 +122,10 @@ void FdRegistry::addFd(int fd, std::function<void(int, uint32_t)> cb, uint32_t e
 
 void FdRegistry::removeFd(int fd) {
     _impl->flagFdFroRemoval(fd);
+}
+
+void FdRegistry::softRemoveFd(int fd) {
+    _impl->softRemoveFd(fd);
 }
 
 void FdRegistry::wait() {

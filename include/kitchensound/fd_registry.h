@@ -14,6 +14,8 @@ public:
 
     void removeFd(int);
 
+    void softRemoveFd(int);
+
     void wait();
 
 private:

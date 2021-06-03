@@ -84,8 +84,7 @@ Configuration::DisplayStandbyConfig Configuration::get_display_standby() {
     return s;
 }
 
-Configuration::MPDConfig Configuration::get_mpd_config() {
-    auto& mpdconf = conf.lookup("mpd");
+Configuration::MPDConfig Configuration::read_mpd_config_from(libconfig::Setting& mpdconf) {
     MPDConfig s{};
     if(!mpdconf.exists("address") || !mpdconf.exists("port")){
         throw std::runtime_error{"Either mpd.address or mpd.port is missing in the configuration!"};
@@ -98,20 +97,30 @@ Configuration::MPDConfig Configuration::get_mpd_config() {
     return s;
 }
 
+Configuration::MPDConfig Configuration::get_mpd_config() {
+    auto& mpdconf = conf.lookup("mpd");
+    return read_mpd_config_from(mpdconf);
+}
+
 Configuration::SnapcastConfig Configuration::get_snapcast_config() {
     auto& c = conf.lookup("snapcast");
     SnapcastConfig s{};
-    if(!c.exists("bin") || !c.exists("host") || !c.exists("port"))
-        throw std::runtime_error{"Missing Snapcast Configuration value. One or multiple of: bin, host, port"};
+    if(!c.exists("bin") || !c.exists("host") || !c.exists("port") || !c.exists("has_mpd_feed"))
+        throw std::runtime_error{"Missing Snapcast Configuration value. One or multiple of: bin, host, port, has_mpd_feed"};
 
-    s.bin  = c.lookup("bin").c_str();
-    s.host = c.lookup("host").c_str();
-    s.port = c.lookup("port");
+    s.bin           = c.lookup("bin").c_str();
+    s.host          = c.lookup("host").c_str();
+    s.port          = c.lookup("port");
+    s.has_mpd_feed  = c.lookup("has_mpd_feed");
+
+    if(s.has_mpd_feed){
+        s.mpd_feed = read_mpd_config_from(c.lookup("mpd_feed"));
+    }
 
     //mirror the alsa pcm device name to the snapcast config
     s.alsa_pcm = get_alsa_device_name(ALSA_DEVICES::PCM_DEVICE);
 
-    SPDLOG_INFO("Read snapcast configuration -> {}; {}:{}", s.bin, s.host, s.port);
+    SPDLOG_INFO("Read snapcast configuration -> {}; {}:{}; {}; {}:{}", s.bin, s.host, s.port, s.has_mpd_feed, s.mpd_feed.address, s.mpd_feed.port);
 
     return s;
 }

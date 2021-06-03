@@ -7,6 +7,7 @@
 #include "kitchensound/file_playback.h"
 #include "kitchensound/gpio_util.h"
 #include "kitchensound/mpd_controller.h"
+#include "kitchensound/snapcast_controller.h"
 #include "kitchensound/os_util.h"
 #include "kitchensound/song_faver.h"
 #include "kitchensound/time_based_standby.h"
@@ -42,6 +43,12 @@ std::shared_ptr<MPDController>
 init_mpd_controller(std::unique_ptr<FdRegistry> &fdr, std::unique_ptr<AnalyticsLogger> &analytics,
                     std::unique_ptr<Configuration> &conf) {
     return std::make_shared<MPDController>(fdr, analytics, conf->get_mpd_config());
+}
+
+std::shared_ptr<SnapcastController>
+init_snapcast_controller(std::unique_ptr<FdRegistry> &fdr, std::unique_ptr<AnalyticsLogger> &analytics,
+                         std::unique_ptr<Configuration> &conf) {
+    return std::make_shared<SnapcastController>(fdr, analytics, conf->get_snapcast_config());
 }
 
 std::shared_ptr<OsUtil> init_os_util() {

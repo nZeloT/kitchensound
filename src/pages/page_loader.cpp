@@ -10,6 +10,7 @@
 #include "kitchensound/pages/station_playing_page.h"
 #include "kitchensound/pages/station_selection_page.h"
 #include "kitchensound/pages/bt_playing_page.h"
+#include "kitchensound/pages/snapcast_playing_page.h"
 #include "kitchensound/pages/options_page.h"
 
 std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackbone& bb) {
@@ -28,6 +29,8 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackb
 
     auto mpd_controller = init_mpd_controller(bb.fdreg, bb.analytics, bb.conf);
 
+    auto snap_controller = init_snapcast_controller(bb.fdreg, bb.analytics, bb.conf);
+
     auto os_util = init_os_util();
 
     auto song_faver = init_song_faver(bb.net, bb.conf);
@@ -40,6 +43,7 @@ std::unordered_map<PAGES, std::unique_ptr<BasePage>> load_pages(ApplicationBackb
     pages.emplace(PAGES::STREAM_SELECTION, std::move(stream_sel));
     pages.emplace(PAGES::STREAM_PLAYING, std::make_unique<StationPlayingPage>(bb, volume, song_faver, mpd_controller, station));
     pages.emplace(PAGES::BT_PLAYING, std::make_unique<BluetoothPlayingPage>(bb, volume, song_faver, bt_controller));
+    pages.emplace(PAGES::SNAPCAST_PLAYING, std::make_unique<SnapcastPlayingPage>(bb, volume, song_faver, snap_controller));
     pages.emplace(PAGES::OPTIONS, std::make_unique<OptionsPage>(bb, os_util, song_faver));
 
     return pages;

@@ -50,6 +50,8 @@ public:
         std::string host;
         int port;
         std::string alsa_pcm;
+        bool has_mpd_feed;
+        MPDConfig mpd_feed;
     };
 
     struct AnalyticsConfig {
@@ -88,6 +90,7 @@ public:
 
 private:
     std::filesystem::path get_folder(std::string const& conf_path, std::string const& def);
+    Configuration::MPDConfig read_mpd_config_from(libconfig::Setting& conf);
 
     libconfig::Config conf;
 };

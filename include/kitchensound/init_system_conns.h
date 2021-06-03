@@ -17,6 +17,8 @@ class BTController;
 
 class MPDController;
 
+class SnapcastController;
+
 class OsUtil;
 
 class FdRegistry;
@@ -41,6 +43,9 @@ init_bt_controller(std::unique_ptr<FdRegistry> &, std::unique_ptr<AnalyticsLogge
 
 std::shared_ptr<MPDController> init_mpd_controller(std::unique_ptr<FdRegistry> &, std::unique_ptr<AnalyticsLogger> &,
                                                    std::unique_ptr<Configuration> &);
+
+std::shared_ptr<SnapcastController> init_snapcast_controller(std::unique_ptr<FdRegistry> &, std::unique_ptr<AnalyticsLogger> &,
+                                                             std::unique_ptr<Configuration> &);
 
 std::shared_ptr<OsUtil> init_os_util();
 

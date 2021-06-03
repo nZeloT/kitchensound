@@ -22,8 +22,7 @@ InactivePage::InactivePage(ApplicationBackbone& bb, std::shared_ptr<TimeBasedSta
         this->_model.amp_cooldown_active = false;
         this->update_state();
     })},
-    _user_active_timer{std::make_unique<Timer>(bb.fdreg, "Inactive Page Standby Block", STANDBY_TIMEOUT, false, [this](){
-        SPDLOG_INFO("Called user active timer");
+    _user_active_timer{std::make_unique<Timer>(bb.fdreg, "Inactive Page Standby Block", STANDBY_TIMEOUT, false, [this]() {
         this->_model.user_cooldown_active = false;
         this->update_state();
     })}
@@ -43,6 +42,7 @@ void InactivePage::setup_inital_state() {
 }
 
 void InactivePage::enter_page(PAGES origin, void* payload) {
+    _user_active_timer->reset_timer();
     _amp_cooldown_timer->reset_timer();
     _model.amp_cooldown_active = true;
     _model.last_seen = origin;
@@ -63,6 +63,9 @@ void* InactivePage::leave_page(PAGES destination) {
 }
 
 void InactivePage::update_state() {
+    SPDLOG_INFO("_model.user_cooldown_active == {}", _model.user_cooldown_active);
+    SPDLOG_INFO("_model.standby_active == {}", _model.standby_active);
+
     if (!_model.user_cooldown_active
         && _model.standby_active
         && _model.display_on) {

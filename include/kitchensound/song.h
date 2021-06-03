@@ -72,5 +72,6 @@ enum class SongState {
 
 std::ostream& operator<<(std::ostream&,SongSourceKind);
 std::ostream& operator<<(std::ostream&,SongState);
+std::ostream& operator<<(std::ostream&,Song const&);
 
 #endif //KITCHENSOUND_SONG_H
