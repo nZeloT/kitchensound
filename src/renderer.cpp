@@ -46,8 +46,10 @@ Renderer::Renderer(std::unique_ptr<ResourceManager>& res)
 }
 
 Renderer::~Renderer() {
+    SPDLOG_DEBUG("Freeing SDL Resources");
     SDL_DestroyRenderer(_renderer);
     SDL_DestroyWindow(_window);
+    SPDLOG_DEBUG("Renderer dropped.");
 }
 
 void Renderer::load_resources(std::unique_ptr<ResourceManager>& res) {

@@ -20,6 +20,7 @@ ResourceManager::ResourceManager(std::unique_ptr<NetworkController>& net, std::f
 
 ResourceManager::~ResourceManager()  {
     unload_all();
+    SPDLOG_DEBUG("Resource Manager dropped.");
 }
 
 ResourceManager::Resource const *ResourceManager::get(std::map<std::string, Resource> const &m, const std::string &s) {
@@ -47,6 +48,7 @@ void ResourceManager::load_all_static() {
 }
 
 void ResourceManager::unload_all() {
+    SPDLOG_INFO("Freeing all resources from resource manager");
     auto unload = [](std::map<std::string, Resource> &m) {
         for (auto &e : m) {
             auto &res = e.second;

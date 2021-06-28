@@ -50,7 +50,9 @@ struct NetworkController::Impl {
     }
 
     ~Impl() {
+        SPDLOG_DEBUG("Dropping network manager ...");
         cleanup();
+        SPDLOG_DEBUG("Network manager dropped");
     }
 
     void add_request(std::string const &url, HTTP_METHOD method,
@@ -239,7 +241,9 @@ size_t write_cb(void *data, size_t size, size_t nmemb, void *userp)
 NetworkController::NetworkController(std::unique_ptr<FdRegistry> &fdreg)
         : _impl{std::make_unique<Impl>(fdreg)} {}
 
-NetworkController::~NetworkController() = default;
+NetworkController::~NetworkController() {
+    SPDLOG_DEBUG("Network Controller dropped.");
+}
 
 void
 NetworkController::add_request(std::string const &url, HTTP_METHOD method,

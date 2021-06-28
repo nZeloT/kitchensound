@@ -7,7 +7,7 @@
 class Volume {
 public:
     Volume(int, const std::string&, const std::string&);
-    ~Volume() = default;
+    ~Volume();
 
     void update_from_system();
     [[nodiscard]] long get_volume() const { return _currentVol; };

@@ -42,7 +42,9 @@ TimeBasedStandby::TimeBasedStandby(Configuration::DisplayStandbyConfig c, std::u
     _currently_active = is_standby_active();
 }
 
-TimeBasedStandby::~TimeBasedStandby() = default;
+TimeBasedStandby::~TimeBasedStandby() {
+    SPDLOG_DEBUG("Dropped TimebasedStandby");
+}
 
 void TimeBasedStandby::update_time() {
     auto now = std::time(nullptr);

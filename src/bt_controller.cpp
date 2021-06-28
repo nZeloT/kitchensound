@@ -48,8 +48,10 @@ struct BTController::Impl {
               })} {}
 
     ~Impl() {
+        SPDLOG_DEBUG("Dropping BTController...");
         if (_bus)
             stop_signal_watchdog();
+        SPDLOG_DEBUG("Dropped BTController.");
     }
 
     void change_adapter_state(const std::string &interface_member, bool turn_on) {

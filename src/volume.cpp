@@ -1,6 +1,7 @@
 #include "kitchensound/volume.h"
 
 #include <alsa/asoundlib.h>
+#include <spdlog/spdlog.h>
 
 Volume::Volume(int start_vol, const std::string& mixer_control, const std::string& mixer_card)
 : _currentVol{0}, _mixer_control{}, _mixer_card{} {
@@ -8,6 +9,10 @@ Volume::Volume(int start_vol, const std::string& mixer_control, const std::strin
     _mixer_control = {mixer_control};
     update_from_system();
     set_volume(start_vol);
+}
+
+Volume::~Volume() {
+    SPDLOG_DEBUG("Dropped Volume");
 }
 
 void Volume::apply_delta(long delta) {

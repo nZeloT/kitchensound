@@ -19,9 +19,11 @@ GpioUtil::GpioUtil(int display_backlight_pin, int amplifier_power_pin)
 }
 
 GpioUtil::~GpioUtil() {
-    gpiod_line_close_chip(_line_display);
-    gpiod_line_close_chip(_line_amplifier);
+    SPDLOG_DEBUG("Dropping GpioUtil ...");
+    gpiod_line_release(_line_display);
+    gpiod_line_release(_line_amplifier);
     gpiod_chip_close(_chip);
+    SPDLOG_DEBUG("Dropped GpioUtil");
 }
 
 void GpioUtil::turn_off_amplifier() {

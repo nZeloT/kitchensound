@@ -26,8 +26,10 @@ struct Timer::Impl {
     }
 
     ~Impl() {
+        SPDLOG_DEBUG("Dropping timer with fd {}", _timerfd);
         _fdreg->removeFd(_timerfd);
         close(_timerfd);
+        SPDLOG_DEBUG("Timer dropped.");
     }
 
     void reset(long new_ms) {

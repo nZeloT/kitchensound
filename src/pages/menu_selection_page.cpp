@@ -20,7 +20,9 @@ MenuSelectionPage::MenuSelectionPage(ApplicationBackbone& bb)
     load_images();
 }
 
-MenuSelectionPage::~MenuSelectionPage() = default;
+MenuSelectionPage::~MenuSelectionPage() {
+    SPDLOG_DEBUG("Dropped Menu Selection Page");
+}
 
 std::string MenuSelectionPage::get_text(const MenuModel &m) {
     return m.name;

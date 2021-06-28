@@ -1,5 +1,7 @@
 #include "kitchensound/pages/snapcast_playing_page.h"
 
+#include <spdlog/spdlog.h>
+
 #include "kitchensound/pages/pages.h"
 #include "kitchensound/song.h"
 #include "kitchensound/snapcast_controller.h"
@@ -14,7 +16,9 @@ SnapcastPlayingPage::SnapcastPlayingPage(ApplicationBackbone &bb, std::shared_pt
     });
 }
 
-SnapcastPlayingPage::~SnapcastPlayingPage() = default;
+SnapcastPlayingPage::~SnapcastPlayingPage() {
+    SPDLOG_DEBUG("Dropped Snapcast Playing Page");
+}
 
 
 void SnapcastPlayingPage::enter_page(PAGES origin, void *payload) {

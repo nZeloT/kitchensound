@@ -33,7 +33,9 @@ InactivePage::InactivePage(ApplicationBackbone& bb, std::shared_ptr<TimeBasedSta
     });
 }
 
-InactivePage::~InactivePage() = default;
+InactivePage::~InactivePage() {
+    SPDLOG_DEBUG("Dropped Inactive Page");
+}
 
 void InactivePage::setup_inital_state() {
     _standby->arm();

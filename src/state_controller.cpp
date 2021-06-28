@@ -29,7 +29,9 @@ StateController::StateController(std::unique_ptr<AnalyticsLogger>& analytics)
       _pages{}, _analytics{analytics}
 {}
 
-StateController::~StateController() = default;
+StateController::~StateController() {
+    SPDLOG_DEBUG("StateController dropped.");
+}
 
 void StateController::register_pages(std::unordered_map<PAGES, std::unique_ptr<BasePage>> pages) {
     _pages = std::move(pages);

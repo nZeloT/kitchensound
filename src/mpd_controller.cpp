@@ -1,6 +1,7 @@
 #include "kitchensound/mpd_controller.h"
 
 #include <sstream>
+#include <utility>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
@@ -35,7 +36,9 @@ struct MPDController::Impl {
     };
 
     ~Impl() {
+        SPDLOG_DEBUG("Dropping MPD_Controller.");
         stop_playback();
+        SPDLOG_DEBUG("MPDController dropped");
     };
 
     void playback_stream(const std::string &stream_name, const std::string &stream_url) {
@@ -83,7 +86,7 @@ struct MPDController::Impl {
         _current_song = std::move(Song{""});
     }
 
-    void stop_polling() {
+    void stop_polling() const {
         _polling_timer->stop();
     }
 
@@ -120,7 +123,7 @@ struct MPDController::Impl {
         close_connection();
     }
 
-    bool check_for_error() const {
+    [[nodiscard]] bool check_for_error() const {
         if (_connection == nullptr)
             throw std::runtime_error{"MPD Connection is null! This should not happen!"};
 
@@ -146,7 +149,7 @@ struct MPDController::Impl {
         if (_connection != nullptr)
             mpd_connection_free(_connection);
 
-        SPDLOG_INFO("Connecting to mpd on => {}:{}", _mpd_config.address, _mpd_config.port);
+        SPDLOG_DEBUG("Connecting to mpd on => {}:{}", _mpd_config.address, _mpd_config.port);
         _connection = mpd_connection_new(_mpd_config.address.c_str(), _mpd_config.port, 30000);
         check_for_error();
 
@@ -216,7 +219,7 @@ void MPDController::set_metadata_callback(std::function<void(const Song &)> upda
 ExtendedMPDController::ExtendedMPDController(std::unique_ptr <FdRegistry> &fdreg,
                                              std::unique_ptr <AnalyticsLogger> &analytics,
                                              Configuration::MPDConfig config)
-        : MPDController(fdreg, analytics, config) {}
+        : MPDController(fdreg, analytics, std::move(config)) {}
 
 ExtendedMPDController::~ExtendedMPDController() = default;
 

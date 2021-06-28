@@ -1,5 +1,7 @@
 #include "kitchensound/pages/station_playing_page.h"
 
+#include <spdlog/spdlog.h>
+
 #include "kitchensound/input_event.h"
 #include "kitchensound/mpd_controller.h"
 #include "kitchensound/resource_manager.h"
@@ -29,7 +31,9 @@ StationPlayingPage::StationPlayingPage(ApplicationBackbone &bb, std::shared_ptr<
     set_image(_model.station.image_url, RADIO_IMAGE);
 }
 
-StationPlayingPage::~StationPlayingPage() = default;
+StationPlayingPage::~StationPlayingPage() {
+    SPDLOG_DEBUG("Dropped Station Playing Page");
+}
 
 void StationPlayingPage::handle_enter_key(InputEvent &inev) {
     PlayingPage::handle_enter_key(inev);

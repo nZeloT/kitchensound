@@ -1,11 +1,15 @@
 #include "kitchensound/pages/loading_page.h"
 
+#include <spdlog/spdlog.h>
+
 #include "kitchensound/renderer.h"
 #include "kitchensound/application_backbone.h"
 
 LoadingPage::LoadingPage(ApplicationBackbone& bb) : BasePage(PAGES::LOADING, bb), _model{} {}
 
-LoadingPage::~LoadingPage() = default;
+LoadingPage::~LoadingPage() {
+    SPDLOG_DEBUG("Dropped Loading page");
+}
 
 void LoadingPage::render() {
     this->render_time();

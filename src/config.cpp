@@ -7,7 +7,9 @@ Configuration::Configuration(const std::filesystem::path& file) {
     conf.readFile(file.c_str());
 }
 
-Configuration::~Configuration() = default;
+Configuration::~Configuration() {
+    SPDLOG_DEBUG("Configuration dropped.");
+}
 
 std::string Configuration::get_input_device(INPUT_SOURCES source) {
     std::string device;

@@ -17,13 +17,10 @@ void init_sdl() {
 }
 
 void exit_sdl() {
+    SPDLOG_INFO("Quitting SDL.");
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
-}
-
-void delay(int ms) {
-    SDL_Delay(ms);
 }
 
 void init_sdl2() {

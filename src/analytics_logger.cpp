@@ -119,7 +119,9 @@ struct AnalyticsLogger::Impl {
 AnalyticsLogger::AnalyticsLogger(std::unique_ptr<NetworkController> &net, Configuration::AnalyticsConfig conf)
         : _impl{std::make_unique<Impl>(net, std::move(conf))} {}
 
-AnalyticsLogger::~AnalyticsLogger() = default;
+AnalyticsLogger::~AnalyticsLogger() {
+    SPDLOG_DEBUG("Analytics logger dropped.");
+}
 
 void AnalyticsLogger::log_page_change(PAGES origin, PAGES destination) {
     _impl->log_page_change(origin, destination);

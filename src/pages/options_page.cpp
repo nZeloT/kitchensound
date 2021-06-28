@@ -154,7 +154,9 @@ OptionsPage::OptionsPage(ApplicationBackbone& bb, std::shared_ptr<OsUtil>& os, s
         : BasePage(PAGES::OPTIONS, bb), _impl{std::make_unique<Impl>(bb.fdreg, os, faver, bb.analytics)}
 {}
 
-OptionsPage::~OptionsPage() = default;
+OptionsPage::~OptionsPage() {
+    SPDLOG_DEBUG("Dropped Options Page");
+}
 
 void OptionsPage::enter_page(PAGES origin, void *payload) {
     _impl->enter_page();

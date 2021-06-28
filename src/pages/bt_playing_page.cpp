@@ -23,7 +23,9 @@ BluetoothPlayingPage::BluetoothPlayingPage(ApplicationBackbone& bb,
     });
 };
 
-BluetoothPlayingPage::~BluetoothPlayingPage() = default;
+BluetoothPlayingPage::~BluetoothPlayingPage() {
+    SPDLOG_DEBUG("Dropped BT Playing Page");
+}
 
 void BluetoothPlayingPage::enter_page(PAGES origin, void* payload) {
     PlayingPage::enter_page(origin, payload);

@@ -24,7 +24,9 @@ StationSelectionPage::StationSelectionPage(ApplicationBackbone& bb,
     load_images();
 };
 
-StationSelectionPage::~StationSelectionPage() = default;
+StationSelectionPage::~StationSelectionPage() {
+    SPDLOG_DEBUG("Dropped Station Selection Page");
+}
 
 void StationSelectionPage::enter_page(PAGES origin, void* payload)  {
     SelectionPage<RadioStationStream>::enter_page(origin, payload);

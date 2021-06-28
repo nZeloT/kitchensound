@@ -31,9 +31,11 @@ InputSource::InputSource(std::unique_ptr<FdRegistry> &fdr, std::string device,
 }
 
 InputSource::~InputSource() {
+    SPDLOG_DEBUG("Removing Input fd from FdRegistry {}", _file_descriptor);
     _fdreg->removeFd(_file_descriptor);
     if (_file_descriptor >= 0)
         close(_file_descriptor);
+    SPDLOG_DEBUG("InputSource dropped");
 };
 
 void InputSource::reset() {
