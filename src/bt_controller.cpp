@@ -172,6 +172,11 @@ struct BTController::Impl {
     void update_sd_bus_event_epoll() {
         _fdreg->removeFd(_bus_fd);
 
+        if(_bus == nullptr)
+            //this can happen when leaving the BT Playing page and therefore stopping the signal watchdog
+            //while at the same time having a pending event on the bus itself
+            return;
+
         _bus_fd = sd_bus_get_fd(_bus);
         auto events = sd_bus_get_events(_bus);
         if (events < 0)

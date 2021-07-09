@@ -2,20 +2,13 @@
 0. Kitchensound
    - add option to display recoverable Error messages
    - use file descriptors to track for mpd changes
-   - provide a place for used libs and licenses
-   - finalize snapcast integration
-   - add statistics collector about cpu temp, avg. load and active periods
-   - add option to fav songs
    
 1. Alsa
     - Add equalizer to alsa configuration
     - http://www.gerrelt.nl/RaspberryPi/wordpress/equalizer/
     - https://www.hifiberry.com/docs/software/guide-adding-equalization-using-alsaeq/
-2. Resilience
-    - add WiFi auto reconnect
 5. Other
     - maybe use buildroot to setup a minimal image https://buildroot.org/
 
 ## Internet Radio
 - Stations Index API: https://de1.api.radio-browser.info/
-- fetch additional metadata for songs https://www.discogs.com/developers
